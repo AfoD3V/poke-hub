@@ -1,0 +1,31 @@
+schema: spec-driven
+
+# Project context
+# This guides the AI's internal "worldview" of your repository.
+context: |
+  Tech stack: Next.js 16, TypeScript, Tailwind CSS, Supabase.
+  Code Style: Functional components, atomic design, strict linting.
+  Commits: Conventional Commits (feat/fix/docs/chore).
+  Domain: [E.g., SaaS dashboard for financial analytics].
+  Note: Prioritize type safety and accessibility (ARIA) in all UI artifacts.
+
+# Per-artifact rules
+# These are strict constraints the AI must follow when creating specific files.
+rules:
+  proposal:
+    - Keep proposals concise and focused on "User Value."
+    - Always include a "Migration & Breaking Changes" section.
+    - List "Non-goals" to define the scope boundary clearly.
+    - Maximum length: 500 words.
+
+  tasks:
+    - Break tasks into granular chunks (max 2-hour implementation time).
+    - Format as a clear, actionable checklist.
+    - Each task must include a brief "Verification Step" (e.g., "Check console for X").
+    - Each task should be able to be tested manually and this should be a part of task check list - final validation has to be done by human.
+
+  code:
+    - Use GPT-5.3-Codex for heavy refactoring or boilerplate generation.
+    - Every new function must include a TSDoc block.
+    - No "placeholder" comments; code must be fully implemented.
+    - Include unit tests for any complex business logic using Vitest.
