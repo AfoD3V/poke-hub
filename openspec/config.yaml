@@ -16,7 +16,7 @@ rules:
     - Keep proposals concise and focused on "User Value."
     - Always include a "Migration & Breaking Changes" section.
     - List "Non-goals" to define the scope boundary clearly.
-    - Maximum length: 500 words.
+    - Maximum length: 600 words.
 
   tasks:
     - Break tasks into granular chunks (max 2-hour implementation time).
@@ -25,7 +25,7 @@ rules:
     - Each task should be able to be tested manually and this should be a part of task check list - final validation has to be done by human.
 
   code:
-    - Use GPT-5.3-Codex for heavy refactoring or boilerplate generation.
+    - Use GPT-5.2-Codex for heavy refactoring or boilerplate generation.
     - Every new function must include a TSDoc block.
     - No "placeholder" comments; code must be fully implemented.
     - Include unit tests for any complex business logic using Vitest.
