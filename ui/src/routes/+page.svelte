@@ -1,5 +1,1 @@
-<script lang="ts">
-	import { goto } from '$app/navigation';
-
-	goto('/auth/login', { replaceState: true });
-</script>
+<!-- Root route redirects to /auth/login via +page.server.ts -->

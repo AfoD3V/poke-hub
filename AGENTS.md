@@ -263,3 +263,8 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   token out of that string and then call `cookies.set()` on the SvelteKit
   `cookies` store to forward the session to the browser. Simply forwarding
   the raw header does not work because SvelteKit sanitizes headers.
+- **`bun test` vs `bun run test`:** `bun test` invokes Bun's native test runner
+  and ignores `package.json` scripts. As a result, Vitest and its `jsdom`
+  environment config are skipped, which produces `document is not defined`
+  errors in every component test. Always use `bun run test`, as it respects
+  `package.json` and launches Vitest correctly.
