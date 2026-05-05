@@ -196,14 +196,17 @@ this sequence without deviation:
 
 ### Playwright Workflow
 
-Use Playwright MCP for verification. It is not a substitute for writing proper tests.
+Use Playwright MCP for verification **before** marking any frontend task complete.
+It is not a substitute for writing proper tests.
 
+- **Before starting frontend development**: run Playwright on the current page
+  to establish a visual baseline and confirm the environment is healthy.
 - **During development**: use it to confirm UI renders correctly in dark mode,
-  holographic card effects behave as expected, and routing works
+  holographic card effects behave as expected, and routing works.
 - **After implementation**: run the full e2e test suite to confirm nothing is
-  broken before marking a task complete
+  broken before marking a task complete.
 - **Never skip this step** for any task touching the frontend — visual
-  regressions in a premium UI are not acceptable
+  regressions in a premium UI are not acceptable.
 - **If Playwright reveals a bug**: fix it before marking the task complete. Do
   not log it and move on.
 
