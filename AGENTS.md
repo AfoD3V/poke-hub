@@ -5,8 +5,9 @@
 Update this section as the project progresses.
 
 - Completed: Phase 1, Task 1 - Core Infrastructure and Database Scaffold
-- In progress: Phase 1, Task 2 - Security and Authentication System
-- Next up: Phase 1, Task 3 - TCG API Proxy & Holographic Search UI
+- Completed: Phase 1, Task 2 - Security and Authentication System
+- Completed: Phase 1, Task 3 - TCG API Proxy & Holographic Search UI
+- Next up: Phase 1, Task 4 - Core Collection Management
 
 ---
 
@@ -18,8 +19,10 @@ collections (JP, EN, CN), and eventually track market values and optimal buying
 strategies.
 
 Design philosophy: the app must look modern and premium. Dark mode is default
-(graphite/deep black/dark purple). We strictly use the `pokemon-cards-css`
-library to apply dynamic, cursor-tracking holographic effects to card renders.
+(graphite/deep black/dark purple). Holographic card effects are implemented
+with custom CSS via `--mx`/`--my` cursor-tracking custom properties inspired
+by `pokemon-cards-css` (the npm package itself was unpublished; we built a
+replacement effect that uses radial gradients and SVG noise overlays).
 
 ---
 
@@ -28,7 +31,7 @@ library to apply dynamic, cursor-tracking holographic effects to card renders.
 | Layer      | Technology                          |
 | ---        | ---                                 |
 | Frontend   | SvelteKit + Tailwind CSS            |
-| Card UI    | pokemon-cards-css                   |
+| Card UI    | Custom holographic CSS (inspired by pokemon-cards-css) |
 | Backend    | Bun + Hono (TypeScript)             |
 | Database   | PostgreSQL                          |
 | ORM        | Drizzle ORM                         |
@@ -274,3 +277,9 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   "untracked working tree files would be overwritten by merge." Always branch
   first: `git checkout -b feature/...` before adding or modifying any file.
   Keep `main` strictly as a clean, read-only mirror of `origin/main`.
+- **`pokemon-cards-css` unpublished from npm:** The `pokemon-cards-css` package
+  was pulled from npm in 2022. Direct `npm install pokemon-cards-css` fails with
+  ENOVERSIONS. We replaced it with a custom cursor-tracking holographic effect
+  using CSS custom properties (`--mx`/`--my`), `radial-gradient` shine overlays,
+  and SVG `feTurbulence` noise — inspired by the original package but built
+  in-house to avoid the missing dependency.
