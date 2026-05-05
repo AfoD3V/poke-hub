@@ -268,3 +268,9 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   environment config are skipped, which produces `document is not defined`
   errors in every component test. Always use `bun run test`, as it respects
   `package.json` and launches Vitest correctly.
+- **Never create files on local `main`:** Making changes directly on the local
+  `main` branch causes untracked files that conflict when the same files are
+  merged via PR into `origin/main`. The result is a `git pull` abort with
+  "untracked working tree files would be overwritten by merge." Always branch
+  first: `git checkout -b feature/...` before adding or modifying any file.
+  Keep `main` strictly as a clean, read-only mirror of `origin/main`.
