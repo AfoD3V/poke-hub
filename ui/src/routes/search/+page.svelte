@@ -1,9 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
+	import CardModal from '$lib/components/CardModal.svelte';
 	import type { TcgCard } from '$shared/tcg';
 
 	export let data: PageData;
+
+	let expandedCard: TcgCard | null = null;
 
 	const PAGE_SIZE = 20;
 
@@ -158,7 +161,7 @@
 		<!-- Card grid -->
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
 			{#each cards as card (card.id)}
-				<Card {card} />
+				<Card {card} on:expand={(e) => (expandedCard = e.detail)} />
 			{/each}
 
 			<!-- Inline load-more skeletons — keep grid flow intact while fetching -->
@@ -217,3 +220,7 @@
 		</div>
 	{/if}
 </div>
+
+{#if expandedCard}
+	<CardModal card={expandedCard} on:close={() => (expandedCard = null)} />
+{/if}

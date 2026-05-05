@@ -307,3 +307,15 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   specular highlight — each with `::before`/`::after` pseudo-elements for depth.
   Rarity-specific CSS uses `data-rarity` attribute selectors and clip-path to
   target the art area (`inset(9.85% 8% 52.85% 8%)`) for regular holo cards.
+- **CSS stacking context destroys `backface-visibility: hidden` in 3D flips:**
+  Two common properties silently break card-flip animations by flattening the
+  3D transform context:
+  (1) `overflow: hidden` on the face element itself creates a stacking context
+  that disables `backface-visibility`. Fix: move `overflow: hidden` + `border-radius`
+  to a nested `.face-inner` wrapper div, keeping the outer `.face` clean.
+  (2) `filter` (including `drop-shadow`) on an element with
+  `transform-style: preserve-3d` flattens the 3D space for all children, also
+  breaking `backface-visibility`. Fix: move the `filter` to an outer wrapper
+  element that does NOT declare `transform-style: preserve-3d`.
+  Symptom of both: the card flip rotates (matrix3d confirms 180°) but both
+  faces remain visible simultaneously — the back face appears on top.
