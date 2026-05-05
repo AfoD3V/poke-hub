@@ -286,3 +286,36 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   using CSS custom properties (`--mx`/`--my`), `radial-gradient` shine overlays,
   and SVG `feTurbulence` noise — inspired by the original package but built
   in-house to avoid the missing dependency.
+- **CSS `calc()` cannot multiply `%` by `deg`:** Storing rotation as
+  `calc((var(--my, 50%) - 50%) * 0.24deg)` is invalid CSS — you cannot multiply
+  a `<percentage>` type by an `<angle>` type in `calc()`. The expression silently
+  resolves to 0 in most browsers, producing no tilt. The fix is to compute the
+  rotation value in JavaScript (using Svelte `spring()` stores), append the `deg`
+  unit there, and store the result as a dimensioned CSS variable like
+  `--rotate-x: 8.5deg`. The CSS transform then reads it verbatim:
+  `rotateY(var(--rotate-x, 0deg))`.
+- **Holographic card effect architecture (reference: simeydotme/pokemon-cards-css):**
+  The production-quality holo effect requires three things working together:
+  (1) Svelte `spring()` stores for `rotate`, `glare`, and `background` — this
+  gives the bouncy physical feel; raw CSS `transition` looks mechanical.
+  (2) JS-computed CSS variables with correct units written every animation frame
+  (`--rotate-x`, `--rotate-y`, `--pointer-x`, `--pointer-y`,
+   `--pointer-from-center`, `--pointer-from-top`, `--pointer-from-left`,
+   `--background-x`, `--background-y`, `--card-opacity`).
+  (3) Two overlay `<div>` layers — `.card__shine` (`mix-blend-mode: color-dodge`)
+  for the rainbow foil and `.card__glare` (`mix-blend-mode: overlay`) for the
+  specular highlight — each with `::before`/`::after` pseudo-elements for depth.
+  Rarity-specific CSS uses `data-rarity` attribute selectors and clip-path to
+  target the art area (`inset(9.85% 8% 52.85% 8%)`) for regular holo cards.
+- **CSS stacking context destroys `backface-visibility: hidden` in 3D flips:**
+  Two common properties silently break card-flip animations by flattening the
+  3D transform context:
+  (1) `overflow: hidden` on the face element itself creates a stacking context
+  that disables `backface-visibility`. Fix: move `overflow: hidden` + `border-radius`
+  to a nested `.face-inner` wrapper div, keeping the outer `.face` clean.
+  (2) `filter` (including `drop-shadow`) on an element with
+  `transform-style: preserve-3d` flattens the 3D space for all children, also
+  breaking `backface-visibility`. Fix: move the `filter` to an outer wrapper
+  element that does NOT declare `transform-style: preserve-3d`.
+  Symptom of both: the card flip rotates (matrix3d confirms 180°) but both
+  faces remain visible simultaneously — the back face appears on top.
