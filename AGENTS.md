@@ -112,6 +112,25 @@ poke-hub/
 - Use Playwright MCP for browser-based debugging, developing, and testing when
   needed.
 
+### Learning & Knowledge Capture
+
+**Critical directive:** This is not optional advice — it is a mandatory
+workflow step.
+
+- **When to write:** Every time you discover a caveat, fix a bug, resolve a
+  tooling conflict, or uncover a project-specific quirk that is not common
+  knowledge, you **must** add it to the `Project Learnings` section below
+  **before** marking the task complete.
+- **What to write:** The root cause, the symptom, and the fix or workaround.
+  Be specific enough that a future agent (or yourself) can avoid the trap.
+- **When too late:** If you are about to finish a task and realize you have not
+  yet documented a new learning, stop, document it, commit the change, then
+  proceed.
+- **Examples of learnings that must be captured:** Framework gotchas, mock
+  requirements, build-tool edge cases, environment mismatches, CI-specific
+  behaviors, dependency incompatibilities, anything that cost you >10 minutes
+  to figure out.
+
 ---
 
 ## Tooling and MCP Configuration
@@ -216,16 +235,31 @@ Use Playwright MCP for verification. It is not a substitute for writing proper t
 
 ## Project Learnings
 
-Agents must update this section immediately when discovering a new caveat, bug
-fix, or project-specific quirk.
+**Agents must update this section immediately when discovering a new caveat,
+bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
 
-- SvelteKit SSR needs to correctly pass the HttpOnly cookie to the Hono
-  backend during `load()` functions, otherwise SSR requests will fail
-  authentication.
-- SvelteKit's `$app/*` modules (`$app/forms`, `$app/stores`, `$app/navigation`,
-  `$app/environment`) are injected by the Vite plugin at build time and are not
-  available in the jsdom test environment. Always mock them in `src/tests/setup.ts`
-  using `vi.mock()` before running Vitest component tests.
-- When using `getByLabelText()` in Testing Library, if a password input shares
-  a label-like aria-label with its show/hide toggle button, use
-  `getByLabelText(/password/i, { selector: 'input' })` to avoid ambiguity errors.
+- **SvelteKit SSR + HttpOnly cookies:** SvelteKit SSR needs to correctly pass
+  the HttpOnly cookie to the Hono backend during `load()` functions, otherwise
+  SSR requests will fail authentication.
+- **`$app/*` modules must be mocked in Vitest:** SvelteKit's `$app/forms`,
+  `$app/stores`, `$app/navigation`, and `$app/environment` are injected by the
+  SvelteKit Vite plugin at build time and are **not** available in the jsdom
+  test environment. Always mock them in `src/tests/setup.ts` using
+  `vi.mock()` before running Vitest component tests. Failure to do so results
+  in `document is not defined` errors from `@testing-library/svelte`.
+- **Vitest `environment` config is in `vitest.config.ts`:** Unlike old Vite
+  setups, the `jsdom` environment must be set in `vitest.config.ts`
+  (`defineConfig` from `vitest/config`, not `vite`). A typo like `engvironment`
+  silently defaults to `node`, causing `document is not defined` errors in
+  component tests with no clear indication of why.
+- **Testing Library `getByLabelText` ambiguity:** When a password input and its
+  show/hide toggle button both share the word "password" in their label or
+  `aria-label`, `getByLabelText(/password/i)` throws a multiple-elements
+  error. Use `getByLabelText(/password/i, { selector: "input" })` to target
+  only the form field.
+- **SvelteKit form actions + cookie forwarding:** When implementing auth form
+  actions in `+page.server.ts`, the `fetch()` response from the Hono backend
+  contains the `Set-Cookie` header as a raw string. You must parse the JWT
+  token out of that string and then call `cookies.set()` on the SvelteKit
+  `cookies` store to forward the session to the browser. Simply forwarding
+  the raw header does not work because SvelteKit sanitizes headers.
