@@ -4,9 +4,9 @@
 
 Update this section as the project progresses.
 
-- Completed: (none)
-- In progress: Phase 1, Task 1 - Core Infrastructure and Database Scaffold
-- Next up: Phase 1, Task 2 - Security and Authentication System
+- Completed: Phase 1, Task 1 - Core Infrastructure and Database Scaffold
+- In progress: Phase 1, Task 2 - Security and Authentication System
+- Next up: Phase 1, Task 3 - TCG API Proxy & Holographic Search UI
 
 ---
 
@@ -48,6 +48,8 @@ poke-hub/
 |-- README.md
 |-- docs/
 |-- openspec/
+|-- shared/
+|-- ui/
 `-- resources/
 ```
 
@@ -92,17 +94,42 @@ poke-hub/
 - Backend tests. Use Vitest for unit testing services and testing Hono API routes.
 - Frontend tests. Use Vitest + Svelte Testing Library for component rendering and state verification.
 - UI states. Always handle loading and error states in the UI.
+- Task verification steps must be actionable. For tasks broken into steps (e.g., 1.1, 1.2, 1.3), each step's verification MUST be executable either manually or with tests at that stage.
+- Always run tests after developing or changing code; all tests must pass before marking any task complete.
+- All API endpoints must include positive and negative test scenarios.
+- Maintain a Postman collection in parallel for all API testing; whenever adding new tests, update the collection with high-quality requests and appropriate test scripts.
 
 ### Communication and Implementation
 
 - Plan first. Output a concrete plan before touching 3+ files or creating a new
   DB schema, and wait for human approval.
+- When implementing tests, run them first and confirm they pass before asking
+  the human to run tests locally.
 - Shared types. Any data crossing the client/server boundary must be typed in
   `shared/`. No `any` types allowed.
 - UI design. Do not invent UI styles. Use Tailwind CSS and follow the dark mode
   design guidelines.
 - Use Playwright MCP for browser-based debugging, developing, and testing when
   needed.
+
+### Learning & Knowledge Capture
+
+**Critical directive:** This is not optional advice — it is a mandatory
+workflow step.
+
+- **When to write:** Every time you discover a caveat, fix a bug, resolve a
+  tooling conflict, or uncover a project-specific quirk that is not common
+  knowledge, you **must** add it to the `Project Learnings` section below
+  **before** marking the task complete.
+- **What to write:** The root cause, the symptom, and the fix or workaround.
+  Be specific enough that a future agent (or yourself) can avoid the trap.
+- **When too late:** If you are about to finish a task and realize you have not
+  yet documented a new learning, stop, document it, commit the change, then
+  proceed.
+- **Examples of learnings that must be captured:** Framework gotchas, mock
+  requirements, build-tool edge cases, environment mismatches, CI-specific
+  behaviors, dependency incompatibilities, anything that cost you >10 minutes
+  to figure out.
 
 ---
 
@@ -208,10 +235,31 @@ Use Playwright MCP for verification. It is not a substitute for writing proper t
 
 ## Project Learnings
 
-Agents must update this section immediately when discovering a new caveat, bug
-fix, or project-specific quirk.
+**Agents must update this section immediately when discovering a new caveat,
+bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
 
-- Example: SvelteKit SSR needs to correctly pass the HttpOnly cookie to the Hono
-  backend during `load()` functions, otherwise SSR requests will fail
-  authentication.
-- (Add new learnings here...)
+- **SvelteKit SSR + HttpOnly cookies:** SvelteKit SSR needs to correctly pass
+  the HttpOnly cookie to the Hono backend during `load()` functions, otherwise
+  SSR requests will fail authentication.
+- **`$app/*` modules must be mocked in Vitest:** SvelteKit's `$app/forms`,
+  `$app/stores`, `$app/navigation`, and `$app/environment` are injected by the
+  SvelteKit Vite plugin at build time and are **not** available in the jsdom
+  test environment. Always mock them in `src/tests/setup.ts` using
+  `vi.mock()` before running Vitest component tests. Failure to do so results
+  in `document is not defined` errors from `@testing-library/svelte`.
+- **Vitest `environment` config is in `vitest.config.ts`:** Unlike old Vite
+  setups, the `jsdom` environment must be set in `vitest.config.ts`
+  (`defineConfig` from `vitest/config`, not `vite`). A typo like `engvironment`
+  silently defaults to `node`, causing `document is not defined` errors in
+  component tests with no clear indication of why.
+- **Testing Library `getByLabelText` ambiguity:** When a password input and its
+  show/hide toggle button both share the word "password" in their label or
+  `aria-label`, `getByLabelText(/password/i)` throws a multiple-elements
+  error. Use `getByLabelText(/password/i, { selector: "input" })` to target
+  only the form field.
+- **SvelteKit form actions + cookie forwarding:** When implementing auth form
+  actions in `+page.server.ts`, the `fetch()` response from the Hono backend
+  contains the `Set-Cookie` header as a raw string. You must parse the JWT
+  token out of that string and then call `cookies.set()` on the SvelteKit
+  `cookies` store to forward the session to the browser. Simply forwarding
+  the raw header does not work because SvelteKit sanitizes headers.

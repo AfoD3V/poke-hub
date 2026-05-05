@@ -1,17 +1,17 @@
 ## 1. Core Infrastructure & Database Scaffold
 
-- [ ] 1.1 Scaffold Bun + Hono backend structure and base configuration (Verification Step: run `bun test` or basic server boot and confirm no runtime errors)
-- [ ] 1.2 Configure Postgres connection and Drizzle ORM setup (Verification Step: run migration command and verify Drizzle connects)
-- [ ] 1.3 Define Drizzle schema for `users`, `cards_cache`, `user_collection` (Verification Step: inspect generated schema types and migration output)
-- [ ] 1.4 Implement `GET /api/health` with DB connectivity check (Verification Step: call endpoint and confirm 200 with DB success)
+- [x] 1.1 Scaffold Bun + Hono backend structure and base configuration (Verification Step: start API with `bun run start` and confirm no runtime errors)
+- [x] 1.2 Configure Postgres connection and Drizzle ORM setup (Verification Step: run `bun run db:generate` then `bun run db:migrate` and confirm success)
+- [x] 1.3 Define Drizzle schema for `users`, `cards_cache`, `user_collection` (Verification Step: inspect generated migration file in `server/drizzle/` for the three tables)
+- [x] 1.4 Implement `GET /api/health` with DB connectivity check (Verification Step: run `bun test` for health service and call endpoint once server is running)
 
 ## 2. Security & Authentication System
 
-- [ ] 2.1 Choose auth approach (session or JWT via HttpOnly cookies) and implement auth middleware (Verification Step: call protected route without cookie and confirm 401)
-- [ ] 2.2 Implement registration endpoint and user creation flow (Verification Step: register user and confirm DB record exists)
-- [ ] 2.3 Implement login endpoint and session validation endpoint (Verification Step: login and call session endpoint with cookie)
-- [ ] 2.4 Scaffold SvelteKit auth pages for login and registration (Verification Step: open auth pages and confirm forms render)
-- [ ] 2.5 Protect `/api/collection` routes with auth middleware (Verification Step: request `/api/collection` without auth returns 401)
+- [x] 2.1 Choose auth approach (session or JWT via HttpOnly cookies) and implement auth middleware (Verification Step: call protected route without cookie and confirm 401)
+- [x] 2.2 Implement registration endpoint and user creation flow (Verification Step: register user and confirm DB record exists)
+- [x] 2.3 Implement login endpoint and session validation endpoint (Verification Step: login and call session endpoint with cookie)
+- [x] 2.4 Scaffold SvelteKit auth pages for login and registration (Verification Step: open auth pages and confirm forms render)
+- [x] 2.5 Protect `/api/collection` routes with auth middleware (Verification Step: request `/api/collection` without auth returns 401)
 
 ## 3. TCG API Proxy & Holographic Search UI
 
