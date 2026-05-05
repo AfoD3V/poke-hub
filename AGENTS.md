@@ -115,6 +115,17 @@ poke-hub/
 - Use Playwright MCP for browser-based debugging, developing, and testing when
   needed.
 
+### Keeping AGENTS.md and CLAUDE.md in Sync
+
+`AGENTS.md` and `CLAUDE.md` are the two primary sources of truth for AI agents in this repo and **must always be consistent with each other**.
+
+- **When updating `AGENTS.md`** (e.g. adding a Project Learning, changing a directive, updating current status): reflect the relevant change in `CLAUDE.md` as well — update the corresponding section or add a new entry.
+- **When updating `CLAUDE.md`** (e.g. adding a gotcha, changing a command, updating the current phase): ensure `AGENTS.md` reflects the same information in the appropriate section.
+- Both files must be updated in the **same commit**. A change to one file without the corresponding update to the other is incomplete.
+- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, MCP config). `CLAUDE.md` contains the distilled, actionable version. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`.
+
+---
+
 ### Learning & Knowledge Capture
 
 **Critical directive:** This is not optional advice — it is a mandatory
