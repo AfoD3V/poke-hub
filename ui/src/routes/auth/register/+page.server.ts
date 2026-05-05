@@ -1,4 +1,4 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import type { AuthRegisterRequest } from '$shared/auth';
 
@@ -12,6 +12,13 @@ function extractJwtFromSetCookie(setCookieHeader: string): string | null {
 	return match ? match[1] : null;
 }
 
+export const load = ({ cookies }) => {
+	const token = cookies.get(SESSION_COOKIE);
+	if (token) {
+		throw redirect(302, '/search');
+	}
+};
+
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
 		const data = await request.formData();
@@ -20,11 +27,11 @@ export const actions: Actions = {
 		const displayName = data.get('displayName')?.toString().trim() || undefined;
 
 		if (!email || !password) {
-			return fail(400, { error: 'Email and password are required', email, displayName });
+			return { error: 'Email and password are required', email, displayName };
 		}
 
 		if (password.length < 8) {
-			return fail(400, { error: 'Password must be at least 8 characters', email, displayName });
+			return { error: 'Password must be at least 8 characters', email, displayName };
 		}
 
 		const body: AuthRegisterRequest = { email, password, ...(displayName ? { displayName } : {}) };
@@ -37,12 +44,12 @@ export const actions: Actions = {
 				body: JSON.stringify(body)
 			});
 		} catch {
-			return fail(503, { error: 'Could not reach the server. Try again shortly.', email, displayName });
+			return { error: 'Could not reach the server. Try again shortly.', email, displayName };
 		}
 
 		if (!res.ok) {
 			const json = await res.json().catch(() => ({ error: 'Registration failed' })) as { error?: string };
-			return fail(res.status, { error: json.error ?? 'Registration failed', email, displayName });
+			return { error: json.error ?? 'Registration failed', email, displayName };
 		}
 
 		const setCookieHeader = res.headers.get('set-cookie');
@@ -59,6 +66,6 @@ export const actions: Actions = {
 			}
 		}
 
-		throw redirect(302, '/');
+		throw redirect(302, '/search');
 	}
 };

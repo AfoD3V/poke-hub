@@ -15,11 +15,11 @@
 
 ## 3. TCG API Proxy & Holographic Search UI
 
-- [ ] 3.1 Implement Hono proxy endpoint for pokemontcg.io (Verification Step: request proxy endpoint and confirm upstream data returned)
-- [ ] 3.2 Add error handling and timeouts for proxy requests (Verification Step: simulate upstream error and confirm controlled error payload)
-- [ ] 3.3 Build SvelteKit search page wired to proxy (Verification Step: search by Pokemon name and confirm results render)
-- [ ] 3.4 Integrate pokemon-cards-css holographic effects on result cards (Verification Step: hover card and confirm cursor-tracking effect)
-- [ ] 3.5 Add loading and error states to search UI (Verification Step: trigger loading and error states and confirm UI feedback)
+- [x] 3.1 Implement Hono proxy endpoint for pokemontcg.io (Verification Step: request proxy endpoint and confirm upstream data returned)
+- [x] 3.2 Add error handling and timeouts for proxy requests (Verification Step: simulate upstream error and confirm controlled error payload)
+- [x] 3.3 Build SvelteKit search page wired to proxy (Verification Step: search by Pokemon name and confirm results render)
+- [x] 3.4 Integrate custom cursor-tracking holographic effects on result cards (Verification Step: hover card and confirm cursor-tracking effect)
+- [x] 3.5 Add loading and error states to search UI (Verification Step: trigger loading and error states and confirm UI feedback)
 
 ## 4. Core Collection Management
 
