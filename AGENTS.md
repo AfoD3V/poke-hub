@@ -4,9 +4,9 @@
 
 Update this section as the project progresses.
 
-- Completed: (none)
-- In progress: Phase 1, Task 1 - Core Infrastructure and Database Scaffold
-- Next up: Phase 1, Task 2 - Security and Authentication System
+- Completed: Phase 1, Task 1 - Core Infrastructure and Database Scaffold
+- In progress: Phase 1, Task 2 - Security and Authentication System
+- Next up: Phase 1, Task 3 - TCG API Proxy & Holographic Search UI
 
 ---
 
@@ -48,6 +48,8 @@ poke-hub/
 |-- README.md
 |-- docs/
 |-- openspec/
+|-- shared/
+|-- ui/
 `-- resources/
 ```
 
@@ -92,11 +94,17 @@ poke-hub/
 - Backend tests. Use Vitest for unit testing services and testing Hono API routes.
 - Frontend tests. Use Vitest + Svelte Testing Library for component rendering and state verification.
 - UI states. Always handle loading and error states in the UI.
+- Task verification steps must be actionable. For tasks broken into steps (e.g., 1.1, 1.2, 1.3), each step's verification MUST be executable either manually or with tests at that stage.
+- Always run tests after developing or changing code; all tests must pass before marking any task complete.
+- All API endpoints must include positive and negative test scenarios.
+- Maintain a Postman collection in parallel for all API testing; whenever adding new tests, update the collection with high-quality requests and appropriate test scripts.
 
 ### Communication and Implementation
 
 - Plan first. Output a concrete plan before touching 3+ files or creating a new
   DB schema, and wait for human approval.
+- When implementing tests, run them first and confirm they pass before asking
+  the human to run tests locally.
 - Shared types. Any data crossing the client/server boundary must be typed in
   `shared/`. No `any` types allowed.
 - UI design. Do not invent UI styles. Use Tailwind CSS and follow the dark mode
@@ -211,7 +219,13 @@ Use Playwright MCP for verification. It is not a substitute for writing proper t
 Agents must update this section immediately when discovering a new caveat, bug
 fix, or project-specific quirk.
 
-- Example: SvelteKit SSR needs to correctly pass the HttpOnly cookie to the Hono
+- SvelteKit SSR needs to correctly pass the HttpOnly cookie to the Hono
   backend during `load()` functions, otherwise SSR requests will fail
   authentication.
-- (Add new learnings here...)
+- SvelteKit's `$app/*` modules (`$app/forms`, `$app/stores`, `$app/navigation`,
+  `$app/environment`) are injected by the Vite plugin at build time and are not
+  available in the jsdom test environment. Always mock them in `src/tests/setup.ts`
+  using `vi.mock()` before running Vitest component tests.
+- When using `getByLabelText()` in Testing Library, if a password input shares
+  a label-like aria-label with its show/hide toggle button, use
+  `getByLabelText(/password/i, { selector: 'input' })` to avoid ambiguity errors.
