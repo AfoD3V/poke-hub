@@ -66,6 +66,6 @@ export const actions: Actions = {
 			}
 		}
 
-		throw redirect(302, '/search');
+		throw redirect(302, '/');
 	}
 };
