@@ -22,7 +22,9 @@ describe('Login page', () => {
 
 	it('renders the password input', () => {
 		render(LoginPage, { props: { form: null } });
-		const input = screen.getByLabelText(/password/i);
+		// Use { selector: 'input' } to distinguish the input from the show/hide toggle button,
+		// which also contains "password" in its aria-label.
+		const input = screen.getByLabelText(/password/i, { selector: 'input' });
 		expect(input).toBeInTheDocument();
 		expect(input).toHaveAttribute('type', 'password');
 		expect(input).toHaveAttribute('name', 'password');

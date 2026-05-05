@@ -1,5 +1,5 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import path from 'path';
 
 export default defineConfig({
@@ -10,7 +10,7 @@ export default defineConfig({
 		}
 	},
 	test: {
-		engvironment: 'jsdom',
+		environment: 'jsdom',
 		globals: true,
 		setupFiles: ['./src/tests/setup.ts'],
 		include: ['src/**/*.test.ts']

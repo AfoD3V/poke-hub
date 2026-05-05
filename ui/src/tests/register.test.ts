@@ -29,7 +29,9 @@ describe('Register page', () => {
 
 	it('renders the password input', () => {
 		render(RegisterPage, { props: { form: null } });
-		const input = screen.getByLabelText(/password/i);
+		// Use { selector: 'input' } to distinguish the password input from the show/hide
+		// toggle button, which also contains "password" in its aria-label.
+		const input = screen.getByLabelText(/password/i, { selector: 'input' });
 		expect(input).toBeInTheDocument();
 		expect(input).toHaveAttribute('name', 'password');
 		expect(input).toHaveAttribute('minlength', '8');
