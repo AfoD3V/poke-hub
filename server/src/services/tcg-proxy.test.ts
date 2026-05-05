@@ -69,7 +69,7 @@ describe("tcg-proxy service", () => {
   };
 
   describe("searchCards", () => {
-    it("forwards query to upstream and returns mapped cards", async () => {
+    it("forwards raw query to upstream and returns mapped cards", async () => {
       stubOk({
         data: [upstreamCard()],
         totalCount: 1
@@ -88,6 +88,19 @@ describe("tcg-proxy service", () => {
       expect(result.cards[0].id).toBe("swsh4-107");
       expect(result.cards[0].name).toBe("Charizard");
       expect(result.cards[0].images.small).toBe("https://example.com/small.jpg");
+    });
+
+    it("auto-prefixes simple keyword queries with name filter", async () => {
+      stubOk({ data: [], totalCount: 0 });
+      await searchCards("Pikachu");
+      expect(capturedRequest?.url).toContain('q=name%3A%22Pikachu%22');
+    });
+
+    it("does not auto-prefix raw pokemontcg.io query expressions", async () => {
+      stubOk({ data: [], totalCount: 0 });
+      await searchCards("set:base1 supertype:Pokémon");
+      expect(capturedRequest?.url).toContain("q=set%3Abase1+supertype%3APok%C3%A9mon");
+      expect(capturedRequest?.url).not.toContain('name%3A');
     });
 
     it("sends the API key header", async () => {

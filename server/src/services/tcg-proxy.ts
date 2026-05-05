@@ -148,8 +148,17 @@ export async function searchCards(
   page = 1,
   pageSize = 20
 ): Promise<TcgSearchResponse> {
+  /**
+   * Auto-prefix simple keyword queries with `name:` so users can type
+   * plain Pokemon names while still allowing power-users to pass raw
+   * pokemontcg.io query expressions (e.g. `set:base1 supertype:Pokémon`).
+   */
+  const normalisedQuery = /^[a-z0-9\-\s.]+$/i.test(query.trim())
+    ? `name:"${query.trim()}"`
+    : query;
+
   const url = new URL(`${UPSTREAM_BASE}/cards`);
-  url.searchParams.set("q", query);
+  url.searchParams.set("q", normalisedQuery);
   url.searchParams.set("page", String(page));
   url.searchParams.set("pageSize", String(pageSize));
 
