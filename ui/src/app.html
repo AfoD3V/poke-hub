@@ -1,9 +1,17 @@
-:- :-The repository to use for operations
-- **AfoD3V/poke-hub**:- :-Files to push in a single commit on `feature/setup-readme-fixes`
-- `AGENTS.md`
-- `README.md`
-- `ui/src/app.html`
-- `ui/src/routes/+page.svelte`
-- `ui/src/routes/+page.server.ts` (new file)
-
-This PR includes documentation updates and two SSR/routing fixes.
+<!doctype html>
+<html lang="en" class="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+			rel="stylesheet"
+		/>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover" class="bg-ph-bg text-ph-text">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>
