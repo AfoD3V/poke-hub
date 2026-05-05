@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		color-scheme: dark;
+	}
+
+	* {
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	body {
+		@apply font-dm;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4 {
+		@apply font-syne;
+	}
+}
+
+@layer components {
+	.form-input {
+		@apply w-full bg-ph-surface border border-ph-border rounded-lg px-4 py-3 text-ph-text
+			placeholder-ph-muted text-sm
+			transition-all duration-200
+			focus:outline-none focus:border-ph-purple focus:ring-2 focus:ring-ph-purple/20
+			hover:border-ph-border-accent;
+	}
+
+	.btn-primary {
+		@apply w-full py-3 px-6 rounded-lg font-syne font-semibold text-sm tracking-wide
+			bg-gradient-to-r from-purple-700 to-violet-600
+			text-white
+			transition-all duration-200
+			hover:from-purple-600 hover:to-violet-500
+			hover:shadow-glow-purple-hover
+			focus:outline-none focus:ring-2 focus:ring-ph-purple/50
+			disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none;
+	}
+
+	.auth-label {
+		@apply block text-xs font-syne font-medium tracking-widest uppercase
+			text-ph-muted mb-2;
+	}
+}
