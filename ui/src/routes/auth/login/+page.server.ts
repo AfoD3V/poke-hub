@@ -4,19 +4,20 @@ import type { AuthLoginRequest } from '$shared/auth';
 
 const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
-/** Cookie name must match the backend's `authConfig.cookieName`. */
 const SESSION_COOKIE = 'pokehub_session';
-/** 7 days — mirrors the backend JWT expiry. */
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
-/**
- * Extract the raw JWT value from a `Set-Cookie` header string produced by the
- * Hono backend (e.g. `pokehub_session=<jwt>; HttpOnly; Path=/; ...`).
- */
 function extractJwtFromSetCookie(setCookieHeader: string): string | null {
 	const match = setCookieHeader.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`));
 	return match ? match[1] : null;
 }
+
+export const load = ({ cookies }) => {
+	const token = cookies.get(SESSION_COOKIE);
+	if (token) {
+		throw redirect(302, '/search');
+	}
+};
 
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
@@ -46,7 +47,6 @@ export const actions: Actions = {
 			return fail(res.status, { error: json.error ?? 'Login failed', email });
 		}
 
-		// Forward the HttpOnly session cookie from the backend to the browser.
 		const setCookieHeader = res.headers.get('set-cookie');
 		if (setCookieHeader) {
 			const jwt = extractJwtFromSetCookie(setCookieHeader);
@@ -61,6 +61,6 @@ export const actions: Actions = {
 			}
 		}
 
-		throw redirect(302, '/');
+		throw redirect(302, '/search');
 	}
 };
