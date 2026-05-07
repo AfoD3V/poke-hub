@@ -58,6 +58,15 @@ poke-hub/
 
 ---
 
+## Agent Identity and Efficiency
+
+- **Role:** Senior Fullstack Engineer. Approach tasks with that level of judgment and ownership.
+- **Efficiency:** Prefer CLI tools (`gh`, `bun`, `git`, `playwright-cli`) over manual file reads where they accomplish the same result with less token overhead.
+- **Verification:** Never assume a command succeeded. Always confirm state changes with a follow-up check (e.g., `gh pr status`, a Playwright snapshot, `bun run test`).
+- **Self-diagnosis:** When a CLI command fails, read the error and check `--help` or `--verbose` before asking the human for help.
+
+---
+
 ## Agent Core Directives
 
 ### Specification Workflow and Documentation
@@ -80,6 +89,7 @@ poke-hub/
 - Commits. Write clear and meaningful commit messages before merging the branch.
 - Reference code in `resources/`. Read-only, local reference, always gitignored,
   never committed.
+- **Context first:** Before beginning any task, run `gh issue list` and `gh pr status` to orient yourself. Use `gh` CLI as the primary tool for all GitHub operations; fall back to raw `git` only when `gh` has no equivalent.
 
 ### Security First Principle
 
@@ -112,8 +122,18 @@ poke-hub/
   `shared/`. No `any` types allowed.
 - UI design. Do not invent UI styles. Use Tailwind CSS and follow the dark mode
   design guidelines.
-- Use Playwright MCP for browser-based debugging, developing, and testing when
-  needed.
+- Use `playwright-cli` for browser-based debugging, developing, and testing when needed.
+
+### Keeping AGENTS.md and CLAUDE.md in Sync
+
+`AGENTS.md` and `CLAUDE.md` are the two primary sources of truth for AI agents in this repo and **must always be consistent with each other**.
+
+- **When updating `AGENTS.md`** (e.g. adding a Project Learning, changing a directive, updating current status): reflect the relevant change in `CLAUDE.md` as well — update the corresponding section or add a new entry.
+- **When updating `CLAUDE.md`** (e.g. adding a gotcha, changing a command, updating the current phase): ensure `AGENTS.md` reflects the same information in the appropriate section.
+- Both files must be updated in the **same commit**. A change to one file without the corresponding update to the other is incomplete.
+- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, tooling config). `CLAUDE.md` contains the distilled, actionable version. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`.
+
+---
 
 ### Learning & Knowledge Capture
 
@@ -136,92 +156,66 @@ workflow step.
 
 ---
 
-## Tooling and MCP Configuration
+## Tooling Configuration
 
-### Available MCP Tools
+### GitHub (`gh` CLI)
 
-Two MCP servers are available. Use them — do not simulate their functionality
-manually or fall back to equivalent CLI commands when an MCP tool exists for the
-job.
+Use `gh` as the primary tool for all GitHub operations. Fall back to raw `git` only when `gh` has no equivalent.
 
-**GitHub MCP** — use for all Git and GitHub operations:
-- Branch creation, file commits, and pull request management
-- Prefer this over raw `git` CLI for any operation that touches the remote
-  repository
+- **Orient first:** Run `gh issue list` and `gh pr status` before beginning any task.
+- **Branch:** `git checkout -b feature/task_name` before writing any code. Never commit to `main`.
+- **Commits:** Commit incrementally with meaningful messages — not "update", "fix", or "wip". Never commit `.env` files, secrets, or the `resources/` directory.
+- **PR:** `gh pr create --title "..." --body "..."` once the feature is complete and all tests pass. Requires human approval — stop and present a full PR summary before opening.
 
-**Playwright MCP** — use for all browser interactions:
-- UI development feedback, visual regression checks, and end-to-end flow
-  verification
-- Required for any task that involves verifying rendered output or user
-  interaction flows
+### Git Workflow — CLI Rules
 
----
+Follow this sequence without deviation:
 
-### Permission Model
-
-The `opencode.json` config defines what requires human approval. Respect this
-strictly — never attempt to work around an `ask` permission by splitting it into
-smaller individually-allowed steps.
-
-| Action | Permission | Required Behavior |
-|---|---|---|
-| `git *` | Auto-allowed | Execute freely |
-| `npm *` | Ask | Stop. State the exact command and reason. Wait for explicit approval before proceeding. |
-| `github:create_branch` | Auto-allowed | Execute freely |
-| `github:push_repository_file` | Auto-allowed | Execute freely |
-| `github:create_pull_request` | Ask | Stop. Present PR title, target branch, and a summary of changes. Wait for explicit approval. |
-| `playwright:*` | Auto-allowed | Execute freely |
+1. **Create the branch first** — `git checkout -b feature/task_name` before writing any code. Never push to `main` or `master`.
+2. **Commit incrementally** as you complete logical units of work. Messages must be meaningful and descriptive.
+3. **Open a PR only after** the feature is complete and all tests pass. Present PR title, target branch, and a summary of changes to the human before running `gh pr create`.
 
 ---
 
-### Git Workflow — MCP-Specific Rules
+### Playwright (`playwright-cli`)
 
-Use the GitHub MCP server as the primary tool for all remote operations. Follow
-this sequence without deviation:
+Use `playwright-cli` for all browser interactions and visual verification. It is not a substitute for writing proper tests.
 
-1. **Create the branch first** via `github:create_branch` before writing any code
-   - Branch name format: `feature/task_name`
-   - Never push to `main` or `master` under any circumstances — MCP tools do not
-     exempt you from this rule
-2. **Commit incrementally** via `github:push_repository_file` as you complete
-   logical units of work
-   - Commit messages must be meaningful and descriptive — not "update", "fix",
-     or "wip"
-   - Never commit `.env` files, secrets, or the `resources/` directory
-3. **Open a PR only after** the feature is complete and all tests pass
-   - Requires human approval — stop and present a full PR summary before calling
-     `github:create_pull_request`
+**Snapshot protocol:**
+1. Ensure the local dev server is running (`bun run dev` in `ui/`).
+2. `playwright-cli open <url>` to open the target page.
+3. `playwright-cli snapshot` to retrieve the UI accessibility tree.
+4. **Always use Short IDs** (e.g., `e12`) for `click` and `type` actions — do not construct long CSS or XPath selectors unless no Short ID is available.
+5. For holographic card effects, use `playwright-cli screenshot` and compare visually for regressions.
 
----
-
-### Playwright Workflow
-
-Use Playwright MCP for verification **before** marking any frontend task complete.
-It is not a substitute for writing proper tests.
-
-- **Before starting frontend development**: run Playwright on the current page
-  to establish a visual baseline and confirm the environment is healthy.
-- **During development**: use it to confirm UI renders correctly in dark mode,
-  holographic card effects behave as expected, and routing works.
-- **After implementation**: run the full e2e test suite to confirm nothing is
-  broken before marking a task complete.
-- **Never skip this step** for any task touching the frontend — visual
-  regressions in a premium UI are not acceptable.
-- **If Playwright reveals a bug**: fix it before marking the task complete. Do
-  not log it and move on.
+**When to use:**
+- **Before starting frontend development**: establish a visual baseline and confirm the environment is healthy.
+- **During development**: confirm UI renders correctly in dark mode, holo effects behave as expected, routing works.
+- **After implementation**: verify the full flow before marking the task complete.
+- **Never skip this step** for any task touching the frontend — visual regressions in a premium UI are not acceptable.
+- **If a bug is found**: fix it before marking the task complete. Do not log it and move on.
 
 ---
 
-### What You Must Never Do With These Tools
+### What You Must Never Do
 
-- Never commit `.env` files or the `resources/` directory via `github:push_repository_file`
-- Never open a PR without explicit human approval, even if the diff looks
-  trivial
-- Never run `npm install`, `npm run build`, `npm run dev`, or any destructive
-  `npm` script without explicit human approval
-- Never use Playwright to interact with forms or auth flows that could trigger
-  real side effects outside a local development environment without first
-  confirming the target environment with the human
+- Never commit `.env` files or the `resources/` directory
+- Never open a PR without explicit human approval, even if the diff looks trivial
+- Never run destructive `bun` or `npm` scripts in production contexts without confirming the target environment with the human
+- Never use `playwright-cli` to interact with forms or auth flows that could trigger real side effects outside a local development environment without first confirming with the human
+
+---
+
+## Definition of Done
+
+A task is complete **only** when all of the following are true:
+
+1. Code passes linting and type checks (`bun run check` in `ui/`, TypeScript compiler clean in `server/`).
+2. All tests pass (`bun run test` in both `server/` and `ui/`).
+3. Frontend changes verified via `playwright-cli snapshot`/`screenshot` (no visual regressions).
+4. New API endpoints have positive and negative Vitest test scenarios and the Postman collection is updated.
+5. Any new framework gotcha or project-specific quirk is documented in `Project Learnings` below.
+6. Changes are pushed to a feature branch and a PR is created via `gh pr create` (with human approval if required by the permission model).
 
 ---
 
