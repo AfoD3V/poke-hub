@@ -1,0 +1,354 @@
+{
+  "info": {
+    "name": "PokeHub API",
+    "description": "Postman collection for PokeHub API routes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health - Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200 or 503', () => {",
+              "  pm.expect([200, 503]).to.include(pm.response.code);",
+              "});",
+              "pm.test('body has ok/database', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('ok');",
+              "  pm.expect(body).to.have.property('database');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Register (Positive)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const email = `user+${Date.now()}@example.com`;",
+              "pm.collectionVariables.set('email', email);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 201', () => {",
+              "  pm.expect(pm.response.code).to.equal(201);",
+              "});",
+              "pm.test('response has user', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('user');",
+              "  pm.expect(body.user).to.have.property('id');",
+              "  pm.expect(body.user.email).to.equal(pm.collectionVariables.get('email'));",
+              "});",
+              "const setCookie = pm.response.headers.get('Set-Cookie');",
+              "if (setCookie) {",
+              "  pm.collectionVariables.set('sessionCookie', setCookie.split(';')[0]);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"displayName\": \"{{displayName}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Login (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has user', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('user');",
+              "  pm.expect(body.user.email).to.equal(pm.collectionVariables.get('email'));",
+              "});",
+              "const setCookie = pm.response.headers.get('Set-Cookie');",
+              "if (setCookie) {",
+              "  pm.collectionVariables.set('sessionCookie', setCookie.split(';')[0]);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Login (Negative)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 401', () => {",
+              "  pm.expect(pm.response.code).to.equal(401);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"wrong-password\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Session (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has user', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('user');",
+              "  pm.expect(body.user.email).to.equal(pm.collectionVariables.get('email'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/session",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "session"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Session (Negative)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 401', () => {",
+              "  pm.expect(pm.response.code).to.equal(401);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "pokehub_session="
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/session",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "session"]
+        }
+      }
+    },
+    {
+      "name": "Collection - Protected (Negative)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 401', () => {",
+              "  pm.expect(pm.response.code).to.equal(401);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "pokehub_session="
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/collection",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "collection"]
+        }
+      }
+    },
+    {
+      "name": "Collection - Protected (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is not 401', () => {",
+              "  pm.expect(pm.response.code).to.not.equal(401);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/collection",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "collection"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('cookie cleared', () => {",
+              "  const setCookie = pm.response.headers.get('Set-Cookie');",
+              "  pm.expect(setCookie || '').to.include('Max-Age=0');",
+              "});",
+              "pm.collectionVariables.unset('sessionCookie');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "logout"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "email",
+      "value": "user@example.com"
+    },
+    {
+      "key": "password",
+      "value": "Pikachu123"
+    },
+    {
+      "key": "displayName",
+      "value": "Trainer"
+    },
+    {
+      "key": "sessionCookie",
+      "value": ""
+    }
+  ]
+}

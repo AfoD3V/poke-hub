@@ -54,13 +54,32 @@ Three-layer system in `ui/src/lib/components/Card.svelte`:
 - **`getByLabelText` ambiguity:** When a password input and its show/hide toggle share "password" in their labels, use `getByLabelText(/password/i, { selector: "input" })`.
 - **Never work on local `main`:** Changes on `main` create untracked files that conflict on `git pull` after a PR merge. Always branch first: `git checkout -b feature/...`.
 
+## Agent Workflow
+
+- **Role:** Senior Fullstack Engineer. Use that level of judgment.
+- **Efficiency:** Prefer CLI tools (`gh`, `bun`, `git`, `playwright-cli`) over manual file reads when they accomplish the same result.
+- **Verification:** Never assume success — confirm state changes with a follow-up command (`gh pr status`, a Playwright snapshot, `bun run test`).
+- **Context first:** Run `gh issue list` and `gh pr status` before starting any task. Use `gh` CLI for all GitHub operations.
+- **Playwright CLI:** `playwright-cli open <url>` → `playwright-cli snapshot`. Use Short IDs (e.g., `e12`) for all `click`/`type` actions. `playwright-cli screenshot` to verify holo card effects.
+- **Self-diagnosis:** When a CLI command fails, read the error and check `--help`/`--verbose` before asking the user.
+
 ## Conventions
 
 - All new API endpoints need positive and negative Vitest test scenarios.
 - Maintain the Postman collection (`docs/postman/`) in parallel with API changes.
-- Use Playwright MCP for visual verification of any frontend changes before marking tasks complete.
+- Use `playwright-cli` for visual verification of any frontend changes before marking tasks complete.
 - For changes touching 3+ files or a new DB schema, output a plan and wait for approval before implementing.
 - Document new framework gotchas or project-specific quirks in `AGENTS.md` > Project Learnings before marking a task complete.
+
+## Definition of Done
+
+A task is complete only when:
+1. Linting/type checks pass (`bun run check` in `ui/`; TypeScript clean in `server/`).
+2. All tests pass (`bun run test` in both packages).
+3. Frontend changes verified via `playwright-cli snapshot`/`screenshot` (no visual regressions).
+4. New API endpoints have tests + Postman collection updated.
+5. New gotchas documented in `AGENTS.md` > Project Learnings.
+6. Changes pushed to a feature branch; PR created via `gh pr create`.
 
 ## Keeping CLAUDE.md and AGENTS.md in Sync
 
@@ -69,4 +88,4 @@ These two files are the primary sources of truth for AI agents working in this r
 - **When updating `AGENTS.md`** (e.g. adding a Project Learning, changing a directive, updating current status): reflect the relevant change in `CLAUDE.md` as well — update the corresponding section or add a new entry.
 - **When updating `CLAUDE.md`** (e.g. adding a gotcha, changing a command, updating the current phase): ensure `AGENTS.md` reflects the same information in the appropriate section.
 - Both files must be updated in the **same commit**. A change to one file without the corresponding update to the other is incomplete.
-- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, MCP config). `CLAUDE.md` contains the distilled, actionable version. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`.
+- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, tooling config). `CLAUDE.md` contains the distilled, actionable version. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`.
