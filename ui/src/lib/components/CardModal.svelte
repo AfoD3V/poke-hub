@@ -115,17 +115,18 @@
 	});
 </script>
 
-<!-- Backdrop -->
+<!-- Backdrop: click-to-close on the overlay itself (not its children) -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div
 	class="overlay"
-	on:click={close}
+	on:click={(e) => e.target === e.currentTarget && close()}
+	on:keydown={(e) => e.key === 'Escape' && close()}
 	transition:fade={{ duration: 220 }}
 	role="dialog"
 	aria-modal="true"
 	aria-label="Card detail — {card.name}"
 >
-	<!-- Stop click propagation so clicking the card doesn't close the modal -->
-	<div class="modal-layout" on:click|stopPropagation>
+	<div class="modal-layout">
 
 		<!-- ── 3-D flip container ──────────────────────────────────────────── -->
 		<!--

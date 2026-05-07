@@ -112,9 +112,12 @@
 	<div class="card__translater">
 		<div
 			class="card__rotator"
+			role="button"
+			tabindex="0"
 			on:pointermove={interact}
 			on:pointerleave={interactEnd}
 			on:click={() => dispatch('expand', card)}
+			on:keypress={(e) => e.key === 'Enter' && dispatch('expand', card)}
 		>
 			<div class="card__front">
 				{#if card.images?.small}
