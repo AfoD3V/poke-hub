@@ -23,10 +23,10 @@
 
 ## 4. Core Collection Management
 
-- [ ] 4.1 Implement `POST /api/collection/add` to save cards (Verification Step: add card and confirm DB insert)
-- [ ] 4.2 Implement `DELETE /api/collection/remove` to remove cards (Verification Step: remove card and confirm DB delete)
-- [ ] 4.3 Build My Collection dashboard page in SvelteKit (Verification Step: navigate to page and confirm layout)
-- [ ] 4.4 Wire dashboard to fetch and render user collection with holographic cards (Verification Step: refresh page and confirm saved cards render)
+- [x] 4.1 Implement `POST /api/collection/add` to save cards (Verification Step: add card and confirm DB insert)
+- [x] 4.2 Implement `DELETE /api/collection/remove` to remove cards (Verification Step: remove card and confirm DB delete)
+- [x] 4.3 Build My Collection dashboard page in SvelteKit (Verification Step: navigate to page and confirm layout)
+- [x] 4.4 Wire dashboard to fetch and render user collection with holographic cards (Verification Step: refresh page and confirm saved cards render)
 
 ## 5. Real-Time Event Architecture
 

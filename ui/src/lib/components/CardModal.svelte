@@ -8,6 +8,32 @@
 
 	const dispatch = createEventDispatcher<{ close: void }>();
 
+	// ── Add-to-collection state ───────────────────────────────────────────────
+	type AddState = 'idle' | 'loading' | 'success' | 'error';
+	let addState: AddState = 'idle';
+	let addError = '';
+
+	async function addToCollection() {
+		if (addState === 'loading' || addState === 'success') return;
+		addState = 'loading';
+		addError = '';
+		try {
+			const res = await fetch('/api/collection/add', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ cardId: card.id, card })
+			});
+			if (!res.ok) {
+				const body = await res.json() as { error?: string };
+				throw new Error(body.error ?? `Request failed (${res.status})`);
+			}
+			addState = 'success';
+		} catch (e) {
+			addError = e instanceof Error ? e.message : 'Failed to add card';
+			addState = 'error';
+		}
+	}
+
 	// ── Math helpers ──────────────────────────────────────────────────────────
 	const round  = (v: number, p = 3) => parseFloat(v.toFixed(p));
 	const clamp  = (v: number, min = 0, max = 100) => Math.min(Math.max(v, min), max);
@@ -231,6 +257,41 @@
 
 				{#if card.flavorText}
 					<p class="flavor">"{card.flavorText}"</p>
+				{/if}
+			</div>
+
+			<!-- Add to collection -->
+			<div class="action-row">
+				<button
+					class="add-btn"
+					class:add-btn--success={addState === 'success'}
+					class:add-btn--error={addState === 'error'}
+					disabled={addState === 'loading' || addState === 'success'}
+					on:click={addToCollection}
+					aria-label="Add {card.name} to collection"
+				>
+					{#if addState === 'idle' || addState === 'error'}
+						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+						</svg>
+						{addState === 'error' ? 'Retry' : 'Add to Collection'}
+					{:else if addState === 'loading'}
+						<svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+						</svg>
+						Adding…
+					{:else}
+						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<polyline points="20 6 9 17 4 12"/>
+						</svg>
+						Added!
+					{/if}
+				</button>
+				{#if addState === 'error'}
+					<p class="add-error">{addError}</p>
+				{/if}
+				{#if addState === 'success'}
+					<a href="/collection" class="collection-link">View Collection →</a>
 				{/if}
 			</div>
 
@@ -991,4 +1052,59 @@
 		color: #e2e2ea;
 		border-color: #4c4c64;
 	}
+
+	/* ── Add-to-collection ───────────────────────────────────────────────────*/
+	.action-row {
+		margin-top: 1.25rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.add-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-family: 'DM Sans', sans-serif;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: #c4b5fd;
+		background: rgba(139, 92, 246, 0.15);
+		border: 1px solid rgba(139, 92, 246, 0.4);
+		border-radius: 0.5rem;
+		padding: 0.5rem 1rem;
+		cursor: pointer;
+		transition: background 0.2s, border-color 0.2s, color 0.2s;
+		align-self: flex-start;
+	}
+	.add-btn:hover:not(:disabled) {
+		background: rgba(139, 92, 246, 0.28);
+		border-color: rgba(139, 92, 246, 0.7);
+		color: #ddd6fe;
+	}
+	.add-btn:disabled { cursor: default; }
+	.add-btn--success {
+		color: #6ee7b7;
+		background: rgba(16, 185, 129, 0.12);
+		border-color: rgba(16, 185, 129, 0.35);
+	}
+	.add-btn--error {
+		color: #fca5a5;
+		background: rgba(239, 68, 68, 0.12);
+		border-color: rgba(239, 68, 68, 0.35);
+	}
+	.add-error {
+		font-family: 'DM Sans', sans-serif;
+		font-size: 0.75rem;
+		color: #fca5a5;
+		margin: 0;
+	}
+	.collection-link {
+		font-family: 'DM Sans', sans-serif;
+		font-size: 0.75rem;
+		color: #a78bfa;
+		text-decoration: none;
+	}
+	.collection-link:hover { color: #c4b5fd; }
+	@keyframes spin { to { transform: rotate(360deg); } }
+	.spin { animation: spin 0.75s linear infinite; }
 </style>

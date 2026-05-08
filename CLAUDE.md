@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PokeHub is a premium personal Pokémon TCG collection manager. Dark mode is the default design (graphite/deep black/dark purple). Holographic card effects use custom CSS with JS-computed cursor-tracking variables — the `pokemon-cards-css` npm package was unpublished in 2022 and we built a replacement.
 
-**Current phase:** Phase 1, Task 4 (Core Collection Management) is next.
+**Current phase:** Phase 1, Task 5 (Real-Time Event Architecture) is next.
 
 ## Commands
 

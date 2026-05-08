@@ -295,6 +295,178 @@
       }
     },
     {
+      "name": "Collection - Get (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has entries array', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('entries');",
+              "  pm.expect(body.entries).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/collection",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "collection"]
+        }
+      }
+    },
+    {
+      "name": "Collection - Add Card (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 201', () => {",
+              "  pm.expect(pm.response.code).to.equal(201);",
+              "});",
+              "pm.test('response has cardId', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('cardId');",
+              "  pm.expect(body).to.have.property('id');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Cookie", "value": "{{sessionCookie}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cardId\": \"swsh1-1\",\n  \"language\": \"en\",\n  \"quantity\": 1,\n  \"card\": {\n    \"id\": \"swsh1-1\",\n    \"name\": \"Celebi V\",\n    \"supertype\": \"Pokémon\",\n    \"set\": \"SWSH01\",\n    \"number\": \"1\",\n    \"images\": { \"small\": \"https://images.pokemontcg.io/swsh1/1.png\", \"large\": \"https://images.pokemontcg.io/swsh1/1_hires.png\" }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/collection/add",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "collection", "add"]
+        }
+      }
+    },
+    {
+      "name": "Collection - Add Card (Negative - missing cardId)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 400', () => {",
+              "  pm.expect(pm.response.code).to.equal(400);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Cookie", "value": "{{sessionCookie}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/collection/add",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "collection", "add"]
+        }
+      }
+    },
+    {
+      "name": "Collection - Remove Card (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has ok true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.ok).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Cookie", "value": "{{sessionCookie}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cardId\": \"swsh1-1\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/collection/remove",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "collection", "remove"]
+        }
+      }
+    },
+    {
+      "name": "Collection - Remove Card (Negative - not found)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 404', () => {",
+              "  pm.expect(pm.response.code).to.equal(404);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Cookie", "value": "{{sessionCookie}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cardId\": \"card-that-does-not-exist\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/collection/remove",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "collection", "remove"]
+        }
+      }
+    },
+    {
       "name": "Auth - Logout",
       "event": [
         {
