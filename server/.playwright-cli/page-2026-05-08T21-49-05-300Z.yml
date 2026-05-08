@@ -1,0 +1,28 @@
+- generic [ref=e3]:
+  - complementary "Sidebar" [ref=e4]:
+    - generic [ref=e6]: PokeHub
+    - navigation "Main navigation" [ref=e7]:
+      - link "Home" [ref=e8] [cursor=pointer]:
+        - /url: /home
+        - img [ref=e9]
+        - text: Home
+      - link "Search" [ref=e12] [cursor=pointer]:
+        - /url: /search
+        - img [ref=e13]
+        - text: Search
+      - link "Collection" [ref=e16] [cursor=pointer]:
+        - /url: /collection
+        - img [ref=e17]
+        - text: Collection
+    - button "Sign out" [ref=e21] [cursor=pointer]:
+      - img [ref=e22]
+      - text: Sign out
+  - main [ref=e25]:
+    - main [ref=e26]:
+      - heading "My Collection" [level=1] [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e30]: 🃏
+        - paragraph [ref=e31]: No cards yet
+        - paragraph [ref=e32]: Search for Pokémon cards and add them to your collection.
+        - link "Browse Cards" [ref=e33] [cursor=pointer]:
+          - /url: /search

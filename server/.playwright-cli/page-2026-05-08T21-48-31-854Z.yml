@@ -1,0 +1,30 @@
+- generic [ref=e2]:
+  - generic [ref=e33]:
+    - complementary "Sidebar" [ref=e34]:
+      - generic [ref=e36]: PokeHub
+      - navigation "Main navigation" [ref=e37]:
+        - link "Home" [ref=e38] [cursor=pointer]:
+          - /url: /home
+          - img [ref=e39]
+          - text: Home
+        - link "Search" [ref=e42] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e43]
+          - text: Search
+        - link "Collection" [ref=e46] [cursor=pointer]:
+          - /url: /collection
+          - img [ref=e47]
+          - text: Collection
+      - button "Sign out" [ref=e51] [cursor=pointer]:
+        - img [ref=e52]
+        - text: Sign out
+    - main [ref=e55]:
+      - generic [ref=e56]:
+        - generic [ref=e57]:
+          - heading "Card Search" [level=1] [ref=e58]
+          - paragraph [ref=e59]: Find cards across all TCG sets
+        - generic [ref=e60]:
+          - textbox "Search query" [ref=e61]:
+            - /placeholder: Search for a Pokémon (e.g. Charizard)...
+          - button "Search" [ref=e62] [cursor=pointer]
+  - generic [ref=e32]: Search — PokeHub
