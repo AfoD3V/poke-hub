@@ -50,5 +50,5 @@
 - [x] 5.3 Take Playwright snapshots of: Sidebar on `/home`, Sidebar on `/search`, Sidebar on `/collection`, and the home dashboard zero-state. Confirm no visual regressions on the card grid or search UI.
   - *Verification*: Screenshots match expected dark-theme layout; sidebar is visible on all app pages and absent on `/auth/login`.
 
-- [ ] 5.4 Manual walkthrough: login → lands on `/home` → click Search in sidebar → search for a card → click Collection in sidebar → remove a card → confirm all flows work end-to-end.
+- [x] 5.4 Manual walkthrough: login → lands on `/home` → click Search in sidebar → search for a card → click Collection in sidebar → remove a card → confirm all flows work end-to-end.
   - *Verification*: No console errors, no broken navigations, active link updates correctly on each route.
