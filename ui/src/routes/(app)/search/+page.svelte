@@ -94,10 +94,10 @@
 	<title>Search — PokeHub</title>
 </svelte:head>
 
-<div class="max-w-6xl mx-auto px-4 py-8">
+<div>
 	<div class="mb-8">
-		<h1 class="font-syne text-3xl font-bold text-ph-text">Card Search</h1>
-		<p class="text-ph-muted text-sm mt-1 font-dm">Find cards across all TCG sets</p>
+		<h1 class="font-dm font-bold text-3xl text-ph-text">Card Search</h1>
+		<p class="text-ph-muted text-sm mt-2 font-dm">Find cards across all TCG sets</p>
 	</div>
 
 	<form on:submit={handleSearch} class="flex gap-3 mb-8">

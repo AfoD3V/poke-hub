@@ -38,7 +38,7 @@ describe('Login page', () => {
 	});
 
 	it('renders an error alert when form has an error', () => {
-		render(LoginPage, { props: { form: { error: 'Invalid credentials' } } });
+		render(LoginPage, { props: { form: { error: 'Invalid credentials', email: undefined } } });
 		const alert = screen.getByRole('alert');
 		expect(alert).toBeInTheDocument();
 		expect(alert).toHaveTextContent('Invalid credentials');

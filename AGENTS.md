@@ -341,3 +341,16 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   for a list of card IDs, use `inArray(cardsCache.cardId, cardIds)` from
   `drizzle-orm` rather than issuing N individual queries. `inArray` emits a
   single `WHERE card_id IN (...)` clause and avoids N+1 query patterns.
+- **SvelteKit `tsconfig.json` `paths` overrides `$lib` alias:** If the project's
+  `tsconfig.json` extends `.svelte-kit/tsconfig.json` and also defines a `paths`
+  block, the extension's `paths` (which includes the `$lib`/`$lib/*` aliases) is
+  completely overridden by the local `paths`. Symptom: `Cannot find module
+  '$lib/components/...'` in `svelte-check`. Fix: move custom path aliases (e.g.
+  `$shared/*`) to `svelte.config.js` `kit.alias` instead of `tsconfig.json
+  paths`. SvelteKit merges kit aliases into the generated tsconfig automatically.
+- **SvelteKit route group `(name)` for authenticated layout isolation:** Use
+  parentheses-prefixed route group directories (e.g. `(app)/`) to apply a shared
+  sidebar/shell layout to authenticated pages without adding a URL segment. Auth
+  pages placed outside the group inherit the root layout only, keeping them
+  sidebar-free. After moving routes into a group, run `svelte-kit sync` to
+  regenerate `$types` before running `svelte-check`.

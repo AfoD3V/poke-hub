@@ -15,7 +15,7 @@ function extractJwtFromSetCookie(setCookieHeader: string): string | null {
 export const load = ({ cookies }) => {
 	const token = cookies.get(SESSION_COOKIE);
 	if (token) {
-		throw redirect(302, '/search');
+		throw redirect(302, '/home');
 	}
 };
 
@@ -61,6 +61,6 @@ export const actions: Actions = {
 			}
 		}
 
-		throw redirect(302, '/search');
+		throw redirect(302, '/home');
 	}
 };

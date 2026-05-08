@@ -26,9 +26,10 @@ export const load: PageServerLoad = async ({ url }) => {
 			};
 		}
 
+		const success = body as TcgSearchResponse;
 		return {
-			cards: body.cards,
-			totalCount: body.totalCount,
+			cards: success.cards,
+			totalCount: success.totalCount,
 			query: q.trim(),
 			error: null
 		};

@@ -45,7 +45,7 @@ describe('Register page', () => {
 	});
 
 	it('renders an error alert when form has an error', () => {
-		render(RegisterPage, { props: { form: { error: 'Email already registered' } } });
+		render(RegisterPage, { props: { form: { error: 'Email already registered', email: undefined, displayName: undefined } } });
 		const alert = screen.getByRole('alert');
 		expect(alert).toBeInTheDocument();
 		expect(alert).toHaveTextContent('Email already registered');

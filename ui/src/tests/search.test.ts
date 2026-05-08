@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import SearchPage from '../../src/routes/search/+page.svelte';
+import SearchPage from '../../src/routes/(app)/search/+page.svelte';
 
 /**
  * Mocks the global fetch used by the search page.
