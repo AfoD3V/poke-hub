@@ -1,5 +1,11 @@
 <script lang="ts">
+	import { onMount, onDestroy } from 'svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
+	import Toast from '$lib/components/Toast.svelte';
+	import { initWs, destroyWs } from '$lib/ws';
+
+	onMount(() => initWs());
+	onDestroy(() => destroyWs());
 </script>
 
 <div class="flex h-screen bg-ph-bg overflow-hidden">
@@ -10,3 +16,5 @@
 		</div>
 	</main>
 </div>
+
+<Toast />
