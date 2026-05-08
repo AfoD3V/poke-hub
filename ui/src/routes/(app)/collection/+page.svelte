@@ -19,19 +19,6 @@
 	<title>My Collection · PokeHub</title>
 </svelte:head>
 
-<!-- Nav bar -->
-<header class="sticky top-0 z-40 bg-ph-bg/80 backdrop-blur border-b border-white/5">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-		<span class="font-syne font-extrabold text-xl tracking-tight">
-			<span class="text-ph-text">Poke</span><span class="text-ph-purple-light">Hub</span>
-		</span>
-		<nav class="flex items-center gap-6 font-dm text-sm">
-			<a href="/search" class="text-ph-muted hover:text-ph-text transition-colors">Search</a>
-			<a href="/collection" class="text-ph-text font-medium border-b border-ph-purple-light pb-0.5">Collection</a>
-		</nav>
-	</div>
-</header>
-
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
 	<!-- Page title + count -->
 	<div class="mb-8">
