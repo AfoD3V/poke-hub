@@ -7,7 +7,8 @@ Update this section as the project progresses.
 - Completed: Phase 1, Task 1 - Core Infrastructure and Database Scaffold
 - Completed: Phase 1, Task 2 - Security and Authentication System
 - Completed: Phase 1, Task 3 - TCG API Proxy & Holographic Search UI
-- Next up: Phase 1, Task 4 - Core Collection Management
+- Completed: Phase 1, Task 4 - Core Collection Management
+- Next up: Phase 1, Task 5 - Real-Time Event Architecture
 
 ---
 
@@ -324,3 +325,19 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   element that does NOT declare `transform-style: preserve-3d`.
   Symptom of both: the card flip rotates (matrix3d confirms 180°) but both
   faces remain visible simultaneously — the back face appears on top.
+- **Bun `mock.module` intercepts dynamic imports:** When route handlers use
+  `await import("../services/collection")` at request time (deferred DB
+  connection), Bun's `mock.module("../services/collection", factory)` still
+  intercepts the import correctly — the mock is registered in the module
+  registry before the handler runs. Register mocks at the top of the test file
+  (before any `describe` or `it` blocks) to guarantee they take effect.
+- **Svelte template inline TypeScript generics are invalid:** Writing
+  `on:expand={(e: CustomEvent<TcgCard>) => ...}` inside a `.svelte` template
+  causes a parse error ("Unexpected token"). TypeScript generic syntax is not
+  supported inside Svelte event handler expressions. Either accept the implicit
+  `any` (matching the existing pattern in this codebase) or extract the handler
+  to a typed function in the `<script>` block.
+- **Drizzle `inArray` for multi-key lookups:** When fetching `cards_cache` rows
+  for a list of card IDs, use `inArray(cardsCache.cardId, cardIds)` from
+  `drizzle-orm` rather than issuing N individual queries. `inArray` emits a
+  single `WHERE card_id IN (...)` clause and avoids N+1 query patterns.
