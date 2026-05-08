@@ -1,0 +1,26 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]: PokeHub
+    - paragraph [ref=e7]: Card Collection Manager
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - heading "Welcome back" [level=1] [ref=e10]
+      - paragraph [ref=e11]: Sign in to your collection
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: Email
+          - textbox "Email" [ref=e16]:
+            - /placeholder: trainer@pokehub.app
+        - generic [ref=e17]:
+          - generic [ref=e18]: Password
+          - generic [ref=e19]:
+            - textbox "Password" [ref=e20]:
+              - /placeholder: ••••••••
+            - button "Show password" [ref=e21] [cursor=pointer]:
+              - img [ref=e22]
+      - button "Sign In" [ref=e25] [cursor=pointer]
+  - paragraph [ref=e26]:
+    - text: New to PokeHub?
+    - link "Create account" [ref=e27] [cursor=pointer]:
+      - /url: /auth/register

@@ -1,0 +1,45 @@
+- generic [ref=e3]:
+  - complementary "Sidebar" [ref=e4]:
+    - generic [ref=e6]: PokeHub
+    - navigation "Main navigation" [ref=e7]:
+      - link "Home" [ref=e8] [cursor=pointer]:
+        - /url: /home
+        - img [ref=e9]
+        - text: Home
+      - link "Search" [ref=e12] [cursor=pointer]:
+        - /url: /search
+        - img [ref=e13]
+        - text: Search
+      - link "Collection" [ref=e16] [cursor=pointer]:
+        - /url: /collection
+        - img [ref=e17]
+        - text: Collection
+    - button "Sign out" [ref=e21] [cursor=pointer]:
+      - img [ref=e22]
+      - text: Sign out
+  - main [ref=e25]:
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - heading "Welcome to PokeHub" [level=1] [ref=e29]
+        - paragraph [ref=e30]: Your personal Pokémon TCG collection manager.
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - paragraph [ref=e33]: Total Cards
+          - paragraph [ref=e34]: "0"
+        - generic [ref=e35]:
+          - paragraph [ref=e36]: Unique Pokémon
+          - paragraph [ref=e37]: "0"
+      - generic [ref=e38]:
+        - heading "Quick Actions" [level=2] [ref=e39]
+        - link "Search Cards Find and add Pokémon cards" [ref=e40] [cursor=pointer]:
+          - /url: /search
+          - img [ref=e41]
+          - generic [ref=e44]:
+            - paragraph [ref=e45]: Search Cards
+            - paragraph [ref=e46]: Find and add Pokémon cards
+        - link "My Collection No cards yet — start searching!" [ref=e47] [cursor=pointer]:
+          - /url: /collection
+          - img [ref=e48]
+          - generic [ref=e50]:
+            - paragraph [ref=e51]: My Collection
+            - paragraph [ref=e52]: No cards yet — start searching!
