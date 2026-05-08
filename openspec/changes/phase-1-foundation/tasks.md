@@ -34,8 +34,3 @@
 - [x] 5.2 Implement WebSocket server in Hono to broadcast events (Verification Step: connect client and observe server broadcast)
 - [x] 5.3 Implement SvelteKit WebSocket client and toast display (Verification Step: add card and confirm toast appears)
 
-## 6. Kubernetes (k3s) Deployment Pipelines
-
-- [ ] 6.1 Create Dockerfiles for UI and API services (Verification Step: build images locally without errors)
-- [ ] 6.2 Create Helm umbrella chart for UI, API, and DB (Verification Step: run `helm install` and confirm workloads created)
-- [ ] 6.3 Configure Traefik ingress for UI and API routing (Verification Step: access routes via defined domains)

@@ -49,7 +49,7 @@ k3s ships Traefik with CRD support. We use `IngressRoute` (Traefik v2 CRD) inste
 **Why not standard Ingress?** Traefik's CRDs are already available; standard Ingress requires an annotation per Traefik feature whereas CRDs are explicit and typed.
 
 ### 4. Secrets management
-A Kubernetes `Secret` named `pokehub-secrets` is created by the `templates/secrets.yaml` template from Helm values. Developers provide real secrets via `--set` or a local `values.secret.yaml` (gitignored). A helper script `scripts/gen-k8s-secret.sh` converts the `.env` file to a `kubectl create secret` command for bootstrapping.
+A Kubernetes `Secret` named `pokehub-secrets` is created by the `templates/secrets.yaml` template from Helm values. Developers provide real secrets via `--set` or a local `values.secret.yaml` (gitignored). A helper script `scripts/gen-k3s-secret.sh` converts the `.env` file to a `kubectl create secret` command for bootstrapping.
 
 **Why Helm-managed secrets over external-secrets-operator?** Operator adds complexity not needed for a single-node dev/staging cluster. This can be upgraded to ESO later.
 
