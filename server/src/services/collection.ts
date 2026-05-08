@@ -1,5 +1,5 @@
 import { eq, and, inArray } from "drizzle-orm";
-import { db } from "../db/client";
+import { db, sql } from "../db/client";
 import { userCollection, cardsCache } from "../db/schema";
 import type { TcgCard } from "../../../shared/tcg";
 import type { CollectionEntry } from "../../../shared/collection";
@@ -28,6 +28,15 @@ export async function addCardToCollection(
     .insert(userCollection)
     .values({ userId, cardId, language, quantity })
     .returning();
+
+  // Notify any LISTEN subscribers so WebSocket clients get a real-time event.
+  await sql.notify("collection_insert", JSON.stringify({
+    cardId,
+    cardName: card.name,
+    userId,
+  })).catch(() => {
+    // Non-fatal: real-time push is best-effort
+  });
 
   return entry;
 }

@@ -30,9 +30,9 @@
 
 ## 5. Real-Time Event Architecture
 
-- [ ] 5.1 Configure Postgres LISTEN/NOTIFY for collection inserts (Verification Step: insert card and confirm notification received server-side)
-- [ ] 5.2 Implement WebSocket server in Hono to broadcast events (Verification Step: connect client and observe server broadcast)
-- [ ] 5.3 Implement SvelteKit WebSocket client and toast display (Verification Step: add card and confirm toast appears)
+- [x] 5.1 Configure Postgres LISTEN/NOTIFY for collection inserts (Verification Step: insert card and confirm notification received server-side)
+- [x] 5.2 Implement WebSocket server in Hono to broadcast events (Verification Step: connect client and observe server broadcast)
+- [x] 5.3 Implement SvelteKit WebSocket client and toast display (Verification Step: add card and confirm toast appears)
 
 ## 6. Kubernetes (k3s) Deployment Pipelines
 
