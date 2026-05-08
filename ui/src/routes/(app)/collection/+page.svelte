@@ -19,10 +19,10 @@
 	<title>My Collection · PokeHub</title>
 </svelte:head>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+<div>
 	<!-- Page title + count -->
 	<div class="mb-8">
-		<h1 class="font-syne font-extrabold text-3xl text-ph-text">My Collection</h1>
+		<h1 class="font-dm font-bold text-3xl text-ph-text">My Collection</h1>
 		{#if entries.length > 0}
 			<p class="text-ph-muted font-dm text-sm mt-1">{entries.length} card{entries.length === 1 ? '' : 's'}</p>
 		{/if}
@@ -116,7 +116,7 @@
 			{/each}
 		</ul>
 	{/if}
-</main>
+</div>
 
 <!-- Card detail modal -->
 {#if expandedCard}

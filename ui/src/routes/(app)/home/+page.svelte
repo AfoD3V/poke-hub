@@ -8,11 +8,11 @@
 	<title>Home · PokeHub</title>
 </svelte:head>
 
-<div class="px-8 py-10 max-w-4xl">
+<div>
 	<!-- Heading -->
 	<div class="mb-10">
-		<h1 class="font-syne font-extrabold text-3xl text-ph-text">Welcome to PokeHub</h1>
-		<p class="text-ph-muted font-dm text-sm mt-1">Your personal Pokémon TCG collection manager.</p>
+		<h1 class="font-dm font-bold text-3xl text-ph-text">Welcome to PokeHub</h1>
+		<p class="text-ph-muted font-dm text-sm mt-2">Your personal Pokémon TCG collection manager.</p>
 	</div>
 
 	<!-- Error banner -->
@@ -26,11 +26,11 @@
 	<div class="grid grid-cols-2 gap-4 mb-10 max-w-sm">
 		<div class="rounded-xl bg-ph-surface border border-white/5 px-5 py-4">
 			<p class="font-dm text-xs text-ph-muted uppercase tracking-widest mb-1">Total Cards</p>
-			<p class="font-syne font-extrabold text-3xl text-ph-text">{data.totalCards}</p>
+			<p class="font-dm font-bold text-3xl text-ph-text">{data.totalCards}</p>
 		</div>
 		<div class="rounded-xl bg-ph-surface border border-white/5 px-5 py-4">
 			<p class="font-dm text-xs text-ph-muted uppercase tracking-widest mb-1">Unique Pokémon</p>
-			<p class="font-syne font-extrabold text-3xl text-ph-text">{data.uniquePokemon}</p>
+			<p class="font-dm font-bold text-3xl text-ph-text">{data.uniquePokemon}</p>
 		</div>
 	</div>
 

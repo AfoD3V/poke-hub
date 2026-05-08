@@ -21,7 +21,7 @@
 >
 	<!-- Brand -->
 	<div class="px-5 py-5 border-b border-white/5">
-		<span class="font-syne font-extrabold text-xl tracking-tight">
+		<span class="font-dm font-bold text-xl">
 			<span class="text-ph-text">Poke</span><span class="text-ph-purple-light">Hub</span>
 		</span>
 	</div>
