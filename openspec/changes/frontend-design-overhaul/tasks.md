@@ -79,5 +79,5 @@
   - **Verification**: No unresolved security findings.
 - [x] 8.7 Document any new framework gotchas discovered during implementation in `AGENTS.md` > Project Learnings. Update `CLAUDE.md` to match.
   - **Verification**: Both files updated in same commit if any gotchas found.
-- [ ] 8.8 Push branch and open PR: `gh pr create --title "feat(ui): black/red design system overhaul + floating card modal"`.
+- [x] 8.8 Push branch and open PR: `gh pr create --title "feat(ui): black/red design system overhaul + floating card modal"`.
   - **Verification**: PR link returned; CI passes.
