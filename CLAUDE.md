@@ -61,6 +61,7 @@ Three-layer system in `ui/src/lib/components/Card.svelte`:
 - **3D flip + `overflow: hidden`:** `overflow: hidden` on a `.face` element creates a stacking context that breaks `backface-visibility: hidden`. Move it to a nested `.face-inner` wrapper. Similarly, `filter` on a `transform-style: preserve-3d` element flattens 3D space — move the filter to an outer wrapper.
 - **`getByLabelText` ambiguity:** When a password input and its show/hide toggle share "password" in their labels, use `getByLabelText(/password/i, { selector: "input" })`.
 - **Never work on local `main`:** Changes on `main` create untracked files that conflict on `git pull` after a PR merge. Always branch first: `git checkout -b feature/...`.
+- **Return to `main` after PR:** Once a PR is created, immediately run `git checkout main` so the next task starts from a clean base.
 - **`tsconfig.json` `paths` overrides `$lib` alias:** Adding a `paths` block to `tsconfig.json` (which extends `.svelte-kit/tsconfig.json`) silently drops the auto-generated `$lib/*` aliases. Symptom: `Cannot find module '$lib/...'` in `svelte-check`. Fix: put custom aliases (e.g. `$shared/*`) in `svelte.config.js` `kit.alias`, not `tsconfig.json`.
 - **Route groups `(name)` for layout isolation:** Use `(app)/` route group to share a sidebar shell layout across authenticated pages without affecting the URL. Auth routes stay outside the group and render without the sidebar. Run `svelte-kit sync` after any route restructure before type-checking.
 
