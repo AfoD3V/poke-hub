@@ -13,12 +13,12 @@
 </svelte:head>
 
 <div
-	class="bg-ph-card border border-ph-border rounded-2xl p-8 shadow-glow-purple
-		    transition-shadow duration-300 hover:shadow-glow-purple-hover"
+	class="bg-ph-card rounded-2xl p-8
+		   [filter:drop-shadow(0_0_60px_rgba(227,0,11,0.12))_drop-shadow(0_8px_32px_rgba(0,0,0,0.6))]"
 >
 	<div class="mb-7">
-		<h1 class="font-syne font-bold text-xl text-ph-text leading-tight">Welcome back</h1>
-		<p class="text-ph-muted text-sm mt-1 font-dm">Sign in to your collection</p>
+		<h1 class="font-geist font-bold text-xl text-ph-text leading-tight">Welcome back</h1>
+		<p class="text-ph-muted text-sm mt-1">Sign in to your collection</p>
 	</div>
 
 	<!-- Error message -->
@@ -26,7 +26,7 @@
 		<div
 			role="alert"
 			class="mb-5 px-4 py-3 rounded-lg bg-red-950/50 border border-red-800/60
-				   text-red-400 text-sm font-dm flex items-center gap-2"
+				   text-red-400 text-sm flex items-center gap-2"
 		>
 			<svg
 				class="w-4 h-4 shrink-0"
@@ -86,7 +86,7 @@
 					<button
 						type="button"
 						class="absolute right-3 top-1/2 -translate-y-1/2 text-ph-muted
-							   hover:text-ph-text transition-colors"
+							   hover:text-ph-text transition-colors cursor-pointer"
 						on:click={() => (showPassword = !showPassword)}
 						aria-label={showPassword ? 'Hide password' : 'Show password'}
 					>

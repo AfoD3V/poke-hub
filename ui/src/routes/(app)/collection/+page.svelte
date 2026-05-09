@@ -21,21 +21,21 @@
 <div>
 	<!-- Page title + count -->
 	<div class="mb-8">
-		<h1 class="font-dm font-bold text-3xl text-ph-text">My Collection</h1>
+		<h1 class="font-geist font-black text-3xl text-white">My Collection</h1>
 		{#if entries.length > 0}
-			<p class="text-ph-muted font-dm text-sm mt-1">{entries.length} card{entries.length === 1 ? '' : 's'}</p>
+			<p class="font-geist text-sm text-ph-muted mt-1">{entries.length} card{entries.length === 1 ? '' : 's'}</p>
 		{/if}
 	</div>
 
 	<!-- Error banner -->
 	{#if data.error}
-		<div class="mb-6 rounded-lg bg-red-900/30 border border-red-700/40 text-red-300 font-dm text-sm px-4 py-3">
+		<div class="mb-6 rounded-lg bg-red-900/30 border border-red-700/40 text-red-300 font-geist text-sm px-4 py-3">
 			{data.error}
 		</div>
 	{/if}
 
 	{#if form?.error}
-		<div class="mb-6 rounded-lg bg-red-900/30 border border-red-700/40 text-red-300 font-dm text-sm px-4 py-3">
+		<div class="mb-6 rounded-lg bg-red-900/30 border border-red-700/40 text-red-300 font-geist text-sm px-4 py-3">
 			{form.error}
 		</div>
 	{/if}
@@ -44,14 +44,14 @@
 	{#if entries.length === 0 && !data.error}
 		<div class="flex flex-col items-center justify-center py-24 gap-4 text-center">
 			<div class="text-5xl opacity-20" aria-hidden="true">🃏</div>
-			<p class="font-syne font-bold text-xl text-ph-muted">No cards yet</p>
-			<p class="font-dm text-sm text-ph-muted/70 max-w-xs">
+			<p class="font-geist font-bold text-xl text-ph-muted">No cards yet</p>
+			<p class="font-geist text-sm text-ph-muted/70 max-w-xs">
 				Search for Pokémon cards and add them to your collection.
 			</p>
 			<a
 				href="/search"
-				class="mt-2 inline-flex items-center gap-2 bg-ph-purple px-4 py-2 rounded-lg font-dm text-sm
-				       text-white hover:bg-ph-purple-light transition-colors"
+				class="mt-2 inline-flex items-center gap-2 bg-ph-accent px-4 py-2 rounded-lg font-geist text-sm
+				       text-white hover:bg-ph-accent/80 transition-colors"
 			>
 				Browse Cards
 			</a>
@@ -60,8 +60,8 @@
 	<!-- Card grid -->
 	{:else}
 		<ul
-			class="grid gap-6"
-			style="grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));"
+			class="grid gap-3"
+			style="grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));"
 			role="list"
 		>
 			{#each entries as entry (entry.id)}
@@ -79,11 +79,11 @@
 
 					<!-- Language / quantity badge -->
 					<div class="flex items-center justify-between px-1">
-						<span class="font-dm text-xs text-ph-muted uppercase tracking-widest">
+						<span class="font-geist text-xs text-ph-muted uppercase tracking-widest">
 							{entry.language}
 						</span>
 						{#if entry.quantity > 1}
-							<span class="font-dm text-xs text-ph-muted">×{entry.quantity}</span>
+							<span class="font-geist text-xs text-ph-muted">×{entry.quantity}</span>
 						{/if}
 					</div>
 
@@ -104,7 +104,7 @@
 							type="submit"
 							disabled={removingId === entry.id}
 							class="w-full opacity-0 group-hover:opacity-100 focus:opacity-100
-							       transition-opacity font-dm text-xs text-red-400 hover:text-red-300
+							       transition-opacity font-geist text-xs text-red-400 hover:text-red-300
 							       border border-red-800/40 hover:border-red-600/60 rounded-md py-1
 							       bg-red-950/20 hover:bg-red-950/40 disabled:opacity-50 disabled:cursor-wait"
 						>

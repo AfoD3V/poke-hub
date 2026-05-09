@@ -10,33 +10,34 @@
 
 	$: pathname = $page.url.pathname;
 
-	function isActive(href: string): boolean {
-		return pathname === href || (href !== '/home' && pathname.startsWith(href));
+	function isActive(href: string, path: string): boolean {
+		return path === href || (href !== '/home' && path.startsWith(href));
 	}
 </script>
 
 <aside
-	class="flex flex-col h-screen w-56 shrink-0 bg-ph-surface border-r border-white/5"
+	class="flex flex-col h-screen w-56 shrink-0 bg-ph-bg"
+	style="box-shadow: 1px 0 0 0 rgba(255,255,255,0.05)"
 	aria-label="Sidebar"
 >
 	<!-- Brand -->
 	<div class="px-5 py-5 border-b border-white/5">
-		<span class="font-dm font-bold text-xl">
-			<span class="text-ph-text">Poke</span><span class="text-ph-purple-light">Hub</span>
+		<span class="font-black text-xl tracking-tight">
+			<span class="text-ph-text">Poke</span><span class="text-ph-accent">Hub</span>
 		</span>
 	</div>
 
 	<!-- Nav links -->
-	<nav aria-label="Main navigation" class="flex-1 px-3 py-4 flex flex-col gap-1">
-		{#each navLinks as link}
+	<nav aria-label="Main navigation" class="flex-1 py-4 flex flex-col gap-1">
+		{#each navLinks as link (link.href)}
 			<a
 				href={link.href}
-				class="flex items-center gap-3 px-3 py-2 rounded-lg font-dm text-sm transition-colors
-				       focus-visible:outline focus-visible:outline-2 focus-visible:outline-ph-purple-light
-				       {isActive(link.href)
-					? 'bg-ph-purple/20 text-ph-purple-light font-medium'
-					: 'text-ph-muted hover:text-ph-text hover:bg-white/5'}"
-				aria-current={isActive(link.href) ? 'page' : undefined}
+				class="flex items-center gap-3 py-2 pr-3 rounded-r-lg text-sm transition-colors
+				       focus-visible:outline focus-visible:outline-2 focus-visible:outline-ph-accent
+				       {isActive(link.href, pathname)
+					? 'border-l-2 border-ph-accent text-ph-text font-medium pl-[10px]'
+					: 'border-l-2 border-transparent text-ph-muted hover:text-ph-text pl-[10px]'}"
+				aria-current={isActive(link.href, pathname) ? 'page' : undefined}
 			>
 				{#if link.icon === 'home'}
 					<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -61,13 +62,13 @@
 	</nav>
 
 	<!-- Logout -->
-	<div class="px-3 py-4 border-t border-white/5">
+	<div class="py-4 border-t border-white/5">
 		<form method="POST" action="/auth/logout" use:enhance>
 			<button
 				type="submit"
-				class="flex items-center gap-3 w-full px-3 py-2 rounded-lg font-dm text-sm text-ph-muted
-				       hover:text-red-400 hover:bg-red-950/20 transition-colors
-				       focus-visible:outline focus-visible:outline-2 focus-visible:outline-ph-purple-light"
+				class="flex items-center gap-3 w-full py-2 pr-3 pl-[10px] rounded-r-lg text-sm text-ph-muted
+				       border-l-2 border-transparent hover:text-ph-accent hover:border-ph-accent transition-colors
+				       focus-visible:outline focus-visible:outline-2 focus-visible:outline-ph-accent"
 			>
 				<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 					<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>

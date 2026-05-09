@@ -2,6 +2,7 @@
 	import { spring } from 'svelte/motion';
 	import { createEventDispatcher } from 'svelte';
 	import type { TcgCard } from '$shared/tcg';
+	import HoverTilt from '$lib/components/HoverTilt.svelte';
 
 	export let card: TcgCard;
 
@@ -39,13 +40,12 @@
 	$: supertypeStr = (card.supertype ?? '').toLowerCase();
 	$: typesStr     = (card.types     ?? []).join(' ').toLowerCase();
 
-	// ── Spring stores ─────────────────────────────────────────────────────────
+	// ── Spring stores (springRotate removed — HoverTilt handles tilt now) ──────
 	const SI = { stiffness: 0.066, damping: 0.25 };
 	const SS = { stiffness: 0.01,  damping: 0.06  };
 
-	const springRotate = spring({ x: 0,  y: 0  }, SI);
-	const springGlare  = spring({ x: 50, y: 50, o: 0 }, SI);
-	const springBg     = spring({ x: 50, y: 50 }, SI);
+	const springGlare = spring({ x: 50, y: 50, o: 0 }, SI);
+	const springBg    = spring({ x: 50, y: 50 }, SI);
 
 	let interacting = false;
 
@@ -57,13 +57,10 @@
 			x: clamp(round((100 / rect.width)  * (e.clientX - rect.left))),
 			y: clamp(round((100 / rect.height) * (e.clientY - rect.top))),
 		};
-		const center = { x: pct.x - 50, y: pct.y - 50 };
 
-		springRotate.stiffness = SI.stiffness; springRotate.damping = SI.damping;
-		springGlare.stiffness  = SI.stiffness; springGlare.damping  = SI.damping;
-		springBg.stiffness     = SI.stiffness; springBg.damping     = SI.damping;
+		springGlare.stiffness = SI.stiffness; springGlare.damping = SI.damping;
+		springBg.stiffness    = SI.stiffness; springBg.damping    = SI.damping;
 
-		springRotate.set({ x: round(-(center.x / 3.5)), y: round(center.y / 3.5) });
 		springGlare.set({ x: pct.x, y: pct.y, o: 1 });
 		springBg.set({
 			x: adjust(pct.x, 0, 100, 37, 63),
@@ -73,10 +70,8 @@
 
 	function interactEnd() {
 		interacting = false;
-		springRotate.stiffness = SS.stiffness; springRotate.damping = SS.damping;
-		springGlare.stiffness  = SS.stiffness; springGlare.damping  = SS.damping;
-		springBg.stiffness     = SS.stiffness; springBg.damping     = SS.damping;
-		springRotate.set({ x: 0,  y: 0  }, { soft: 1 });
+		springGlare.stiffness = SS.stiffness; springGlare.damping = SS.damping;
+		springBg.stiffness    = SS.stiffness; springBg.damping    = SS.damping;
 		springGlare.set({ x: 50, y: 50, o: 0 }, { soft: 1 });
 		springBg.set({ x: 50, y: 50 }, { soft: 1 });
 	}
@@ -91,8 +86,6 @@
 		--pointer-from-top:    ${$springGlare.y / 100};
 		--pointer-from-left:   ${$springGlare.x / 100};
 		--card-opacity:        ${$springGlare.o};
-		--rotate-x:            ${$springRotate.x}deg;
-		--rotate-y:            ${$springRotate.y}deg;
 		--background-x:        ${$springBg.x}%;
 		--background-y:        ${$springBg.y}%;
 		--seedx:               ${seed.x};
@@ -109,7 +102,7 @@
 	style={dynStyles}
 	role="listitem"
 >
-	<div class="card__translater">
+	<HoverTilt tiltFactor={1.5} scaleFactor={1.04} shadow={true}>
 		<div
 			class="card__rotator"
 			role="button"
@@ -137,7 +130,7 @@
 				<div class="card__glare"  aria-hidden="true"></div>
 			</div>
 		</div>
-	</div>
+	</HoverTilt>
 
 	<div class="card-info">
 		<h3 class="card-name">{card.name}</h3>
@@ -180,8 +173,8 @@
 		--clip-invert:       polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0 47.15%, 91.5% 47.15%, 91.5% 9.85%, 8% 9.85%, 8% 47.15%, 0 50%);
 		--clip-stage-invert: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0 47.15%, 91.5% 47.15%, 91.5% 9.85%, 57% 9.85%, 54% 12%, 17% 12%, 16% 14%, 12% 16%, 8% 16%, 8% 47.15%, 0 50%);
 		--clip-borders:      inset(2.8% 4% round 2.55% / 1.5%);
-		/* Glow color */
-		--card-glow: hsl(215, 90%, 70%);
+		/* Glow color — Pokéball Red (type-specific overrides below stay unchanged) */
+		--card-glow: hsl(0, 90%, 44%);
 		transform: translate3d(0, 0, 0.01px);
 		will-change: transform;
 		cursor: pointer;
@@ -199,20 +192,17 @@
 	.card.dragon    { --card-glow: hsl(51,  60%, 35%); }
 	.card.fairy     { --card-glow: hsl(323, 100%, 89%); }
 
-	/* ── Translater / Rotator ────────────────────────────────────────────────*/
-	.card__translater { perspective: 600px; transform-style: preserve-3d; }
+	/* ── Rotator (HoverTilt owns the 3D transform and perspective now) ─────────*/
+	/* transform-style: preserve-3d removed — HoverTilt's .hover-tilt is the preserve-3d
+	   root; keeping it here puts .card__front's overflow: hidden inside a preserve-3d
+	   chain, which the GPU clips as a flat 2D rect and causes edge dropout at tilt angles */
 	.card__rotator {
 		aspect-ratio: var(--card-aspect);
 		border-radius: var(--card-radius);
 		display: grid;
-		transform-style: preserve-3d;
-		transform: rotateY(var(--rotate-x, 0deg)) rotateX(var(--rotate-y, 0deg));
 		transition: box-shadow 0.4s ease;
 		will-change: transform;
 		box-shadow: 0 6px 20px -4px rgba(0,0,0,.55), 0 2px 8px -2px rgba(0,0,0,.45);
-	}
-	.card:not(.interacting) .card__rotator {
-		transition: transform 0.6s cubic-bezier(.03,.98,.52,.99), box-shadow 0.4s ease;
 	}
 	.card__rotator:hover,
 	.card.interacting .card__rotator {
@@ -237,7 +227,7 @@
 	.card__fallback {
 		background: linear-gradient(135deg, #1a1a2e, #0f0f1f);
 		display: flex; align-items: center; justify-content: center;
-		color: #a0a0b0; font-size: 0.8rem; font-family: 'DM Sans', sans-serif;
+		color: #a0a0b0; font-size: 0.8rem; font-family: 'Geist', sans-serif;
 	}
 
 	/* ── Base Shine (color-dodge foil) — contrast 2.75 matches reference ────*/
@@ -706,8 +696,8 @@
 	/* ── Card info ───────────────────────────────────────────────────────────*/
 	.card-info { margin-top: 0.6rem; text-align: center; }
 	.card-name {
-		font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
-		color: #e2e2ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+		font-family: 'Geist', sans-serif; font-weight: 700; font-size: 0.85rem;
+		color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 	}
-	.card-meta { font-family: 'DM Sans', sans-serif; font-size: 0.72rem; color: #7c7c8e; margin-top: 0.2rem; }
+	.card-meta { font-family: 'Geist', sans-serif; font-size: 0.72rem; color: #707070; margin-top: 0.2rem; }
 </style>

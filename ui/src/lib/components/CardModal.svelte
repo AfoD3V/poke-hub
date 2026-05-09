@@ -151,195 +151,183 @@
 	role="dialog"
 	aria-modal="true"
 	aria-label="Card detail — {card.name}"
+	tabindex="-1"
 >
-	<div class="modal-layout">
+	<!-- ── Close button — top-right corner of overlay ─────────────────────── -->
+	<button class="close-btn" on:click={close} aria-label="Close">×</button>
 
-		<!-- ── 3-D flip container ──────────────────────────────────────────── -->
+	<!-- ── 3-D flip container — absolute, slightly left of centre ────────── -->
+	<!--
+		The drop-shadow MUST be on an outer wrapper — applying filter directly
+		to the flip-wrap flattens transform-style:preserve-3d for its children,
+		silently disabling backface-visibility:hidden on both face elements.
+	-->
+	<div class="flip-shadow-wrap">
+		<div class="flip-wrap" class:flipped>
+
+		<!-- BACK FACE (visible on open) -->
 		<!--
-			The drop-shadow MUST be on an outer wrapper — applying filter directly
-			to the flip-wrap flattens transform-style:preserve-3d for its children,
-			silently disabling backface-visibility:hidden on both face elements.
+			IMPORTANT: overflow:hidden must NOT be on .face itself — it creates a
+			CSS stacking context that breaks backface-visibility:hidden.
+			border-radius clipping lives on the img element instead.
 		-->
-		<div class="flip-shadow-wrap">
-			<div class="flip-wrap" class:flipped>
-
-			<!-- BACK FACE (visible on open) -->
-			<!--
-				IMPORTANT: overflow:hidden must NOT be on .face itself — it creates a
-				CSS stacking context that breaks backface-visibility:hidden.
-				Clipping lives on .face-inner instead.
-			-->
-			<div class="face face--back">
-				<div class="face-inner">
-					<img
-						src="https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg"
-						alt="Card back"
-						width="660"
-						height="921"
-						draggable="false"
-					/>
-				</div>
+		<div class="face face--back">
+			<div class="face-inner">
+				<img
+					src="https://tcg.pokemon.com/assets/img/global/tcg-card-back-2x.jpg"
+					alt="Card back"
+					width="660"
+					height="921"
+					draggable="false"
+				/>
 			</div>
+		</div>
 
-			<!-- FRONT FACE (revealed after flip, with full holo) -->
-			<div
-				class="face face--front card {typesStr}"
-				class:interacting
-				data-rarity={dataRarity}
-				data-subtypes={subtypesStr}
-				data-supertype={supertypeStr}
-				style={dynStyles}
-				on:pointermove={interact}
-				on:pointerleave={interactEnd}
-			>
-				<div class="face-inner">
-					<div class="card__perspective">
-						<div class="card__rotator">
-							<img
-								src={card.images.large ?? card.images.small}
-								alt={card.name}
-								width="660"
-								height="921"
-								draggable="false"
-							/>
-							<div class="card__shine" aria-hidden="true"></div>
-							<div class="card__glare"  aria-hidden="true"></div>
-						</div>
+		<!-- FRONT FACE (revealed after flip, with full holo) -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		<div
+			class="face face--front card {typesStr}"
+			class:interacting
+			data-rarity={dataRarity}
+			data-subtypes={subtypesStr}
+			data-supertype={supertypeStr}
+			style={dynStyles}
+			on:pointermove={interact}
+			on:pointerleave={interactEnd}
+		>
+			<div class="face-inner">
+				<div class="card__perspective">
+					<div class="card__rotator">
+						<img
+							src={card.images.large ?? card.images.small}
+							alt={card.name}
+							width="660"
+							height="921"
+							draggable="false"
+						/>
+						<div class="card__shine" aria-hidden="true"></div>
+						<div class="card__glare"  aria-hidden="true"></div>
 					</div>
 				</div>
 			</div>
-			</div><!-- /flip-wrap -->
-		</div><!-- /flip-shadow-wrap -->
+		</div>
+		</div><!-- /flip-wrap -->
+	</div><!-- /flip-shadow-wrap -->
 
-		<!-- ── Info panel ──────────────────────────────────────────────────── -->
-		<aside class="info-panel">
-			<div class="info-scroll">
-				<h2 class="card-title">{card.name}</h2>
+	<!-- ── Info panel — floating aside, right side of overlay ────────────── -->
+	<aside class="info-panel">
+		<div class="info-scroll">
+			<h2 class="card-title">{card.name}</h2>
 
-				{#if card.rarity}
-					<span class="rarity-pill">{card.rarity}</span>
+			{#if card.rarity}
+				<span class="rarity-pill">{card.rarity}</span>
+			{/if}
+
+			<p class="set-line">{card.set} &middot; #{card.number}</p>
+
+			<dl class="stats">
+				{#if card.hp}
+					<div class="stat-row">
+						<dt>HP</dt>
+						<dd>{card.hp}</dd>
+					</div>
 				{/if}
-
-				<p class="set-line">{card.set} &middot; #{card.number}</p>
-
-				<dl class="stats">
-					{#if card.hp}
-						<div class="stat-row">
-							<dt>HP</dt>
-							<dd>{card.hp}</dd>
-						</div>
-					{/if}
-					{#if card.types?.length}
-						<div class="stat-row">
-							<dt>Type</dt>
-							<dd>{card.types.join(' / ')}</dd>
-						</div>
-					{/if}
-					{#if card.supertype}
-						<div class="stat-row">
-							<dt>Category</dt>
-							<dd>{card.supertype}</dd>
-						</div>
-					{/if}
-					{#if card.subtypes?.length}
-						<div class="stat-row">
-							<dt>Stage</dt>
-							<dd>{card.subtypes.join(', ')}</dd>
-						</div>
-					{/if}
-					{#if card.artist}
-						<div class="stat-row">
-							<dt>Artist</dt>
-							<dd>{card.artist}</dd>
-						</div>
-					{/if}
-				</dl>
-
-				{#if card.flavorText}
-					<p class="flavor">"{card.flavorText}"</p>
+				{#if card.types?.length}
+					<div class="stat-row">
+						<dt>Type</dt>
+						<dd>{card.types.join(' / ')}</dd>
+					</div>
 				{/if}
-			</div>
-
-			<!-- Add to collection -->
-			<div class="action-row">
-				<button
-					class="add-btn"
-					class:add-btn--success={addState === 'success'}
-					class:add-btn--error={addState === 'error'}
-					disabled={addState === 'loading' || addState === 'success'}
-					on:click={addToCollection}
-					aria-label="Add {card.name} to collection"
-				>
-					{#if addState === 'idle' || addState === 'error'}
-						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-						</svg>
-						{addState === 'error' ? 'Retry' : 'Add to Collection'}
-					{:else if addState === 'loading'}
-						<svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-						</svg>
-						Adding…
-					{:else}
-						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-							<polyline points="20 6 9 17 4 12"/>
-						</svg>
-						Added!
-					{/if}
-				</button>
-				{#if addState === 'error'}
-					<p class="add-error">{addError}</p>
+				{#if card.supertype}
+					<div class="stat-row">
+						<dt>Category</dt>
+						<dd>{card.supertype}</dd>
+					</div>
 				{/if}
-				{#if addState === 'success'}
-					<a href="/collection" class="collection-link">View Collection →</a>
+				{#if card.subtypes?.length}
+					<div class="stat-row">
+						<dt>Stage</dt>
+						<dd>{card.subtypes.join(', ')}</dd>
+					</div>
 				{/if}
-			</div>
+				{#if card.artist}
+					<div class="stat-row">
+						<dt>Artist</dt>
+						<dd>{card.artist}</dd>
+					</div>
+				{/if}
+			</dl>
 
-			<button class="close-btn" on:click={close} aria-label="Close">
-				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-					<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-				</svg>
-				Close
+			{#if card.flavorText}
+				<p class="flavor">"{card.flavorText}"</p>
+			{/if}
+		</div>
+
+		<!-- Add to collection -->
+		<div class="action-row">
+			<button
+				class="add-btn"
+				class:add-btn--success={addState === 'success'}
+				class:add-btn--error={addState === 'error'}
+				disabled={addState === 'loading' || addState === 'success'}
+				on:click={addToCollection}
+				aria-label="Add {card.name} to collection"
+			>
+				{#if addState === 'idle' || addState === 'error'}
+					<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+					</svg>
+					{addState === 'error' ? 'Retry' : 'Add to Collection'}
+				{:else if addState === 'loading'}
+					<svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+					</svg>
+					Adding…
+				{:else}
+					<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<polyline points="20 6 9 17 4 12"/>
+					</svg>
+					Added!
+				{/if}
 			</button>
-		</aside>
-	</div>
+			{#if addState === 'error'}
+				<p class="add-error">{addError}</p>
+			{/if}
+			{#if addState === 'success'}
+				<a href="/collection" class="collection-link">View Collection →</a>
+			{/if}
+		</div>
+	</aside>
 </div>
 
 <style>
-	/* ── Overlay ─────────────────────────────────────────────────────────────*/
+	/* ── Overlay — sole positioning parent ──────────────────────────────────*/
 	.overlay {
 		position: fixed;
 		inset: 0;
 		z-index: 9999;
 		background: rgba(4, 4, 14, 0.88);
 		backdrop-filter: blur(12px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 1.5rem;
-		overflow-y: auto;
 	}
 
-	/* ── Modal layout: card + info side by side ───────────────────────────────*/
-	.modal-layout {
-		display: flex;
-		align-items: center;
-		gap: 3rem;
-		max-width: 860px;
-		width: 100%;
+	/* ── Flip shadow wrapper — floating card, slightly left of centre ────────*/
+	/* filter lives here, NOT on flip-wrap: filter on a preserve-3d element
+	   flattens 3D space and breaks backface-visibility on child faces */
+	.flip-shadow-wrap {
+		position: absolute;
+		top: 50%;
+		left: 32%;
+		transform: translate(-50%, -50%);
+		width: min(320px, 40vw);
+		aspect-ratio: 0.718;
+		filter: drop-shadow(0 30px 60px rgba(0,0,0,0.85));
 	}
 	@media (max-width: 680px) {
-		.modal-layout { flex-direction: column; gap: 1.5rem; }
-	}
-
-	/* ── Flip shadow wrapper (filter lives here, NOT on flip-wrap) ───────────*/
-	.flip-shadow-wrap {
-		flex-shrink: 0;
-		width: min(320px, 80vw);
-		aspect-ratio: 0.718;
-		/* drop-shadow is safe here — this element has no transform-style:preserve-3d */
-		filter: drop-shadow(0 30px 60px rgba(0,0,0,0.85));
-		position: relative;
+		.flip-shadow-wrap {
+			left: 50%;
+			top: 35%;
+			width: min(260px, 72vw);
+		}
 	}
 
 	/* ── Flip wrap ───────────────────────────────────────────────────────────*/
@@ -370,19 +358,20 @@
 		-webkit-backface-visibility: hidden;
 	}
 
-	/* Clipping wrapper — safe to use overflow:hidden here since it's not the
-	   element that carries the backface-visibility declaration */
+	/* No overflow:hidden here — the tilt (card__rotator) extends the card beyond
+	   face-inner's bounds at steep angles; clipping there is the "invisible frame" bug.
+	   The flip is governed by backface-visibility on .face, not by overflow clipping.
+	   Rounded corners are applied directly on the img elements instead. */
 	.face-inner {
 		position: absolute;
 		inset: 0;
-		overflow: hidden;
-		border-radius: 4.55% / 3.5%;
 	}
 
 	.face-inner img {
 		width: 100%; height: 100%;
 		object-fit: cover;
 		display: block;
+		border-radius: 4.55% / 3.5%;
 		user-select: none;
 		-webkit-user-drag: none;
 	}
@@ -429,7 +418,7 @@
 		--clip-invert:       polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0 47.15%, 91.5% 47.15%, 91.5% 9.85%, 8% 9.85%, 8% 47.15%, 0 50%);
 		--clip-stage-invert: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0 47.15%, 91.5% 47.15%, 91.5% 9.85%, 57% 9.85%, 54% 12%, 17% 12%, 16% 14%, 12% 16%, 8% 16%, 8% 47.15%, 0 50%);
 		--clip-borders:      inset(2.8% 4% round 2.55% / 1.5%);
-		--card-glow:    hsl(215, 90%, 70%);
+		--card-glow:    hsl(0, 90%, 44%);
 	}
 	.card.water     { --card-glow: hsl(192, 97%, 60%); }
 	.card.fire      { --card-glow: hsl(9,   81%, 59%); }
@@ -482,7 +471,9 @@
 		display: grid; grid-area: 1/1;
 		aspect-ratio: var(--card-aspect);
 		border-radius: var(--card-radius);
-		overflow: hidden;
+		/* overflow: hidden removed — shine/glare have only CSS backgrounds that are clipped
+		   by border-radius alone; overflow: hidden inside preserve-3d creates a 2D stacking
+		   context the GPU clips as a flat rect, causing edge dropout at tilt angles */
 	}
 	.card__rotator img {
 		height: 100%; width: 100%;
@@ -954,46 +945,88 @@
 		opacity: calc(var(--card-opacity) * 0.7);
 	}
 
-	/* ── Info panel ──────────────────────────────────────────────────────────*/
+	/* ── Close button — top-right overlay corner ─────────────────────────────*/
+	.close-btn {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		z-index: 10;
+		width: 2rem;
+		height: 2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.25rem;
+		line-height: 1;
+		color: #707070;
+		background: transparent;
+		border: 1px solid transparent;
+		border-radius: 0.4rem;
+		cursor: pointer;
+		transition: color 0.15s, border-color 0.15s;
+	}
+	.close-btn:hover {
+		color: #ffffff;
+		border-color: rgba(255,255,255,0.15);
+	}
+
+	/* ── Info panel — floating aside ─────────────────────────────────────────*/
 	.info-panel {
-		flex: 1;
-		min-width: 0;
+		position: absolute;
+		left: 56%;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 280px;
+		max-height: 90vh;
+		background: rgba(17, 17, 17, 0.92);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-radius: 1rem;
+		padding: 1.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0;
-		max-height: min(90vh, 600px);
+		overflow-y: auto;
+	}
+	@media (max-width: 680px) {
+		.info-panel {
+			position: static;
+			transform: none;
+			width: 100%;
+			max-width: 320px;
+			margin: 68vh auto 2rem;
+			border-radius: 0.75rem;
+		}
 	}
 	.info-scroll {
 		flex: 1;
-		overflow-y: auto;
-		padding-right: 0.25rem;
 	}
 	.card-title {
-		font-family: 'Syne', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-weight: 800;
-		font-size: clamp(1.3rem, 4vw, 2rem);
-		color: #f0f0f8;
+		font-size: clamp(1.2rem, 3vw, 1.6rem);
+		color: #ffffff;
 		line-height: 1.1;
 		margin: 0 0 0.5rem;
 	}
 	.rarity-pill {
 		display: inline-block;
-		font-family: 'DM Sans', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-size: 0.7rem;
 		font-weight: 600;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		background: rgba(139, 92, 246, 0.2);
-		border: 1px solid rgba(139, 92, 246, 0.4);
-		color: #c4b5fd;
+		background: rgba(227, 0, 11, 0.15);
+		border: 1px solid rgba(227, 0, 11, 0.4);
+		color: #E3000B;
 		padding: 0.2em 0.7em;
 		border-radius: 999px;
 		margin-bottom: 0.75rem;
 	}
 	.set-line {
-		font-family: 'DM Sans', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-size: 0.8rem;
-		color: #6c6c82;
+		color: #707070;
 		margin: 0 0 1.25rem;
 	}
 	.stats {
@@ -1008,49 +1041,29 @@
 		gap: 0.75rem;
 	}
 	.stat-row dt {
-		font-family: 'DM Sans', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-size: 0.7rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.07em;
-		color: #4c4c64;
+		color: #444444;
 		min-width: 4.5rem;
 	}
 	.stat-row dd {
-		font-family: 'DM Sans', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-size: 0.875rem;
-		color: #c8c8dc;
+		color: #c8c8c8;
 		margin: 0;
 	}
 	.flavor {
-		font-family: 'DM Sans', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-size: 0.8rem;
 		font-style: italic;
-		color: #5c5c74;
+		color: #555555;
 		line-height: 1.6;
-		border-left: 2px solid #2a2a3e;
+		border-left: 2px solid #222222;
 		padding-left: 0.75rem;
 		margin: 0;
-	}
-	.close-btn {
-		margin-top: 1.5rem;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-family: 'DM Sans', sans-serif;
-		font-size: 0.8rem;
-		color: #6c6c82;
-		background: transparent;
-		border: 1px solid #2a2a3e;
-		border-radius: 0.5rem;
-		padding: 0.5rem 1rem;
-		cursor: pointer;
-		transition: color 0.2s, border-color 0.2s;
-		align-self: flex-start;
-	}
-	.close-btn:hover {
-		color: #e2e2ea;
-		border-color: #4c4c64;
 	}
 
 	/* ── Add-to-collection ───────────────────────────────────────────────────*/
@@ -1064,24 +1077,26 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
-		font-family: 'DM Sans', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-size: 0.8rem;
 		font-weight: 600;
-		color: #c4b5fd;
-		background: rgba(139, 92, 246, 0.15);
-		border: 1px solid rgba(139, 92, 246, 0.4);
+		color: #E3000B;
+		background: rgba(227, 0, 11, 0.12);
+		border: 1px solid rgba(227, 0, 11, 0.35);
 		border-radius: 0.5rem;
 		padding: 0.5rem 1rem;
 		cursor: pointer;
 		transition: background 0.2s, border-color 0.2s, color 0.2s;
 		align-self: flex-start;
+		width: 100%;
+		justify-content: center;
 	}
 	.add-btn:hover:not(:disabled) {
-		background: rgba(139, 92, 246, 0.28);
-		border-color: rgba(139, 92, 246, 0.7);
-		color: #ddd6fe;
+		background: rgba(227, 0, 11, 0.22);
+		border-color: rgba(227, 0, 11, 0.6);
+		color: #ff2233;
 	}
-	.add-btn:disabled { cursor: default; }
+	.add-btn:disabled { cursor: default; opacity: 0.7; }
 	.add-btn--success {
 		color: #6ee7b7;
 		background: rgba(16, 185, 129, 0.12);
@@ -1093,18 +1108,18 @@
 		border-color: rgba(239, 68, 68, 0.35);
 	}
 	.add-error {
-		font-family: 'DM Sans', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-size: 0.75rem;
 		color: #fca5a5;
 		margin: 0;
 	}
 	.collection-link {
-		font-family: 'DM Sans', sans-serif;
+		font-family: 'Geist', sans-serif;
 		font-size: 0.75rem;
-		color: #a78bfa;
+		color: #E3000B;
 		text-decoration: none;
 	}
-	.collection-link:hover { color: #c4b5fd; }
+	.collection-link:hover { color: #ff2233; }
 	@keyframes spin { to { transform: rotate(360deg); } }
 	.spin { animation: spin 0.75s linear infinite; }
 </style>

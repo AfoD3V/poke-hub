@@ -59,12 +59,15 @@ Three-layer system in `ui/src/lib/components/Card.svelte`:
 - **`bun test` vs `bun run test`:** `bun test` invokes Bun's native runner and skips Vitest + jsdom config. Always use `bun run test`.
 - **`$app/*` mocks required:** SvelteKit's `$app/forms`, `$app/stores`, `$app/navigation`, `$app/environment` don't exist in jsdom. Mock them in `ui/src/tests/setup.ts` with `vi.mock()`.
 - **3D flip + `overflow: hidden`:** `overflow: hidden` on a `.face` element creates a stacking context that breaks `backface-visibility: hidden`. Move it to a nested `.face-inner` wrapper. Similarly, `filter` on a `transform-style: preserve-3d` element flattens 3D space — move the filter to an outer wrapper.
+- **`overflow: hidden` on any ancestor of a tilt causes "invisible frame" clipping:** Even when `overflow: hidden` is on a non-face wrapper (e.g. `.face-inner`), tilting the card via `card__rotator` extends the projected card outside that ancestor's 2D bounds — the card is clipped as if by an invisible box. Fix: remove `overflow: hidden` from `.face-inner` entirely; the flip is controlled by `backface-visibility` on `.face`, not by overflow. Move rounded-corner clipping to `border-radius` directly on `<img>` (images are clipped by their own `border-radius` without an overflow parent).
 - **`getByLabelText` ambiguity:** When a password input and its show/hide toggle share "password" in their labels, use `getByLabelText(/password/i, { selector: "input" })`.
 - **Never work on local `main`:** Changes on `main` create untracked files that conflict on `git pull` after a PR merge. Always branch first: `git checkout -b feature/...`.
 - **Always branch from an up-to-date `main`:** Before creating any branch, run `git checkout main && git fetch origin && git pull origin main` to ensure local `main` is fully in sync with remote.
 - **Return to `main` after PR:** Once a PR is created, immediately run `git checkout main` so the next task starts from a clean base.
 - **`tsconfig.json` `paths` overrides `$lib` alias:** Adding a `paths` block to `tsconfig.json` (which extends `.svelte-kit/tsconfig.json`) silently drops the auto-generated `$lib/*` aliases. Symptom: `Cannot find module '$lib/...'` in `svelte-check`. Fix: put custom aliases (e.g. `$shared/*`) in `svelte.config.js` `kit.alias`, not `tsconfig.json`.
 - **Route groups `(name)` for layout isolation:** Use `(app)/` route group to share a sidebar shell layout across authenticated pages without affecting the URL. Auth routes stay outside the group and render without the sidebar. Run `svelte-kit sync` after any route restructure before type-checking.
+- **`playwright-cli open` resets the browser session:** Each `playwright-cli open <url>` creates a new context and discards all cookies (including auth). To visit authenticated pages during verification, navigate within the same session using `playwright-cli click <ref>` on sidebar links — do not call `open` again.
+- **Vite dev server auto-increments port:** If 5173 is in use, Vite picks 5174, 5175, etc. Always read the `Local:` line from `bun run dev` output before running `playwright-cli open` or browser assertions.
 
 ## Required Skills
 
