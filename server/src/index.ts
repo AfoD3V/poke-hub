@@ -15,6 +15,7 @@ export const app = createApp();
 export function startServer(serverApp: Hono): void {
   const port = Number(getOptionalEnvVar("PORT") ?? "3000");
 
+  try {
   Bun.serve({
     port,
     fetch(req, server) {
@@ -39,6 +40,13 @@ export function startServer(serverApp: Hono): void {
       },
     },
   });
+  } catch (err: unknown) {
+    if (err instanceof Error && (err as NodeJS.ErrnoException).code === "EADDRINUSE") {
+      console.error(`Error: port ${port} is already in use. Stop the existing process or set a different PORT in server/.env`);
+      process.exit(1);
+    }
+    throw err;
+  }
 
   startPgListener().catch((err) => {
     console.error("Failed to start Postgres listener:", err);
