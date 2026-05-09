@@ -215,7 +215,7 @@ Use `gh` as the primary tool for all GitHub operations. Fall back to raw `git` o
 
 Follow this sequence without deviation:
 
-1. **Create the branch first** — `git checkout -b feature/task_name` before writing any code. Never push to `main` or `master`.
+1. **Create the branch from an up-to-date `main`** — before branching, always run `git checkout main && git fetch origin && git pull origin main` to sync with remote. Then `git checkout -b feature/task_name`. Never push to `main` or `master`.
 2. **Commit incrementally** as you complete logical units of work. Messages must be meaningful and descriptive.
 3. **Open a PR only after** the feature is complete and all tests pass. Present PR title, target branch, and a summary of changes to the human before running `gh pr create`.
 4. **Return to `main` after the PR is created** — run `git checkout main` immediately so the next task starts from a clean base.
