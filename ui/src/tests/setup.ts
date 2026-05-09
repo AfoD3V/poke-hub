@@ -15,8 +15,8 @@ vi.mock('$app/navigation', () => ({
 	preloadData: vi.fn()
 }));
 
-vi.mock('$app/stores', () => {
-	const { readable, writable } = require('svelte/store');
+vi.mock('$app/stores', async () => {
+	const { readable } = await vi.importActual<typeof import('svelte/store')>('svelte/store');
 	return {
 		page: readable({
 			url: new URL('http://localhost/'),

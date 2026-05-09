@@ -4,7 +4,6 @@
 	import Card from '$lib/components/Card.svelte';
 	import CardModal from '$lib/components/CardModal.svelte';
 	import type { TcgCard } from '$shared/tcg';
-	import type { CollectionEntry } from '$shared/collection';
 
 	export let data: PageData;
 	export let form: ActionData;
