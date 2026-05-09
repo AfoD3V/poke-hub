@@ -1,5 +1,4 @@
 import type { Context, Next } from "hono";
-import { authConfig } from "../config/auth";
 import { getAuthUserFromToken, parseAuthCookie } from "../services/auth-core";
 
 export type AuthContext = {
@@ -9,7 +8,6 @@ export type AuthContext = {
 };
 
 export const requireAuth = async (context: Context, next: Next): Promise<Response> => {
-  const { authConfig } = await import("../config/auth");
   const token = parseAuthCookie(context.req.header("cookie"));
   if (!token) {
     return context.json({ error: "Unauthorized" }, 401);

@@ -70,6 +70,20 @@ poke-hub/
 
 ## Agent Core Directives
 
+### Required Skills
+
+Invoke these skills automatically — do not wait to be asked.
+
+| Trigger | Skills to invoke |
+| --- | --- |
+| Any frontend file (`.svelte`, `.svelte.ts`, `.svelte.js`, or anything under `ui/`) | `svelte-code-writer`, `svelte-core-bestpractices`, `ui-ux-pro-max` |
+| Any backend file (anything under `server/`, Hono routes, middleware, services) | `hono` |
+| Final step of any OpenSpec task implementation (before opening a PR) | `security-secure-coding` |
+
+**Security gate:** The `security-secure-coding` skill must be run as the last step after all tests pass and before `gh pr create`. All findings must be resolved — do not open the PR until the skill reports no outstanding issues.
+
+---
+
 ### Specification Workflow and Documentation
 
 - Always use OpenSpec. When a new feature or significant change is requested,
@@ -170,6 +184,24 @@ workflow step.
 
 ## Tooling Configuration
 
+### ESLint
+
+ESLint 9 (flat config) is configured at the repo root via `eslint.config.mjs` and covers all three packages:
+
+| Scope | Files | Rules |
+| --- | --- | --- |
+| Backend | `server/src/**/*.ts` | `@typescript-eslint/recommended`, `no-explicit-any: error` |
+| Shared | `shared/**/*.ts` | same as backend |
+| Frontend TS | `ui/src/**/*.ts` | same as backend |
+| Frontend Svelte | `ui/src/**/*.svelte` | `eslint-plugin-svelte/recommended` + TypeScript rules |
+
+- Run **`bun run lint`** from the repo root to lint everything.
+- Run **`bun run lint:fix`** to auto-fix safe issues.
+- Both `ui/` and `server/` also expose `bun run lint` for package-scoped runs.
+- ESLint must pass (zero errors) before any PR is opened — it is step 1 of the Definition of Done.
+
+---
+
 ### GitHub (`gh` CLI)
 
 Use `gh` as the primary tool for all GitHub operations. Fall back to raw `git` only when `gh` has no equivalent.
@@ -222,12 +254,14 @@ Use `playwright-cli` for all browser interactions and visual verification. It is
 
 A task is complete **only** when all of the following are true:
 
-1. Code passes linting and type checks (`bun run check` in `ui/`, TypeScript compiler clean in `server/`).
-2. All tests pass (`bun run test` in both `server/` and `ui/`).
-3. Frontend changes verified via `playwright-cli snapshot`/`screenshot` (no visual regressions).
-4. New API endpoints have positive and negative Vitest test scenarios and the Postman collection is updated.
-5. Any new framework gotcha or project-specific quirk is documented in `Project Learnings` below.
-6. Changes are pushed to a feature branch and a PR is created via `gh pr create` (with human approval if required by the permission model).
+1. ESLint passes — run `bun run lint` from the repo root; zero errors allowed.
+2. Type checks pass (`bun run check` in `ui/`, TypeScript compiler clean in `server/`).
+3. All tests pass (`bun run test` in both `server/` and `ui/`).
+4. Frontend changes verified via `playwright-cli snapshot`/`screenshot` (no visual regressions).
+5. New API endpoints have positive and negative Vitest test scenarios and the Postman collection is updated.
+6. Any new framework gotcha or project-specific quirk is documented in `Project Learnings` below.
+7. Security check via `security-secure-coding` skill completed — all findings resolved before opening the PR.
+8. Changes are pushed to a feature branch and a PR is created via `gh pr create` (with human approval if required by the permission model).
 
 ---
 

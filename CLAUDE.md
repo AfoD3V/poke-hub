@@ -10,12 +10,19 @@ PokeHub is a premium personal Pokémon TCG collection manager. Dark mode is the 
 
 ## Commands
 
+### Root (monorepo-wide)
+```bash
+bun run lint         # ESLint across server/, ui/, and shared/
+bun run lint:fix     # ESLint with --fix
+```
+
 ### Backend (`server/`)
 ```bash
 bun run dev          # Start with hot reload (port defined by PORT in server/.env)
 bun run db:generate  # Generate Drizzle migrations after schema changes
 bun run db:migrate   # Apply migrations to PostgreSQL
 bun run test         # Run Vitest (NOT `bun test` — see Gotchas below)
+bun run lint         # ESLint for server/src
 ```
 
 ### Frontend (`ui/`)
@@ -24,6 +31,7 @@ bun run dev          # Vite dev server at http://localhost:5173
 bun run build        # Production build
 bun run check        # svelte-check type checking
 bun run test         # Run Vitest in jsdom environment
+bun run lint         # ESLint for ui/src (TypeScript + Svelte)
 ```
 
 ## Architecture
@@ -56,6 +64,14 @@ Three-layer system in `ui/src/lib/components/Card.svelte`:
 - **`tsconfig.json` `paths` overrides `$lib` alias:** Adding a `paths` block to `tsconfig.json` (which extends `.svelte-kit/tsconfig.json`) silently drops the auto-generated `$lib/*` aliases. Symptom: `Cannot find module '$lib/...'` in `svelte-check`. Fix: put custom aliases (e.g. `$shared/*`) in `svelte.config.js` `kit.alias`, not `tsconfig.json`.
 - **Route groups `(name)` for layout isolation:** Use `(app)/` route group to share a sidebar shell layout across authenticated pages without affecting the URL. Auth routes stay outside the group and render without the sidebar. Run `svelte-kit sync` after any route restructure before type-checking.
 
+## Required Skills
+
+Invoke these skills automatically — do not wait to be asked:
+
+- **Frontend work** (any `.svelte`, `.svelte.ts`, `.svelte.js`, or `ui/` file): invoke `svelte-code-writer`, `svelte-core-bestpractices`, and `ui-ux-pro-max` before writing or editing code.
+- **Backend work** (any `server/` file or Hono route/middleware): invoke `hono` before writing or editing code.
+- **OpenSpec task completion** (final step before opening a PR): invoke `security-secure-coding` and resolve all findings before merging to `main`.
+
 ## Agent Workflow
 
 - **Role:** Senior Fullstack Engineer. Use that level of judgment.
@@ -76,12 +92,14 @@ Three-layer system in `ui/src/lib/components/Card.svelte`:
 ## Definition of Done
 
 A task is complete only when:
-1. Linting/type checks pass (`bun run check` in `ui/`; TypeScript clean in `server/`).
-2. All tests pass (`bun run test` in both packages).
-3. Frontend changes verified via `playwright-cli snapshot`/`screenshot` (no visual regressions).
-4. New API endpoints have tests + Postman collection updated.
-5. New gotchas documented in `AGENTS.md` > Project Learnings.
-6. Changes pushed to a feature branch; PR created via `gh pr create`.
+1. ESLint passes (`bun run lint` from repo root — zero errors).
+2. Type checks pass (`bun run check` in `ui/`; TypeScript clean in `server/`).
+3. All tests pass (`bun run test` in both packages).
+4. Frontend changes verified via `playwright-cli snapshot`/`screenshot` (no visual regressions).
+5. New API endpoints have tests + Postman collection updated.
+6. New gotchas documented in `AGENTS.md` > Project Learnings.
+7. Security check via `security-secure-coding` skill — all findings resolved.
+8. Changes pushed to a feature branch; PR created via `gh pr create`.
 
 ## Keeping CLAUDE.md and AGENTS.md in Sync
 
