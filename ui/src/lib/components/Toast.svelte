@@ -10,11 +10,11 @@
 	>
 		{#each $toasts as toast (toast.id)}
 			<div
-				class="flex items-center gap-3 bg-ph-surface border border-ph-purple/40
-				       text-ph-text font-dm text-sm px-4 py-3 rounded-xl shadow-glow-purple
+				class="flex items-center gap-3 bg-ph-surface border border-ph-accent/40
+				       text-ph-text font-geist text-sm px-4 py-3 rounded-xl shadow-glow-red
 				       animate-in slide-in-from-bottom-2 duration-200"
 			>
-				<span class="text-ph-purple-light shrink-0" aria-hidden="true">
+				<span class="text-ph-accent shrink-0" aria-hidden="true">
 					<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<polyline points="20 6 9 17 4 12"/>
 					</svg>

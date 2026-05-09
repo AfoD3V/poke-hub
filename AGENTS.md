@@ -360,6 +360,17 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   element that does NOT declare `transform-style: preserve-3d`.
   Symptom of both: the card flip rotates (matrix3d confirms 180°) but both
   faces remain visible simultaneously — the back face appears on top.
+- **`overflow: hidden` on any ancestor of a tilted card causes "invisible frame" clipping:**
+  Even when `overflow: hidden` is on a non-face wrapper (`.face-inner`), the spring tilt on
+  `card__rotator` projects the card outside that ancestor's 2D bounds — edges disappear as if
+  clipped by an invisible box. The flip animation does NOT require `overflow: hidden`; it is
+  governed entirely by `backface-visibility: hidden` on `.face`.
+  Fix: Remove `overflow: hidden` from `.face-inner`. Move the rounded-corner clip directly onto
+  the `<img>` element via `border-radius: 4.55% / 3.5%` — images are clipped by their own
+  `border-radius` without needing an overflow parent.
+  Also remove `transform-style: preserve-3d` from `.card__rotator` in Card.svelte (grid cards):
+  HoverTilt's `.hover-tilt` is the `preserve-3d` root; keeping it on the rotator puts
+  `.card__front`'s `overflow: hidden` inside a 3D stacking context causing the same artifact.
 - **Bun `mock.module` intercepts dynamic imports:** When route handlers use
   `await import("../services/collection")` at request time (deferred DB
   connection), Bun's `mock.module("../services/collection", factory)` still
@@ -389,3 +400,12 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   pages placed outside the group inherit the root layout only, keeping them
   sidebar-free. After moving routes into a group, run `svelte-kit sync` to
   regenerate `$types` before running `svelte-check`.
+- **`playwright-cli open <url>` resets the browser session:** Calling `playwright-cli open`
+  creates a brand-new browser context, discarding all existing cookies including auth sessions.
+  To navigate to an authenticated page during visual verification, stay within the existing
+  session: use the sidebar nav links (via `playwright-cli click <ref>`) rather than issuing a
+  new `playwright-cli open`. Only use `open` for the initial page load.
+- **Vite dev server auto-increments port when default is in use:** If port 5173 (or 5174) is
+  already occupied, Vite silently picks the next free port (5175, 5176, …). Always read the
+  `Local:` line from `bun run dev` output (or check the dev log) to confirm the actual port
+  before running `playwright-cli open` or browser tests against it.

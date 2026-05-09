@@ -96,8 +96,8 @@
 
 <div>
 	<div class="mb-8">
-		<h1 class="font-dm font-bold text-3xl text-ph-text">Card Search</h1>
-		<p class="text-ph-muted text-sm mt-2 font-dm">Find cards across all TCG sets</p>
+		<h1 class="font-geist font-black text-3xl text-white">Card Search</h1>
+		<p class="text-ph-muted text-sm mt-2 font-geist">Find cards across all TCG sets</p>
 	</div>
 
 	<form on:submit={handleSearch} class="flex gap-3 mb-8">
@@ -131,7 +131,7 @@
 	{#if error}
 		<div
 			role="alert"
-			class="mb-6 px-4 py-3 rounded-lg bg-red-950/50 border border-red-800/60 text-red-400 text-sm font-dm flex items-center gap-2"
+			class="mb-6 px-4 py-3 rounded-lg bg-red-950/50 border border-red-800/60 text-red-400 text-sm font-geist flex items-center gap-2"
 		>
 			<svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<circle cx="12" cy="12" r="10" />
@@ -144,22 +144,22 @@
 
 	<!-- Loading skeleton — only shown on fresh searches, not load-more -->
 	{#if loading}
-		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+		<div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));">
 			{#each Array.from({ length: PAGE_SIZE }) as _, i (i)}
-				<div class="animate-pulse bg-ph-card rounded-xl aspect-[2.5/3.5]" />
+				<div class="animate-pulse bg-ph-card rounded-xl aspect-[2.5/3.5]"></div>
 			{/each}
 		</div>
 	{:else if cards.length > 0}
 
 		<!-- Result count -->
-		<p class="text-sm text-ph-muted font-dm mb-6">
+		<p class="text-sm text-ph-muted font-geist mb-6">
 			Showing <span class="text-ph-text font-medium">{cards.length}</span>
 			of <span class="text-ph-text font-medium">{totalCount}</span>
 			result{totalCount === 1 ? '' : 's'}
 		</p>
 
 		<!-- Card grid -->
-		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+		<div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));">
 			{#each cards as card (card.id)}
 				<Card {card} on:expand={(e) => (expandedCard = e.detail)} />
 			{/each}
@@ -167,7 +167,7 @@
 			<!-- Inline load-more skeletons — keep grid flow intact while fetching -->
 			{#if loadingMore}
 				{#each Array.from({ length: PAGE_SIZE }) as _, i (i)}
-					<div class="animate-pulse bg-ph-card rounded-xl aspect-[2.5/3.5]" />
+					<div class="animate-pulse bg-ph-card rounded-xl aspect-[2.5/3.5]"></div>
 				{/each}
 			{/if}
 		</div>
@@ -192,12 +192,12 @@
 						Load more
 					{/if}
 				</button>
-				<p class="text-xs text-ph-muted font-dm">
+				<p class="text-xs text-ph-muted font-geist">
 					{remaining} more card{remaining === 1 ? '' : 's'} available
 				</p>
 			</div>
 		{:else if totalCount > 0}
-			<p class="mt-8 text-xs text-ph-muted text-center font-dm">
+			<p class="mt-8 text-xs text-ph-muted text-center font-geist">
 				All {totalCount} cards loaded
 			</p>
 		{/if}
@@ -216,7 +216,7 @@
 				<path d="M3 9h18" />
 				<path d="M9 21V9" />
 			</svg>
-			<p class="text-ph-muted font-dm">No cards found for "{query}".</p>
+			<p class="text-ph-muted font-geist">No cards found for "{query}".</p>
 		</div>
 	{/if}
 </div>
