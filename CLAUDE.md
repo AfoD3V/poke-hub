@@ -10,25 +10,37 @@ PokeHub is a premium personal Pokémon TCG collection manager. Dark mode is the 
 
 ## Commands
 
+### Local Development (Docker Compose — primary)
+```bash
+docker compose up -d --build   # Build images and start all services
+docker compose logs -f         # Tail logs for all services
+docker compose logs migrate    # Check migration output
+docker compose down            # Stop all services
+```
+
+Services when running:
+- UI:    http://localhost:4000
+- API:   http://localhost:3000
+- DB:    localhost:5432 (exposed for local tooling)
+- Redis: localhost:6379
+
+Migrations run automatically via the `migrate` service on every `docker compose up`. After a schema change, run `bun run db:generate` in `server/` to create the migration file, then `docker compose up -d --build` to apply it.
+
 ### Root (monorepo-wide)
 ```bash
 bun run lint         # ESLint across server/, ui/, and shared/
 bun run lint:fix     # ESLint with --fix
 ```
 
-### Backend (`server/`)
+### Backend (`server/`) — for tests and codegen only; runtime is Docker
 ```bash
-bun run dev          # Start with hot reload (port defined by PORT in server/.env)
 bun run db:generate  # Generate Drizzle migrations after schema changes
-bun run db:migrate   # Apply migrations to PostgreSQL
 bun run test         # Run Vitest (NOT `bun test` — see Gotchas below)
 bun run lint         # ESLint for server/src
 ```
 
-### Frontend (`ui/`)
+### Frontend (`ui/`) — for tests and type-checking only; runtime is Docker
 ```bash
-bun run dev          # Vite dev server at http://localhost:5173
-bun run build        # Production build
 bun run check        # svelte-check type checking
 bun run test         # Run Vitest in jsdom environment
 bun run lint         # ESLint for ui/src (TypeScript + Svelte)
@@ -68,6 +80,8 @@ Three-layer system in `ui/src/lib/components/Card.svelte`:
 - **Route groups `(name)` for layout isolation:** Use `(app)/` route group to share a sidebar shell layout across authenticated pages without affecting the URL. Auth routes stay outside the group and render without the sidebar. Run `svelte-kit sync` after any route restructure before type-checking.
 - **`playwright-cli open` resets the browser session:** Each `playwright-cli open <url>` creates a new context and discards all cookies (including auth). To visit authenticated pages during verification, navigate within the same session using `playwright-cli click <ref>` on sidebar links — do not call `open` again.
 - **Vite dev server auto-increments port:** If 5173 is in use, Vite picks 5174, 5175, etc. Always read the `Local:` line from `bun run dev` output before running `playwright-cli open` or browser assertions.
+- **Docker migrations use a separate `migrate` service:** `drizzle-kit` is a dev dependency and is not present in the production `api` image. A dedicated `migrate` stage in `server/Dockerfile` installs all deps (including dev) and runs `drizzle-kit migrate`. It starts before `api`, runs once, and exits. Check its output with `docker compose logs migrate`. Never try to run `db:migrate` inside the `api` container.
+- **Docker Compose credentials vs `server/.env`:** The root `.env` defines actual Postgres credentials used by all containers (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `DATABASE_URL` with `@db:5432`). `server/.env` is only used for local `bun run` commands and must use `@localhost:5432` with the same credentials. Keep them in sync.
 
 ## Required Skills
 
