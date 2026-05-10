@@ -5,9 +5,9 @@ import {
   TcgProxyServiceError
 } from "./tcg-proxy";
 
-/**
- * Minimal TCGdex card record for test fixtures.
- */
+// ---------------------------------------------------------------------------
+// REST fixture — used by getCardById tests (unchanged REST endpoint)
+// ---------------------------------------------------------------------------
 const upstreamCard = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: "swsh3-136",
   name: "Charizard",
@@ -30,6 +30,50 @@ const upstreamCard = (overrides: Partial<Record<string, unknown>> = {}) => ({
   ...overrides
 });
 
+// ---------------------------------------------------------------------------
+// GraphQL fixture — matches TCGdex GraphQL response card shape
+// ---------------------------------------------------------------------------
+const graphqlCard = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  id: "swsh3-136",
+  localId: "136",
+  name: "Charizard",
+  image: "https://assets.tcgdex.net/en/swsh/swsh3/136",
+  rarity: "Rare Holo",
+  hp: 170,
+  types: ["Fire"],
+  stage: "Stage2",
+  evolveFrom: "Charmeleon",
+  description: "Spits fire that is hot enough to melt boulders.",
+  illustrator: "5ban Graphics",
+  retreat: 3,
+  regulationMark: "D",
+  category: "Pokemon",
+  set: {
+    id: "swsh3",
+    name: "Darkness Ablaze",
+    logo: "https://assets.tcgdex.net/en/swsh/swsh3/logo.png",
+    symbol: "https://assets.tcgdex.net/en/swsh/swsh3/symbol.png"
+  },
+  variants: {
+    normal: false,
+    holo: true,
+    reverse: true,
+    firstEdition: false
+  },
+  attacks: [
+    {
+      name: "Flare Blitz",
+      cost: ["Fire", "Fire", "Colorless"],
+      damage: "300",
+      effect: "This Pokemon also does 50 damage to itself."
+    }
+  ],
+  weaknesses: [
+    { type: "Water", value: "×2" }
+  ],
+  ...overrides
+});
+
 describe("tcg-proxy service", () => {
   const originalFetch = globalThis.fetch;
   let capturedRequest: { url: string; init: RequestInit } | undefined;
@@ -39,11 +83,24 @@ describe("tcg-proxy service", () => {
     capturedRequest = undefined;
   });
 
-  const stubOk = (jsonBody: unknown = []): void => {
+  // Stubs a plain JSON response (used by getCardById REST tests)
+  const stubOk = (jsonBody: unknown): void => {
     globalThis.fetch = async (_url: RequestInfo | URL, _init: RequestInit): Promise<Response> => {
       const url = typeof _url === "string" ? _url : _url.toString();
       capturedRequest = { url, init: _init };
       return new Response(JSON.stringify(jsonBody), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+  };
+
+  // Stubs a GraphQL success response wrapping cards in { data: { cards: [...] } }
+  const stubGraphQLOk = (cards: unknown[] = []): void => {
+    globalThis.fetch = async (_url: RequestInfo | URL, _init: RequestInit): Promise<Response> => {
+      const url = typeof _url === "string" ? _url : _url.toString();
+      capturedRequest = { url, init: _init };
+      return new Response(JSON.stringify({ data: { cards } }), {
         status: 200,
         headers: { "Content-Type": "application/json" }
       });
@@ -65,22 +122,50 @@ describe("tcg-proxy service", () => {
     };
   };
 
+  // ---------------------------------------------------------------------------
+  // searchCards — GraphQL
+  // ---------------------------------------------------------------------------
   describe("searchCards", () => {
-    it("sends request to TCGdex and returns mapped cards", async () => {
-      stubOk([upstreamCard()]);
+    it("sends POST to TCGdex GraphQL endpoint", async () => {
+      stubGraphQLOk([graphqlCard()]);
 
-      const result = await searchCards("Charizard", 1, 20);
+      await searchCards("Charizard", 1, 20);
 
       expect(capturedRequest).toBeDefined();
-      expect(capturedRequest?.url).toContain("https://api.tcgdex.net/v2/en/cards");
-      expect(capturedRequest?.url).toContain("name=Charizard");
-      expect(capturedRequest?.url).toContain("pagination%3Apage=1");
-      expect(capturedRequest?.url).toContain("pagination%3AitemsPerPage=20");
+      expect(capturedRequest?.url).toBe("https://api.tcgdex.net/v2/graphql");
+      expect(capturedRequest?.init.method).toBe("POST");
+    });
+
+    it("sends query and name variable in the request body", async () => {
+      stubGraphQLOk([graphqlCard()]);
+
+      await searchCards("Charizard", 1, 20);
+
+      const body = JSON.parse(capturedRequest?.init.body as string) as {
+        query: string;
+        variables: { name: string };
+      };
+      expect(typeof body.query).toBe("string");
+      expect(body.query).toContain("cards");
+      expect(body.variables.name).toBe("Charizard");
+    });
+
+    it("returns mapped cards from data.cards", async () => {
+      stubGraphQLOk([graphqlCard()]);
+
+      const result = await searchCards("Charizard", 1, 20);
 
       expect(result.totalCount).toBe(1);
       expect(result.cards).toHaveLength(1);
       expect(result.cards[0].id).toBe("swsh3-136");
       expect(result.cards[0].name).toBe("Charizard");
+    });
+
+    it("maps image to small/large webp URLs", async () => {
+      stubGraphQLOk([graphqlCard()]);
+
+      const result = await searchCards("Charizard");
+
       expect(result.cards[0].images.small).toBe(
         "https://assets.tcgdex.net/en/swsh/swsh3/136/low.webp"
       );
@@ -90,40 +175,166 @@ describe("tcg-proxy service", () => {
     });
 
     it("maps category to supertype", async () => {
-      stubOk([upstreamCard({ category: "Trainer" })]);
+      stubGraphQLOk([graphqlCard({ category: "Trainer" })]);
       const result = await searchCards("Potion");
       expect(result.cards[0].supertype).toBe("Trainer");
     });
 
     it("maps illustrator to artist", async () => {
-      stubOk([upstreamCard()]);
+      stubGraphQLOk([graphqlCard()]);
       const result = await searchCards("Charizard");
       expect(result.cards[0].artist).toBe("5ban Graphics");
     });
 
     it("maps localId to number", async () => {
-      stubOk([upstreamCard()]);
+      stubGraphQLOk([graphqlCard()]);
       const result = await searchCards("Charizard");
       expect(result.cards[0].number).toBe("136");
     });
 
     it("maps hp as string", async () => {
-      stubOk([upstreamCard({ hp: 170 })]);
+      stubGraphQLOk([graphqlCard({ hp: 170 })]);
       const result = await searchCards("Charizard");
       expect(result.cards[0].hp).toBe("170");
     });
 
+    it("maps set id, name, logo and symbol", async () => {
+      stubGraphQLOk([graphqlCard()]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].setDetails?.id).toBe("swsh3");
+      expect(result.cards[0].setDetails?.name).toBe("Darkness Ablaze");
+      expect(result.cards[0].setDetails?.images?.logo).toBe(
+        "https://assets.tcgdex.net/en/swsh/swsh3/logo.png"
+      );
+      expect(result.cards[0].setDetails?.images?.symbol).toBe(
+        "https://assets.tcgdex.net/en/swsh/swsh3/symbol.png"
+      );
+    });
+
+    it("maps variants.holo to holofoil", async () => {
+      stubGraphQLOk([graphqlCard({ variants: { normal: false, holo: true, reverse: false, firstEdition: false } })]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].holofoil).toBe(true);
+    });
+
+    it("maps attacks with cost array", async () => {
+      stubGraphQLOk([graphqlCard()]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].attacks).toHaveLength(1);
+      expect(result.cards[0].attacks?.[0].name).toBe("Flare Blitz");
+      expect(result.cards[0].attacks?.[0].cost).toEqual(["Fire", "Fire", "Colorless"]);
+      expect(result.cards[0].attacks?.[0].damage).toBe("300");
+    });
+
+    it("maps weaknesses", async () => {
+      stubGraphQLOk([graphqlCard()]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].weaknesses?.[0]).toEqual({ type: "Water", value: "×2" });
+    });
+
+    it("filters out attacks where name is null", async () => {
+      stubGraphQLOk([
+        graphqlCard({
+          attacks: [
+            { name: null, cost: ["Fire"], damage: "10", effect: "" },
+            { name: "Flare Blitz", cost: ["Fire", "Fire", "Colorless"], damage: "300", effect: "" }
+          ]
+        })
+      ]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].attacks).toHaveLength(1);
+      expect(result.cards[0].attacks?.[0].name).toBe("Flare Blitz");
+    });
+
+    it("filters out null attack entries (entire item null, not just name)", async () => {
+      stubGraphQLOk([
+        graphqlCard({
+          attacks: [
+            null,
+            { name: "Flare Blitz", cost: ["Fire"], damage: "100", effect: "" }
+          ]
+        })
+      ]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].attacks).toHaveLength(1);
+      expect(result.cards[0].attacks?.[0].name).toBe("Flare Blitz");
+    });
+
+    it("defaults null attack cost to empty array", async () => {
+      stubGraphQLOk([
+        graphqlCard({
+          attacks: [{ name: "Tackle", cost: null, damage: "10", effect: "" }]
+        })
+      ]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].attacks?.[0].cost).toEqual([]);
+    });
+
+    it("defaults null attack damage to empty string", async () => {
+      stubGraphQLOk([
+        graphqlCard({
+          attacks: [{ name: "Tackle", cost: ["Colorless"], damage: null, effect: "" }]
+        })
+      ]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].attacks?.[0].damage).toBe("");
+    });
+
+    it("returns empty array when data.cards is empty", async () => {
+      stubGraphQLOk([]);
+      const result = await searchCards("NoSuchCard");
+      expect(result.cards).toHaveLength(0);
+      expect(result.totalCount).toBe(0);
+    });
+
     it("uses cards.length as totalCount", async () => {
-      stubOk([upstreamCard(), upstreamCard({ id: "swsh3-137", name: "Charizard VMAX" })]);
+      stubGraphQLOk([graphqlCard(), graphqlCard({ id: "swsh3-137", name: "Charizard VMAX" })]);
       const result = await searchCards("Charizard");
       expect(result.totalCount).toBe(2);
     });
 
     it("does not send an API key header", async () => {
-      stubOk([]);
+      stubGraphQLOk([]);
       await searchCards("Pikachu");
       const headers = capturedRequest?.init.headers as Record<string, string> | undefined;
       expect(headers?.["X-Api-Key"]).toBeUndefined();
+    });
+
+    it("throws TcgProxyServiceError when errors present and data.cards is absent", async () => {
+      globalThis.fetch = async (_url: RequestInfo | URL, _init: RequestInit): Promise<Response> => {
+        const url = typeof _url === "string" ? _url : _url.toString();
+        capturedRequest = { url, init: _init };
+        return new Response(
+          JSON.stringify({ errors: [{ message: "Fatal error" }] }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      };
+
+      try {
+        await searchCards("Pikachu");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(TcgProxyServiceError);
+        expect((err as TcgProxyServiceError).statusCode).toBe(502);
+      }
+    });
+
+    it("returns cards when errors and data.cards are both present (field-level null warnings)", async () => {
+      globalThis.fetch = async (_url: RequestInfo | URL, _init: RequestInit): Promise<Response> => {
+        const url = typeof _url === "string" ? _url : _url.toString();
+        capturedRequest = { url, init: _init };
+        return new Response(
+          JSON.stringify({
+            errors: [{ message: "Cannot return null for non-nullable field AttacksListItem.name." }],
+            data: { cards: [graphqlCard()] }
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      };
+
+      const result = await searchCards("Pikachu");
+      expect(result.cards).toHaveLength(1);
+      expect(result.cards[0].name).toBe("Charizard");
     });
 
     it("throws TcgProxyServiceError when upstream returns non-OK", async () => {
@@ -148,19 +359,11 @@ describe("tcg-proxy service", () => {
         expect((err as TcgProxyServiceError).statusCode).toBe(502);
       }
     });
-
-    it("throws with status 502 when response is not an array", async () => {
-      stubOk({ unexpected: "object" });
-      try {
-        await searchCards("xxx");
-        throw new Error("should have thrown");
-      } catch (err) {
-        expect(err).toBeInstanceOf(TcgProxyServiceError);
-        expect((err as TcgProxyServiceError).statusCode).toBe(502);
-      }
-    });
   });
 
+  // ---------------------------------------------------------------------------
+  // getCardById — REST (unchanged)
+  // ---------------------------------------------------------------------------
   describe("getCardById", () => {
     it("returns mapped card on success", async () => {
       stubOk(upstreamCard({ id: "base1-58", name: "Pikachu", localId: "58" }));
