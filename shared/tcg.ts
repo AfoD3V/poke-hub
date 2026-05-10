@@ -10,7 +10,7 @@
  * Represents a single TCG card returned by the upstream API.
  */
 export interface TcgCard {
-  /** Unique card identifier (e.g. "swsh4-107") */
+  /** Unique card identifier (e.g. "swsh3-136") */
   id: string;
 
   /** Human-readable card name */
@@ -25,7 +25,7 @@ export interface TcgCard {
   /** Primary type (e.g. "Fire", "Water") */
   types?: string[];
 
-  /** Set abbreviation / name */
+  /** Set name */
   set: string;
 
   /** Set details */
@@ -81,7 +81,7 @@ export interface TcgCard {
   legalities?: Record<string, string | null>;
   regulationMark?: string;
 
-  /** Card images */
+  /** Card images (small = low quality, large = high quality) */
   images: {
     small: string;
     large: string;
@@ -101,19 +101,8 @@ export interface TcgCard {
     };
   };
 
-  /** Reverse holo or holo flag (derived from upstream if available) */
+  /** Whether the card has a holo or first-edition holo variant */
   holofoil?: boolean;
-}
-
-/**
- * Generic wrapper shape returned by `pokemontcg.io` — nested under `.data`.
- */
-export interface TcgApiResponse<T> {
-  data: T;
-  count?: number;
-  page?: number;
-  pageSize?: number;
-  totalCount?: number;
 }
 
 /**

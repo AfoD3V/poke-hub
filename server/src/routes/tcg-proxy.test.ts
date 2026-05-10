@@ -7,7 +7,6 @@ describe("tcg-proxy routes", () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
-    process.env.POKEMONTCG_API_KEY = "test-key";
     globalThis.fetch = originalFetch;
   });
 
@@ -20,7 +19,7 @@ describe("tcg-proxy routes", () => {
     return createApp();
   };
 
-  const stubOk = (jsonBody: unknown = { data: [] }): void => {
+  const stubOk = (jsonBody: unknown = []): void => {
     globalThis.fetch = async (): Promise<Response> => {
       return new Response(JSON.stringify(jsonBody), {
         status: 200,
@@ -44,6 +43,26 @@ describe("tcg-proxy routes", () => {
     };
   };
 
+  const tcgdexCard = (overrides: Partial<Record<string, unknown>> = {}) => ({
+    id: "swsh3-136",
+    name: "Charizard",
+    localId: "136",
+    category: "Pokemon",
+    types: ["Fire"],
+    image: "https://assets.tcgdex.net/en/swsh/swsh3/136",
+    set: {
+      id: "swsh3",
+      name: "Darkness Ablaze",
+      serie: { id: "swsh", name: "Sword & Shield" },
+      cardCount: { official: 189, total: 201 },
+      releaseDate: "2020-08-14"
+    },
+    rarity: "Rare Holo",
+    illustrator: "5ban Graphics",
+    hp: 170,
+    ...overrides
+  });
+
   describe("GET /api/cards/search", () => {
     it("returns 400 when 'q' query parameter is missing", async () => {
       const app = await buildApp();
@@ -60,29 +79,16 @@ describe("tcg-proxy routes", () => {
     });
 
     it("proxies search and returns cards", async () => {
-      stubOk({
-        data: [
-          {
-            id: "swsh4-107",
-            name: "Charizard",
-            supertype: "Pokémon",
-            types: ["Fire"],
-            set: "Vivid Voltage",
-            number: "107",
-            images: { small: "https://example.com/small.jpg", large: "https://example.com/large.jpg" }
-          }
-        ],
-        totalCount: 1
-      });
+      stubOk([tcgdexCard()]);
 
       const app = await buildApp();
-      const res = await app.request("/api/cards/search?q=name:Charizard");
+      const res = await app.request("/api/cards/search?q=Charizard");
 
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.cards).toHaveLength(1);
       expect(body.totalCount).toBe(1);
-      expect(body.cards[0].id).toBe("swsh4-107");
+      expect(body.cards[0].id).toBe("swsh3-136");
     });
 
     it("returns 502 when upstream fails", async () => {
@@ -104,16 +110,7 @@ describe("tcg-proxy routes", () => {
 
   describe("GET /api/cards/:id", () => {
     it("returns card by id", async () => {
-      stubOk({
-        data: {
-          id: "base1-58",
-          name: "Pikachu",
-          supertype: "Pokémon",
-          set: "Base",
-          number: "58",
-          images: { small: "https://example.com/s.jpg", large: "https://example.com/l.jpg" }
-        }
-      });
+      stubOk(tcgdexCard({ id: "base1-58", name: "Pikachu", localId: "58" }));
 
       const app = await buildApp();
       const res = await app.request("/api/cards/base1-58");
@@ -125,7 +122,7 @@ describe("tcg-proxy routes", () => {
 
     it("returns 404 when card is not found", async () => {
       globalThis.fetch = async (): Promise<Response> =>
-        new Response(JSON.stringify({ error: "Not Found" }), { status: 404 });
+        new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
 
       const app = await buildApp();
       const res = await app.request("/api/cards/unknown");

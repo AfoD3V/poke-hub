@@ -352,7 +352,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"cardId\": \"swsh1-1\",\n  \"language\": \"en\",\n  \"quantity\": 1,\n  \"card\": {\n    \"id\": \"swsh1-1\",\n    \"name\": \"Celebi V\",\n    \"supertype\": \"Pokémon\",\n    \"set\": \"SWSH01\",\n    \"number\": \"1\",\n    \"images\": { \"small\": \"https://images.pokemontcg.io/swsh1/1.png\", \"large\": \"https://images.pokemontcg.io/swsh1/1_hires.png\" }\n  }\n}"
+          "raw": "{\n  \"cardId\": \"swsh1-1\",\n  \"language\": \"en\",\n  \"quantity\": 1,\n  \"card\": {\n    \"id\": \"swsh1-1\",\n    \"name\": \"Celebi V\",\n    \"supertype\": \"Pokemon\",\n    \"set\": \"Sword & Shield\",\n    \"number\": \"1\",\n    \"images\": { \"small\": \"https://assets.tcgdex.net/en/swsh/swsh1/1/low.webp\", \"large\": \"https://assets.tcgdex.net/en/swsh/swsh1/1/high.webp\" }\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/collection/add",

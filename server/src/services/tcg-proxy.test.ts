@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 import {
   getCardById,
   searchCards,
@@ -6,26 +6,27 @@ import {
 } from "./tcg-proxy";
 
 /**
- * Minimal upstream card record for test fixtures.
+ * Minimal TCGdex card record for test fixtures.
  */
 const upstreamCard = (overrides: Partial<Record<string, unknown>> = {}) => ({
-  id: "swsh4-107",
+  id: "swsh3-136",
   name: "Charizard",
-  supertype: "Pokémon",
+  localId: "136",
+  category: "Pokemon",
   types: ["Fire"],
+  image: "https://assets.tcgdex.net/en/swsh/swsh3/136",
   set: {
-    id: "swsh4",
-    name: "Vivid Voltage",
-    series: "Sword & Shield",
-    printedTotal: 185,
-    total: 205,
-    ptcgoCode: "VIV",
-    releaseDate: "2020/01/01",
-    updatedAt: "2020/01/01",
-    images: { symbol: "", logo: "" }
+    id: "swsh3",
+    name: "Darkness Ablaze",
+    serie: { id: "swsh", name: "Sword & Shield" },
+    cardCount: { official: 189, total: 201 },
+    releaseDate: "2020-08-14",
+    logo: "https://assets.tcgdex.net/en/swsh/swsh3/logo.png",
+    symbol: "https://assets.tcgdex.net/en/swsh/swsh3/symbol.png"
   },
-  number: "107",
-  images: { small: "https://example.com/small.jpg", large: "https://example.com/large.jpg" },
+  rarity: "Rare Holo",
+  illustrator: "5ban Graphics",
+  hp: 170,
   ...overrides
 });
 
@@ -33,16 +34,12 @@ describe("tcg-proxy service", () => {
   const originalFetch = globalThis.fetch;
   let capturedRequest: { url: string; init: RequestInit } | undefined;
 
-  beforeAll(() => {
-    process.env.POKEMONTCG_API_KEY = "test-api-key";
-  });
-
   afterEach(() => {
     globalThis.fetch = originalFetch;
     capturedRequest = undefined;
   });
 
-  const stubOk = (jsonBody: unknown = { data: [] }): void => {
+  const stubOk = (jsonBody: unknown = []): void => {
     globalThis.fetch = async (_url: RequestInfo | URL, _init: RequestInit): Promise<Response> => {
       const url = typeof _url === "string" ? _url : _url.toString();
       capturedRequest = { url, init: _init };
@@ -69,45 +66,64 @@ describe("tcg-proxy service", () => {
   };
 
   describe("searchCards", () => {
-    it("forwards raw query to upstream and returns mapped cards", async () => {
-      stubOk({
-        data: [upstreamCard()],
-        totalCount: 1
-      });
+    it("sends request to TCGdex and returns mapped cards", async () => {
+      stubOk([upstreamCard()]);
 
-      const result = await searchCards("name:Charizard", 1, 20);
+      const result = await searchCards("Charizard", 1, 20);
 
       expect(capturedRequest).toBeDefined();
-      expect(capturedRequest?.url).toContain("https://api.pokemontcg.io/v2/cards");
-      expect(capturedRequest?.url).toContain("q=name%3ACharizard");
-      expect(capturedRequest?.url).toContain("page=1");
-      expect(capturedRequest?.url).toContain("pageSize=20");
+      expect(capturedRequest?.url).toContain("https://api.tcgdex.net/v2/en/cards");
+      expect(capturedRequest?.url).toContain("name=Charizard");
+      expect(capturedRequest?.url).toContain("pagination%3Apage=1");
+      expect(capturedRequest?.url).toContain("pagination%3AitemsPerPage=20");
 
       expect(result.totalCount).toBe(1);
       expect(result.cards).toHaveLength(1);
-      expect(result.cards[0].id).toBe("swsh4-107");
+      expect(result.cards[0].id).toBe("swsh3-136");
       expect(result.cards[0].name).toBe("Charizard");
-      expect(result.cards[0].images.small).toBe("https://example.com/small.jpg");
+      expect(result.cards[0].images.small).toBe(
+        "https://assets.tcgdex.net/en/swsh/swsh3/136/low.webp"
+      );
+      expect(result.cards[0].images.large).toBe(
+        "https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp"
+      );
     });
 
-    it("auto-prefixes simple keyword queries with name filter", async () => {
-      stubOk({ data: [], totalCount: 0 });
+    it("maps category to supertype", async () => {
+      stubOk([upstreamCard({ category: "Trainer" })]);
+      const result = await searchCards("Potion");
+      expect(result.cards[0].supertype).toBe("Trainer");
+    });
+
+    it("maps illustrator to artist", async () => {
+      stubOk([upstreamCard()]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].artist).toBe("5ban Graphics");
+    });
+
+    it("maps localId to number", async () => {
+      stubOk([upstreamCard()]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].number).toBe("136");
+    });
+
+    it("maps hp as string", async () => {
+      stubOk([upstreamCard({ hp: 170 })]);
+      const result = await searchCards("Charizard");
+      expect(result.cards[0].hp).toBe("170");
+    });
+
+    it("uses cards.length as totalCount", async () => {
+      stubOk([upstreamCard(), upstreamCard({ id: "swsh3-137", name: "Charizard VMAX" })]);
+      const result = await searchCards("Charizard");
+      expect(result.totalCount).toBe(2);
+    });
+
+    it("does not send an API key header", async () => {
+      stubOk([]);
       await searchCards("Pikachu");
-      expect(capturedRequest?.url).toContain('q=name%3A%22Pikachu%22');
-    });
-
-    it("does not auto-prefix raw pokemontcg.io query expressions", async () => {
-      stubOk({ data: [], totalCount: 0 });
-      await searchCards("set:base1 supertype:Pokémon");
-      expect(capturedRequest?.url).toContain("q=set%3Abase1+supertype%3APok%C3%A9mon");
-      expect(capturedRequest?.url).not.toContain('name%3A');
-    });
-
-    it("sends the API key header", async () => {
-      stubOk({ data: [], totalCount: 0 });
-      await searchCards("Pikachu");
-      expect(capturedRequest?.init.headers).toBeDefined();
-      expect(JSON.stringify(capturedRequest?.init.headers)).toContain("test-api-key");
+      const headers = capturedRequest?.init.headers as Record<string, string> | undefined;
+      expect(headers?.["X-Api-Key"]).toBeUndefined();
     });
 
     it("throws TcgProxyServiceError when upstream returns non-OK", async () => {
@@ -133,8 +149,8 @@ describe("tcg-proxy service", () => {
       }
     });
 
-    it("throws with status 502 when data field is missing", async () => {
-      stubOk({ totalCount: 0 });
+    it("throws with status 502 when response is not an array", async () => {
+      stubOk({ unexpected: "object" });
       try {
         await searchCards("xxx");
         throw new Error("should have thrown");
@@ -147,24 +163,36 @@ describe("tcg-proxy service", () => {
 
   describe("getCardById", () => {
     it("returns mapped card on success", async () => {
-      stubOk({ data: upstreamCard({ id: "base1-58", name: "Pikachu" }) });
+      stubOk(upstreamCard({ id: "base1-58", name: "Pikachu", localId: "58" }));
       const card = await getCardById("base1-58");
 
       expect(card).not.toBeNull();
       expect(card?.id).toBe("base1-58");
       expect(card?.name).toBe("Pikachu");
+      expect(card?.number).toBe("58");
     });
 
     it("returns null when upstream returns 404", async () => {
       globalThis.fetch = async (): Promise<Response> =>
-        new Response(JSON.stringify({ error: "Not Found" }), { status: 404 });
+        new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
       const card = await getCardById("missing");
       expect(card).toBeNull();
     });
 
     it("throws on upstream failure", async () => {
       stubUpstreamError(500);
-      await expect(getCardById("base1-58")).rejects.toThrow(TcgProxyServiceError);
+      await expect(getCardById("swsh3-136")).rejects.toThrow(TcgProxyServiceError);
+    });
+
+    it("builds correct image URLs", async () => {
+      stubOk(upstreamCard());
+      const card = await getCardById("swsh3-136");
+      expect(card?.images.small).toBe(
+        "https://assets.tcgdex.net/en/swsh/swsh3/136/low.webp"
+      );
+      expect(card?.images.large).toBe(
+        "https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp"
+      );
     });
   });
 });

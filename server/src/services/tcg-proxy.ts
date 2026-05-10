@@ -1,7 +1,6 @@
 import type { TcgCard, TcgSearchResponse } from "../../../shared/tcg";
-import { getOptionalEnvVar } from "../config/env";
 
-const UPSTREAM_BASE = "https://api.pokemontcg.io/v2";
+const UPSTREAM_BASE = "https://api.tcgdex.net/v2/en";
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 /**
@@ -16,20 +15,6 @@ export class TcgProxyServiceError extends Error {
     super(message);
     this.name = "TcgProxyServiceError";
   }
-}
-
-/**
- * Builds a `Headers` object that includes the upstream API key.
- */
-function buildHeaders(): Headers {
-  const key = getOptionalEnvVar("POKEMONTCG_API_KEY");
-  const headers = new Headers({
-    "Content-Type": "application/json"
-  });
-  if (key) {
-    headers.set("X-Api-Key", key);
-  }
-  return headers;
 }
 
 /**
@@ -61,42 +46,56 @@ async function fetchWithTimeout(
 }
 
 /**
- * Normalises the upstream JSON into our internal {@link TcgCard} shape.
+ * Normalises a TCGdex card object into our internal {@link TcgCard} shape.
  */
 function mapUpstreamCard(raw: unknown): TcgCard {
   const r = raw as Record<string, unknown>;
+  const set = r.set as Record<string, unknown> | undefined;
+  const serie = set?.serie as Record<string, unknown> | undefined;
+  const cardCount = set?.cardCount as Record<string, unknown> | undefined;
+  const imageBase = typeof r.image === "string" ? r.image : "";
+
   return {
     id: String(r.id ?? ""),
     name: String(r.name ?? ""),
-    supertype: String(r.supertype ?? ""),
-    subtypes: Array.isArray(r.subtypes) ? r.subtypes.map(String) : undefined,
+    supertype: String(r.category ?? ""),
+    subtypes: Array.isArray(r.variants) ? undefined : undefined,
     types: Array.isArray(r.types) ? r.types.map(String) : undefined,
-    set: typeof r.set === "string" ? r.set : (r.set as Record<string, unknown>)?.name ?? "",
-    setDetails: r.set ?? undefined,
-    hp: r.hp ?? undefined,
-    level: r.level ?? undefined,
-    evolvesFrom: r.evolvesFrom ?? undefined,
-    evolvesTo: Array.isArray(r.evolvesTo)
-      ? r.evolvesTo.map(String)
+    set: typeof set?.name === "string" ? set.name : "",
+    setDetails: set
+      ? {
+          id: String(set.id ?? ""),
+          name: String(set.name ?? ""),
+          series: typeof serie?.name === "string" ? serie.name : "",
+          printedTotal: Number(cardCount?.official ?? cardCount?.total ?? 0),
+          total: Number(cardCount?.total ?? 0),
+          releaseDate: String(set.releaseDate ?? ""),
+          images: {
+            symbol: typeof set.symbol === "string" ? set.symbol : "",
+            logo: typeof set.logo === "string" ? set.logo : ""
+          }
+        }
+      : undefined,
+    hp: r.hp !== undefined && r.hp !== null ? String(r.hp) : undefined,
+    evolvesFrom: typeof r.stage === "string" && r.evolvesFrom
+      ? String(r.evolvesFrom)
       : undefined,
     abilities: Array.isArray(r.abilities)
       ? r.abilities.map((a: unknown) => ({
           name: String((a as Record<string, unknown>).name ?? ""),
-          text: String((a as Record<string, unknown>).text ?? ""),
-          type: String((a as Record<string, unknown>).type ?? "")
+          text: String((a as Record<string, unknown>).effect ?? ""),
+          type: "Ability"
         }))
       : undefined,
     attacks: Array.isArray(r.attacks)
       ? r.attacks.map((a: unknown) => ({
           name: String((a as Record<string, unknown>).name ?? ""),
-          cost: Array.isArray((a as Record<string, unknown>).cost)
-            ? (a as Record<string, unknown>).cost.map(String)
-            : [],
+          cost: [],
           convertedEnergyCost: Number(
-            (a as Record<string, unknown>).convertedEnergyCost ?? 0
+            (a as Record<string, unknown>).cost ?? 0
           ),
           damage: String((a as Record<string, unknown>).damage ?? ""),
-          text: String((a as Record<string, unknown>).text ?? "")
+          text: String((a as Record<string, unknown>).effect ?? "")
         }))
       : undefined,
     weaknesses: Array.isArray(r.weaknesses)
@@ -111,35 +110,63 @@ function mapUpstreamCard(raw: unknown): TcgCard {
           value: String((w as Record<string, unknown>).value ?? "")
         }))
       : undefined,
-    retreatCost: Array.isArray(r.retreatCost)
-      ? r.retreatCost.map(String)
+    retreatCost: r.retreat !== undefined
+      ? Array(Number(r.retreat)).fill("Colorless")
       : undefined,
-    convertedRetreatCost: r.convertedRetreatCost ?? undefined,
+    convertedRetreatCost: r.retreat !== undefined ? Number(r.retreat) : undefined,
     rules: Array.isArray(r.rules) ? r.rules.map(String) : undefined,
-    number: String(r.number ?? ""),
-    artist: r.artist ?? undefined,
-    rarity: r.rarity ?? undefined,
-    flavorText: r.flavorText ?? undefined,
-    nationalPokedexNumbers: Array.isArray(r.nationalPokedexNumbers)
-      ? r.nationalPokedexNumbers.map(Number)
+    number: String(r.localId ?? ""),
+    artist: typeof r.illustrator === "string" ? r.illustrator : undefined,
+    rarity: typeof r.rarity === "string" ? r.rarity : undefined,
+    flavorText: typeof r.description === "string" ? r.description : undefined,
+    nationalPokedexNumbers: Array.isArray(r.dexIds)
+      ? r.dexIds.map(Number)
       : undefined,
-    legalities: r.legalities ?? undefined,
-    regulationMark: r.regulationMark ?? undefined,
+    legalities:
+      r.legal !== undefined
+        ? (r.legal as Record<string, string | null>)
+        : undefined,
+    regulationMark:
+      typeof r.regulationMark === "string" ? r.regulationMark : undefined,
     images: {
-      small: String((r.images as Record<string, unknown>)?.small ?? ""),
-      large: String((r.images as Record<string, unknown>)?.large ?? "")
+      small: imageBase ? `${imageBase}/low.webp` : "",
+      large: imageBase ? `${imageBase}/high.webp` : ""
     },
-    prices: r.prices ?? undefined,
-    holofoil: Boolean(r.holofoil ?? false)
+    prices: (() => {
+      const tcgplayer = r.tcgplayer as Record<string, unknown> | undefined;
+      const cardmarket = r.cardmarket as Record<string, unknown> | undefined;
+      if (!tcgplayer && !cardmarket) return undefined;
+      return {
+        tcgplayer: tcgplayer
+          ? {
+              url: String(tcgplayer.url ?? ""),
+              updatedAt: String(tcgplayer.updatedAt ?? ""),
+              prices: (tcgplayer.prices as Record<string, number | null>) ?? {}
+            }
+          : undefined,
+        cardmarket: cardmarket
+          ? {
+              url: String(cardmarket.url ?? ""),
+              updatedAt: String(cardmarket.updatedAt ?? ""),
+              prices:
+                (cardmarket.prices as Record<string, number | null>) ?? {}
+            }
+          : undefined
+      };
+    })(),
+    holofoil: (() => {
+      const variants = r.variants as Record<string, unknown> | undefined;
+      return Boolean(variants?.holo ?? variants?.firstEditionHolo ?? false);
+    })()
   };
 }
 
 /**
- * Searches pokemontcg.io for cards matching the provided query.
+ * Searches TCGdex for cards matching the provided name query.
  *
- * @param query     A pokemontcg.io query expression (e.g. `name:Charizard`)
+ * @param query     Plain card name (e.g. `Charizard`) or partial match
  * @param page      Page number (1-based)
- * @param pageSize  Items per page (capped at 250 by the upstream API)
+ * @param pageSize  Items per page
  * @returns Mapped search result
  * @throws TcgProxyServiceError on upstream failure or timeout
  */
@@ -148,23 +175,14 @@ export async function searchCards(
   page = 1,
   pageSize = 20
 ): Promise<TcgSearchResponse> {
-  /**
-   * Auto-prefix simple keyword queries with `name:` so users can type
-   * plain Pokemon names while still allowing power-users to pass raw
-   * pokemontcg.io query expressions (e.g. `set:base1 supertype:Pokémon`).
-   */
-  const normalisedQuery = /^[a-z0-9\-\s.]+$/i.test(query.trim())
-    ? `name:"${query.trim()}"`
-    : query;
-
   const url = new URL(`${UPSTREAM_BASE}/cards`);
-  url.searchParams.set("q", normalisedQuery);
-  url.searchParams.set("page", String(page));
-  url.searchParams.set("pageSize", String(pageSize));
+  url.searchParams.set("name", query.trim());
+  url.searchParams.set("pagination:page", String(page));
+  url.searchParams.set("pagination:itemsPerPage", String(pageSize));
 
   const response = await fetchWithTimeout(url.toString(), {
     method: "GET",
-    headers: buildHeaders()
+    headers: { "Content-Type": "application/json" }
   });
 
   if (!response.ok) {
@@ -181,28 +199,19 @@ export async function searchCards(
     throw new TcgProxyServiceError("Invalid upstream response body", 502);
   }
 
-  if (!body || typeof body !== "object") {
+  if (!Array.isArray(body)) {
     throw new TcgProxyServiceError("Unexpected upstream response shape", 502);
   }
 
-  const data = (body as Record<string, unknown>).data;
-  const totalCount = Number(
-    (body as Record<string, unknown>).totalCount ?? 0
-  );
+  const cards: TcgCard[] = body.map(mapUpstreamCard);
 
-  if (!Array.isArray(data)) {
-    throw new TcgProxyServiceError("Unexpected upstream response shape", 502);
-  }
-
-  const cards: TcgCard[] = data.map(mapUpstreamCard);
-
-  return { cards, totalCount };
+  return { cards, totalCount: cards.length };
 }
 
 /**
  * Fetches a single card by its unique identifier.
  *
- * @param id  The card id (e.g. `swsh4-107`)
+ * @param id  The card id (e.g. `swsh3-136`)
  * @returns   The card, or `null` if not found
  * @throws TcgProxyServiceError on upstream failure or timeout
  */
@@ -211,7 +220,7 @@ export async function getCardById(id: string): Promise<TcgCard | null> {
 
   const response = await fetchWithTimeout(url, {
     method: "GET",
-    headers: buildHeaders()
+    headers: { "Content-Type": "application/json" }
   });
 
   if (response.status === 404) {
@@ -236,10 +245,5 @@ export async function getCardById(id: string): Promise<TcgCard | null> {
     throw new TcgProxyServiceError("Unexpected upstream response shape", 502);
   }
 
-  const data = (body as Record<string, unknown>).data;
-  if (!data) {
-    throw new TcgProxyServiceError("Unexpected upstream response shape", 502);
-  }
-
-  return mapUpstreamCard(data);
+  return mapUpstreamCard(body);
 }
