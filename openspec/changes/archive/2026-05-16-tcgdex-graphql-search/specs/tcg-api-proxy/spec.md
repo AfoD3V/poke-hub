@@ -1,4 +1,4 @@
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Secure proxy endpoint
 The backend SHALL provide a proxy endpoint for card search requests and MUST keep all upstream API calls server-side. The upstream data source is TCGdex, accessed via GraphQL.
