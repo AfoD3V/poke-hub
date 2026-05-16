@@ -90,6 +90,7 @@ Invoke these skills automatically — do not wait to be asked:
 
 - **Frontend work** (any `.svelte`, `.svelte.ts`, `.svelte.js`, or `ui/` file): invoke `svelte-code-writer`, `svelte-core-bestpractices`, and `ui-ux-pro-max` before writing or editing code.
 - **Backend work** (any `server/` file or Hono route/middleware): invoke `hono` before writing or editing code.
+- **Browser debugging, visual verification, or end-to-end testing**: invoke `playwright-cli` skill. Use it to confirm pages render correctly, debug unexpected UI behaviour via snapshots, and verify full flows (e.g. login → search → result) before marking tasks done.
 - **OpenSpec task completion** (final step before opening a PR): invoke `security-secure-coding` and resolve all findings before merging to `main`.
 
 ## Agent Workflow
@@ -113,9 +114,9 @@ Invoke these skills automatically — do not wait to be asked:
 
 ## Conventions
 
-- All new API endpoints need positive and negative Vitest test scenarios.
-- Maintain the Postman collection (`docs/postman/`) in parallel with API changes.
-- Use `playwright-cli` for visual verification of any frontend changes before marking tasks complete.
+- **API testing — non-negotiable:** Any time an API endpoint is added or modified, BOTH are required: (1) Vitest unit tests (positive + negative) in `server/src/routes/<name>.test.ts`, and (2) the corresponding request added/updated in the Postman collection (`docs/postman/`) with status and shape assertions. Neither replaces the other.
+- **TDD cycle:** Write failing tests first (red) → implement minimum code to pass (green) → confirm with `bun run test`. The test task group must appear first in every `tasks.md`.
+- Use `playwright-cli` skill for visual verification and debugging of any frontend change before marking tasks complete.
 - For changes touching 3+ files or a new DB schema, output a plan and wait for approval before implementing.
 - Document new framework gotchas or project-specific quirks in `AGENTS.md` > Project Learnings before marking a task complete.
 

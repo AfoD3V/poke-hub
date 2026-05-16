@@ -139,6 +139,64 @@ describe("tcg-proxy routes", () => {
     });
   });
 
+  describe("GET /api/cards/by-set", () => {
+    it("returns 400 when setId is missing", async () => {
+      const app = await buildApp();
+      const res = await app.request("/api/cards/by-set?cardNumber=112");
+      expect(res.status).toBe(400);
+      await expect(res.json()).resolves.toEqual({
+        error: "Missing required parameters: setId and cardNumber"
+      });
+    });
+
+    it("returns 400 when cardNumber is missing", async () => {
+      const app = await buildApp();
+      const res = await app.request("/api/cards/by-set?setId=SVN");
+      expect(res.status).toBe(400);
+      await expect(res.json()).resolves.toEqual({
+        error: "Missing required parameters: setId and cardNumber"
+      });
+    });
+
+    it("returns 400 when both params are missing", async () => {
+      const app = await buildApp();
+      const res = await app.request("/api/cards/by-set");
+      expect(res.status).toBe(400);
+      await expect(res.json()).resolves.toEqual({
+        error: "Missing required parameters: setId and cardNumber"
+      });
+    });
+
+    it("returns the card on success", async () => {
+      stubOk(tcgdexCard({ id: "svn-112", name: "Pikachu", localId: "112" }));
+
+      const app = await buildApp();
+      const res = await app.request("/api/cards/by-set?setId=SVN&cardNumber=112");
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.id).toBe("svn-112");
+      expect(body.name).toBe("Pikachu");
+    });
+
+    it("returns 404 when card is not found upstream", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
+
+      const app = await buildApp();
+      const res = await app.request("/api/cards/by-set?setId=SVN&cardNumber=999");
+      expect(res.status).toBe(404);
+      await expect(res.json()).resolves.toEqual({ error: "Card not found" });
+    });
+
+    it("returns 502 on upstream failure", async () => {
+      stubUpstreamError(500);
+      const app = await buildApp();
+      const res = await app.request("/api/cards/by-set?setId=SVN&cardNumber=112");
+      expect(res.status).toBe(502);
+      await expect(res.json()).resolves.toHaveProperty("error");
+    });
+  });
+
   describe("GET /api/cards/:id", () => {
     it("returns card by id", async () => {
       stubOk(restCard({ id: "base1-58", name: "Pikachu", localId: "58" }));

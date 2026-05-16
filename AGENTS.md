@@ -78,9 +78,16 @@ Invoke these skills automatically — do not wait to be asked.
 | --- | --- |
 | Any frontend file (`.svelte`, `.svelte.ts`, `.svelte.js`, or anything under `ui/`) | `svelte-code-writer`, `svelte-core-bestpractices`, `ui-ux-pro-max` |
 | Any backend file (anything under `server/`, Hono routes, middleware, services) | `hono` |
+| Browser debugging, visual verification, or end-to-end testing of any UI change | `playwright-cli` |
 | Final step of any OpenSpec task implementation (before opening a PR) | `security-secure-coding` |
 
 **Security gate:** The `security-secure-coding` skill must be run as the last step after all tests pass and before `gh pr create`. All findings must be resolved — do not open the PR until the skill reports no outstanding issues.
+
+**Playwright CLI skill:** The `playwright-cli` skill provides browser automation for debugging, checking correctness, and visual verification. Use it for:
+- Confirming a page renders correctly after any frontend change.
+- Debugging unexpected UI behaviour (snapshots reveal the accessibility tree; screenshots reveal visuals).
+- End-to-end flow verification (e.g. login → search → result) before marking a task done.
+- Never use `playwright-cli open <url>` a second time during a session — it resets cookies. Navigate within the session using `playwright-cli click <ref>` on nav links.
 
 ---
 
@@ -133,8 +140,12 @@ Invoke these skills automatically — do not wait to be asked.
 - Frontend tests: use Vitest + Svelte Testing Library for component rendering and state verification.
 - UI states: always handle loading and error states in the UI.
 - Task verification steps must be actionable. For tasks broken into steps (e.g., 1.1, 1.2, 1.3), each step's verification MUST be executable either manually or with tests at that stage.
-- All API endpoints must include positive and negative test scenarios.
-- Maintain a Postman collection in parallel for all API testing; whenever adding new tests, update the collection with high-quality requests and appropriate test scripts.
+
+**API testing rule — non-negotiable:** Any time an API endpoint is added or modified, BOTH of the following are required before the task is considered done:
+1. **Vitest unit tests** — at minimum one positive scenario (happy path) and one negative scenario (error/invalid input) in `server/src/routes/<name>.test.ts`.
+2. **Postman collection** — add or update the corresponding request in `docs/postman/pokehub.postman_collection.json` with appropriate test scripts (status code assertions, response shape checks).
+
+Neither replaces the other. Both are required, every time, for every endpoint.
 
 ### Communication and Implementation
 
@@ -156,17 +167,6 @@ Invoke these skills automatically — do not wait to be asked.
 - **When updating `CLAUDE.md`** (e.g. adding a gotcha, changing a command, updating the current phase): ensure `AGENTS.md` reflects the same information in the appropriate section.
 - Both files must be updated in the **same commit**. A change to one file without the corresponding update to the other is incomplete.
 - `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, tooling config). `CLAUDE.md` contains the distilled, actionable version. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`.
-
----
-
-### Keeping AGENTS.md and CLAUDE.md in Sync
-
-`AGENTS.md` and `CLAUDE.md` are the two primary sources of truth for AI agents in this repo and **must always be consistent with each other**.
-
-- **When updating `AGENTS.md`** (e.g. adding a Project Learning, changing a directive, updating current status): reflect the relevant change in `CLAUDE.md` as well — update the corresponding section or add a new entry.
-- **When updating `CLAUDE.md`** (e.g. adding a gotcha, changing a command, updating the current phase): ensure `AGENTS.md` reflects the same information in the appropriate section.
-- Both files must be updated in the **same commit**. A change to one file without the corresponding update to the other is incomplete.
-- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, MCP config). `CLAUDE.md` contains the distilled, actionable version. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`.
 
 ---
 

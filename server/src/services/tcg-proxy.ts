@@ -375,6 +375,50 @@ export async function searchCards(
 }
 
 /**
+ * Fetches a single card by set ID and local card number.
+ *
+ * @param setId       The TCGdex set code (e.g. `SVN`)
+ * @param cardNumber  The card's local number within the set (e.g. `112`)
+ * @returns           The matched card
+ * @throws TcgProxyServiceError with status 404 if not found, 502/504 on upstream failure
+ */
+export async function getCardBySetAndNumber(
+  setId: string,
+  cardNumber: string
+): Promise<TcgCard> {
+  const url = `${UPSTREAM_BASE}/sets/${encodeURIComponent(setId)}/${encodeURIComponent(cardNumber)}`;
+
+  const response = await fetchWithTimeout(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  });
+
+  if (response.status === 404) {
+    throw new TcgProxyServiceError("Card not found", 404);
+  }
+
+  if (!response.ok) {
+    throw new TcgProxyServiceError(
+      `Upstream returned ${response.status}`,
+      502
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new TcgProxyServiceError("Invalid upstream response body", 502);
+  }
+
+  if (!body || typeof body !== "object") {
+    throw new TcgProxyServiceError("Unexpected upstream response shape", 502);
+  }
+
+  return mapUpstreamCard(body);
+}
+
+/**
  * Fetches a single card by its unique identifier.
  *
  * @param id  The card id (e.g. `swsh3-136`)

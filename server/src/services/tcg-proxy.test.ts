@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import {
   getCardById,
+  getCardBySetAndNumber,
   searchCards,
   TcgProxyServiceError
 } from "./tcg-proxy";
@@ -357,6 +358,69 @@ describe("tcg-proxy service", () => {
       } catch (err) {
         expect(err).toBeInstanceOf(TcgProxyServiceError);
         expect((err as TcgProxyServiceError).statusCode).toBe(502);
+      }
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getCardBySetAndNumber — REST
+  // ---------------------------------------------------------------------------
+  describe("getCardBySetAndNumber", () => {
+    it("returns mapped card on success", async () => {
+      stubOk(upstreamCard({ id: "svn-112", name: "Pikachu", localId: "112" }));
+      const card = await getCardBySetAndNumber("SVN", "112");
+
+      expect(card.id).toBe("svn-112");
+      expect(card.name).toBe("Pikachu");
+      expect(card.number).toBe("112");
+    });
+
+    it("builds the correct upstream URL", async () => {
+      stubOk(upstreamCard());
+      await getCardBySetAndNumber("SVN", "112");
+      expect(capturedRequest?.url).toContain("/sets/SVN/112");
+    });
+
+    it("throws TcgProxyServiceError with status 404 when upstream returns 404", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
+
+      try {
+        await getCardBySetAndNumber("SVN", "999");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(TcgProxyServiceError);
+        expect((err as TcgProxyServiceError).statusCode).toBe(404);
+        expect((err as TcgProxyServiceError).message).toBe("Card not found");
+      }
+    });
+
+    it("throws TcgProxyServiceError with status 502 when upstream returns 500", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify({ error: "fail" }), { status: 500 });
+
+      try {
+        await getCardBySetAndNumber("SVN", "112");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(TcgProxyServiceError);
+        expect((err as TcgProxyServiceError).statusCode).toBe(502);
+      }
+    });
+
+    it("throws TcgProxyServiceError with status 504 on timeout", async () => {
+      globalThis.fetch = async (): Promise<Response> => {
+        const err = new Error("The operation was aborted.");
+        err.name = "AbortError";
+        throw err;
+      };
+
+      try {
+        await getCardBySetAndNumber("SVN", "112");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(TcgProxyServiceError);
+        expect((err as TcgProxyServiceError).statusCode).toBe(504);
       }
     });
   });
