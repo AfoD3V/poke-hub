@@ -135,3 +135,61 @@ export interface SetItem {
   /** Release date string (e.g. "2023-09-22") */
   releaseDate: string;
 }
+
+/**
+ * A single series entry from the series list endpoint.
+ */
+export interface SeriesItem {
+  /** TCGdex series ID (e.g. "sv") */
+  id: string;
+  /** Human-readable series name (e.g. "Scarlet & Violet") */
+  name: string;
+  /** Series logo URL, or empty string if unavailable */
+  logo: string;
+  /** Release date string (e.g. "2023-03-31"), or empty string if unknown */
+  releaseDate: string;
+}
+
+/**
+ * A single set entry embedded within a series detail response.
+ */
+export interface SeriesSetItem {
+  /** TCGdex set ID (e.g. "sv03.5") */
+  id: string;
+  /** Human-readable set name (e.g. "151") */
+  name: string;
+  /** Set logo URL, or empty string if unavailable */
+  logo: string;
+  /** Number of official cards in the set */
+  cardCount: number;
+}
+
+/**
+ * Detailed series data including its sets.
+ */
+export interface SeriesDetail {
+  /** TCGdex series ID */
+  id: string;
+  /** Human-readable series name */
+  name: string;
+  /** Series logo URL, or empty string */
+  logo: string;
+  /** Release date string, or empty string */
+  releaseDate: string;
+  /** Sets belonging to this series */
+  sets: SeriesSetItem[];
+}
+
+/**
+ * Lightweight card entry returned by the set-cards endpoint.
+ */
+export interface SetCardItem {
+  /** Unique card identifier */
+  id: string;
+  /** Card name */
+  name: string;
+  /** Card's local number within the set */
+  localId: string;
+  /** Base image URL (without extension), or empty string */
+  image: string;
+}

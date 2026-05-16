@@ -5,6 +5,11 @@ import {
   getSets,
   _resetSetsCache,
   searchCards,
+  getSeries,
+  getSeriesById,
+  getSetCards,
+  _resetSeriesCache,
+  _resetSetCardsCache,
   TcgProxyServiceError
 } from "./tcg-proxy";
 
@@ -566,5 +571,322 @@ describe("getSets service", () => {
     await getSets();
     await getSets();
     expect(fetchCount).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TCGdex series fixtures
+// ---------------------------------------------------------------------------
+const tcgdexSeriesListItem = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  id: "sv",
+  name: "Scarlet & Violet",
+  logo: "https://assets.tcgdex.net/univ/sv/logo.png",
+  ...overrides
+});
+
+const tcgdexSeriesDetail = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  id: "sv",
+  name: "Scarlet & Violet",
+  logo: "https://assets.tcgdex.net/univ/sv/logo.png",
+  releaseDate: "2023-03-31",
+  sets: [
+    { id: "sv03.5", name: "151", logo: "https://assets.tcgdex.net/en/sv/sv03.5/logo.png", cardCount: { official: 165 } }
+  ],
+  ...overrides
+});
+
+// ---------------------------------------------------------------------------
+// getSeries
+// ---------------------------------------------------------------------------
+describe("getSeries service", () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    _resetSeriesCache();
+    globalThis.fetch = originalFetch;
+  });
+
+  afterEach(() => {
+    _resetSeriesCache();
+    globalThis.fetch = originalFetch;
+  });
+
+  // Stubs series list then detail responses (fan-out pattern)
+  const stubSeriesList = (list: unknown[], detailFn: (id: string) => unknown): void => {
+    globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+      const urlStr = typeof url === "string" ? url : url.toString();
+      if (urlStr.match(/\/series\/[^/]+$/)) {
+        const id = urlStr.split("/").pop()!;
+        const detail = detailFn(id);
+        return new Response(JSON.stringify(detail), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      // series list
+      return new Response(JSON.stringify(list), { status: 200, headers: { "Content-Type": "application/json" } });
+    };
+  };
+
+  it("returns array of SeriesItem sorted by releaseDate descending (dated first)", async () => {
+    const list = [
+      tcgdexSeriesListItem({ id: "bw", name: "Black & White" }),
+      tcgdexSeriesListItem({ id: "sv", name: "Scarlet & Violet" })
+    ];
+    stubSeriesList(list, (id) =>
+      id === "sv"
+        ? tcgdexSeriesDetail({ id: "sv", name: "Scarlet & Violet", releaseDate: "2023-03-31" })
+        : tcgdexSeriesDetail({ id: "bw", name: "Black & White", releaseDate: "2011-04-25" })
+    );
+
+    const result = await getSeries();
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe("sv"); // newest first
+    expect(result[1].id).toBe("bw");
+  });
+
+  it("undated series appear last, sorted alphabetically", async () => {
+    const list = [
+      tcgdexSeriesListItem({ id: "misc", name: "Miscellaneous" }),
+      tcgdexSeriesListItem({ id: "sv", name: "Scarlet & Violet" }),
+      tcgdexSeriesListItem({ id: "promo", name: "Promos" })
+    ];
+    stubSeriesList(list, (id) => {
+      if (id === "sv") return tcgdexSeriesDetail({ id: "sv", releaseDate: "2023-03-31" });
+      return tcgdexSeriesDetail({ id, releaseDate: "" });
+    });
+
+    const result = await getSeries();
+    expect(result[0].id).toBe("sv"); // dated first
+    // undated in alpha order
+    const undated = result.slice(1).map((s) => s.name);
+    expect(undated).toEqual([...undated].sort());
+  });
+
+  it("throws TcgProxyServiceError(502) when series list upstream fails", async () => {
+    globalThis.fetch = async (): Promise<Response> =>
+      new Response(JSON.stringify({ error: "fail" }), { status: 502 });
+
+    await expect(getSeries()).rejects.toThrow(TcgProxyServiceError);
+    try {
+      await getSeries();
+    } catch (err) {
+      expect((err as TcgProxyServiceError).statusCode).toBe(502);
+    }
+  });
+
+  it("second call within TTL makes only one upstream request to list endpoint", async () => {
+    let listFetchCount = 0;
+    globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+      const urlStr = typeof url === "string" ? url : url.toString();
+      if (!urlStr.match(/\/series\/[^/]+$/)) listFetchCount++;
+      return new Response(
+        JSON.stringify(urlStr.match(/\/series\/[^/]+$/) ? tcgdexSeriesDetail() : [tcgdexSeriesListItem()]),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    };
+
+    await getSeries();
+    await getSeries();
+    expect(listFetchCount).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSeriesById
+// ---------------------------------------------------------------------------
+describe("getSeriesById service", () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    _resetSeriesCache();
+    globalThis.fetch = originalFetch;
+  });
+
+  afterEach(() => {
+    _resetSeriesCache();
+    globalThis.fetch = originalFetch;
+  });
+
+  it("returns SeriesDetail with sets array on valid id", async () => {
+    globalThis.fetch = async (): Promise<Response> =>
+      new Response(JSON.stringify(tcgdexSeriesDetail()), { status: 200, headers: { "Content-Type": "application/json" } });
+
+    const result = await getSeriesById("sv");
+    expect(result.id).toBe("sv");
+    expect(result.name).toBe("Scarlet & Violet");
+    expect(Array.isArray(result.sets)).toBe(true);
+    expect(result.sets).toHaveLength(1);
+    expect(result.sets[0].id).toBe("sv03.5");
+  });
+
+  it("throws TcgProxyServiceError(404) on unknown id", async () => {
+    globalThis.fetch = async (): Promise<Response> =>
+      new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
+
+    try {
+      await getSeriesById("nonexistent");
+      throw new Error("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(TcgProxyServiceError);
+      expect((err as TcgProxyServiceError).statusCode).toBe(404);
+    }
+  });
+
+  it("second call for same id makes only one upstream request (cache hit)", async () => {
+    let fetchCount = 0;
+    globalThis.fetch = async (): Promise<Response> => {
+      fetchCount++;
+      return new Response(JSON.stringify(tcgdexSeriesDetail()), { status: 200, headers: { "Content-Type": "application/json" } });
+    };
+
+    await getSeriesById("sv");
+    await getSeriesById("sv");
+    expect(fetchCount).toBe(1);
+  });
+
+  it("throws TcgProxyServiceError(502) on upstream error", async () => {
+    globalThis.fetch = async (): Promise<Response> =>
+      new Response(JSON.stringify({ error: "fail" }), { status: 500 });
+
+    try {
+      await getSeriesById("sv");
+      throw new Error("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(TcgProxyServiceError);
+      expect((err as TcgProxyServiceError).statusCode).toBe(502);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSetCards
+// ---------------------------------------------------------------------------
+const tcgdexSetDetail = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  id: "sv03.5",
+  name: "151",
+  cards: [
+    { id: "sv03.5-10", name: "Metapod", localId: "10", image: "https://assets.tcgdex.net/en/sv/sv03.5/10" },
+    { id: "sv03.5-1", name: "Bulbasaur", localId: "1", image: "https://assets.tcgdex.net/en/sv/sv03.5/1" },
+    { id: "sv03.5-2", name: "Ivysaur", localId: "2", image: null }
+  ],
+  ...overrides
+});
+
+describe("getSetCards service", () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    _resetSetCardsCache();
+    globalThis.fetch = originalFetch;
+  });
+
+  afterEach(() => {
+    _resetSetCardsCache();
+    globalThis.fetch = originalFetch;
+  });
+
+  it("returns card array ordered by localId ascending", async () => {
+    globalThis.fetch = async (): Promise<Response> =>
+      new Response(JSON.stringify(tcgdexSetDetail()), { status: 200, headers: { "Content-Type": "application/json" } });
+
+    const result = await getSetCards("sv03.5");
+    expect(result).toHaveLength(3);
+    expect(result[0].localId).toBe("1");
+    expect(result[1].localId).toBe("2");
+    expect(result[2].localId).toBe("10");
+  });
+
+  it("returns cards with id, name, localId, image fields", async () => {
+    globalThis.fetch = async (): Promise<Response> =>
+      new Response(JSON.stringify(tcgdexSetDetail()), { status: 200, headers: { "Content-Type": "application/json" } });
+
+    const result = await getSetCards("sv03.5");
+    expect(result[0]).toHaveProperty("id");
+    expect(result[0]).toHaveProperty("name");
+    expect(result[0]).toHaveProperty("localId");
+    expect(result[0]).toHaveProperty("image");
+  });
+
+  it("throws TcgProxyServiceError(404) on unknown set", async () => {
+    globalThis.fetch = async (): Promise<Response> =>
+      new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
+
+    try {
+      await getSetCards("nonexistent");
+      throw new Error("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(TcgProxyServiceError);
+      expect((err as TcgProxyServiceError).statusCode).toBe(404);
+    }
+  });
+
+  it("second call for same setId makes only one upstream request (cache hit)", async () => {
+    let fetchCount = 0;
+    globalThis.fetch = async (): Promise<Response> => {
+      fetchCount++;
+      return new Response(JSON.stringify(tcgdexSetDetail()), { status: 200, headers: { "Content-Type": "application/json" } });
+    };
+
+    await getSetCards("sv03.5");
+    await getSetCards("sv03.5");
+    expect(fetchCount).toBe(1);
+  });
+
+  it("throws TcgProxyServiceError(502) when upstream returns 502", async () => {
+    globalThis.fetch = async (): Promise<Response> =>
+      new Response(JSON.stringify({ error: "fail" }), { status: 502 });
+
+    try {
+      await getSetCards("sv03.5");
+      throw new Error("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(TcgProxyServiceError);
+      expect((err as TcgProxyServiceError).statusCode).toBe(502);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// searchCards with lang param
+// ---------------------------------------------------------------------------
+describe("searchCards with lang param", () => {
+  const originalFetch = globalThis.fetch;
+  let capturedUrl = "";
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    capturedUrl = "";
+  });
+
+  const stubGraphQLOkLang = (cards: unknown[] = []): void => {
+    globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+      capturedUrl = typeof url === "string" ? url : url.toString();
+      return new Response(JSON.stringify({ data: { cards } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+  };
+
+  it("defaults to English endpoint when lang is not provided", async () => {
+    stubGraphQLOkLang([]);
+    await searchCards("Pikachu");
+    // TCGdex GraphQL is language-agnostic; lang param is validated but doesn't change the URL
+    expect(capturedUrl).toContain("/v2/graphql");
+  });
+
+  it("uses the base graphql endpoint regardless of lang", async () => {
+    stubGraphQLOkLang([]);
+    await searchCards("ピカチュウ", 1, 20, "ja");
+    expect(capturedUrl).toContain("/v2/graphql");
+  });
+
+  it("throws TcgProxyServiceError(400) for unsupported language code", async () => {
+    try {
+      await searchCards("Pikachu", 1, 20, "zz");
+      throw new Error("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(TcgProxyServiceError);
+      expect((err as TcgProxyServiceError).statusCode).toBe(400);
+      expect((err as TcgProxyServiceError).message).toContain("Unsupported language: zz");
+    }
   });
 });
