@@ -357,6 +357,192 @@
       }
     },
     {
+      "name": "Series - List (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response is a non-empty array with id, name, releaseDate', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array').that.is.not.empty;",
+              "  pm.expect(body[0]).to.have.property('id');",
+              "  pm.expect(body[0]).to.have.property('name');",
+              "  pm.expect(body[0]).to.have.property('releaseDate');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/series",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "series"]
+        }
+      }
+    },
+    {
+      "name": "Series - Detail (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has id and non-empty sets array', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('id');",
+              "  pm.expect(body).to.have.property('sets');",
+              "  pm.expect(body.sets).to.be.an('array').that.is.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/series/sv",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "series", "sv"]
+        }
+      }
+    },
+    {
+      "name": "Series - Detail (Not Found)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 404', () => {",
+              "  pm.expect(pm.response.code).to.equal(404);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/series/nonexistent-series-xyz",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "series", "nonexistent-series-xyz"]
+        }
+      }
+    },
+    {
+      "name": "Set Cards - List (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response is non-empty array with id, name, localId, image', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array').that.is.not.empty;",
+              "  pm.expect(body[0]).to.have.property('id');",
+              "  pm.expect(body[0]).to.have.property('name');",
+              "  pm.expect(body[0]).to.have.property('localId');",
+              "  pm.expect(body[0]).to.have.property('image');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/sets/sv03.5/cards",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "sets", "sv03.5", "cards"]
+        }
+      }
+    },
+    {
+      "name": "Cards - Search (Japanese)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has cards array', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('cards');",
+              "  pm.expect(body.cards).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/search?q=ピカチュウ&lang=ja",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "search"],
+          "query": [
+            { "key": "q", "value": "ピカチュウ" },
+            { "key": "lang", "value": "ja" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cards - Search (Invalid Lang)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 400', () => {",
+              "  pm.expect(pm.response.code).to.equal(400);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/search?q=Pikachu&lang=zz",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "search"],
+          "query": [
+            { "key": "q", "value": "Pikachu" },
+            { "key": "lang", "value": "zz" }
+          ]
+        }
+      }
+    },
+    {
       "name": "Auth - Register (Positive)",
       "event": [
         {
@@ -918,6 +1104,208 @@
             "collection",
             "remove"
           ]
+        }
+      }
+    },
+    {
+      "name": "Chase - Get List (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has entries array', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('entries');",
+              "  pm.expect(body.entries).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/chase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Get List (Negative - unauthenticated)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 401', () => {",
+              "  pm.expect(pm.response.code).to.equal(401);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/chase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Add Card (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 201', () => {",
+              "  pm.expect(pm.response.code).to.equal(201);",
+              "});",
+              "pm.test('response has entry with cardId', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('entry');",
+              "  pm.expect(body.entry).to.have.property('cardId');",
+              "  pm.expect(body.entry).to.have.property('cardSnapshot');",
+              "  pm.expect(body.entry).to.have.property('addedAt');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardId\":\"sv1-001\",\"cardSnapshot\":{\"name\":\"Bulbasaur\",\"setName\":\"Scarlet & Violet\",\"setId\":\"sv1\",\"imageSmall\":\"https://images.pokemontcg.io/sv1/1_hires.png\"}}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/chase/add",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase", "add"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Add Card (Negative - missing cardId)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 400', () => {",
+              "  pm.expect(pm.response.code).to.equal(400);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardSnapshot\":{\"name\":\"Bulbasaur\",\"setName\":\"Scarlet & Violet\",\"setId\":\"sv1\",\"imageSmall\":\"\"}}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/chase/add",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase", "add"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Remove Card (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has success true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.equal(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardId\":\"sv1-001\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/chase/remove",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase", "remove"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Remove Card (Negative - not found)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 404', () => {",
+              "  pm.expect(pm.response.code).to.equal(404);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardId\":\"card-does-not-exist\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/chase/remove",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase", "remove"]
         }
       }
     },

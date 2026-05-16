@@ -5,6 +5,7 @@
 	import type { TcgCard } from '$shared/tcg';
 
 	export let card: TcgCard;
+	export let chaseIds: Set<string> = new Set();
 
 	const dispatch = createEventDispatcher<{ close: void }>();
 
@@ -12,6 +13,46 @@
 	type AddState = 'idle' | 'loading' | 'success' | 'error';
 	let addState: AddState = 'idle';
 	let addError = '';
+
+	// ── Chase state ───────────────────────────────────────────────────────────
+	// localChasing overrides the prop for optimistic UI; null = defer to prop
+	let localChasing: boolean | null = null;
+	$: isChasing = localChasing !== null ? localChasing : chaseIds.has(card.id);
+	let chaseLoading = false;
+
+	async function toggleChase() {
+		if (chaseLoading) return;
+		const newVal = !isChasing;
+		localChasing = newVal;
+		chaseLoading = true;
+		try {
+			if (newVal) {
+				const snapshot = {
+					name: card.name,
+					setName: card.setDetails?.name ?? card.set,
+					setId: card.setDetails?.id ?? '',
+					imageSmall: card.images?.small ?? ''
+				};
+				const res = await fetch('/api/chase/add', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ cardId: card.id, cardSnapshot: snapshot })
+				});
+				if (!res.ok) throw new Error('Failed to add to chase list');
+			} else {
+				const res = await fetch('/api/chase/remove', {
+					method: 'DELETE',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ cardId: card.id })
+				});
+				if (!res.ok) throw new Error('Failed to remove from chase list');
+			}
+		} catch {
+			localChasing = !newVal; // revert optimistic update
+		} finally {
+			chaseLoading = false;
+		}
+	}
 
 	async function addToCollection() {
 		if (addState === 'loading' || addState === 'success') return;
@@ -66,6 +107,24 @@
 	// ── Flip state ────────────────────────────────────────────────────────────
 	let flipped  = false;
 	let closing  = false;
+
+	let imgSrcIdx = 0;
+	$: imgSrcs = (() => {
+		const large = card.images?.large ?? '';
+		const small = card.images?.small ?? '';
+		const srcs: string[] = [];
+		if (large) srcs.push(large);
+		if (small && small !== large) srcs.push(small);
+		if (large) srcs.push(large.replace('.webp', '.png'));
+		if (small && small !== large) srcs.push(small.replace('.webp', '.png'));
+		return srcs;
+	})();
+	$: modalImgSrc = imgSrcs[imgSrcIdx] ?? (card.images?.small ?? '');
+	$: if (card) imgSrcIdx = 0;
+
+	function handleModalImgError() {
+		imgSrcIdx = Math.min(imgSrcIdx + 1, imgSrcs.length);
+	}
 
 	// ── Independent spring stores for the modal card ──────────────────────────
 	const seed = { x: Math.random(), y: Math.random() };
@@ -142,7 +201,6 @@
 </script>
 
 <!-- Backdrop: click-to-close on the overlay itself (not its children) -->
-<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div
 	class="overlay"
 	on:click={(e) => e.target === e.currentTarget && close()}
@@ -199,11 +257,12 @@
 				<div class="card__perspective">
 					<div class="card__rotator">
 						<img
-							src={card.images.large ?? card.images.small}
+							src={modalImgSrc}
 							alt={card.name}
 							width="660"
 							height="921"
 							draggable="false"
+							on:error={handleModalImgError}
 						/>
 						<div class="card__shine" aria-hidden="true"></div>
 						<div class="card__glare"  aria-hidden="true"></div>
@@ -263,8 +322,34 @@
 			{/if}
 		</div>
 
-		<!-- Add to collection -->
+		<!-- Actions: Add to Collection + Chase -->
 		<div class="action-row">
+			<!-- Chase toggle button -->
+			<button
+				class="chase-btn"
+				class:chase-btn--active={isChasing}
+				disabled={chaseLoading}
+				on:click={toggleChase}
+				aria-label="{isChasing ? 'Remove' : 'Add'} {card.name} {isChasing ? 'from' : 'to'} chase list"
+			>
+				{#if chaseLoading}
+					<svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+					</svg>
+					{isChasing ? 'Removing…' : 'Adding…'}
+				{:else if isChasing}
+					<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+						<path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd"/>
+					</svg>
+					Chasing
+				{:else}
+					<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+					</svg>
+					Chase
+				{/if}
+			</button>
+
 			<button
 				class="add-btn"
 				class:add-btn--success={addState === 'success'}
@@ -1066,13 +1151,50 @@
 		margin: 0;
 	}
 
-	/* ── Add-to-collection ───────────────────────────────────────────────────*/
+	/* ── Actions ────────────────────────────────────────────────────────────*/
 	.action-row {
 		margin-top: 1.25rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
+
+	/* Chase button */
+	.chase-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-family: 'Geist', sans-serif;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: #a78bfa;
+		background: rgba(167, 139, 250, 0.10);
+		border: 1px solid rgba(167, 139, 250, 0.30);
+		border-radius: 0.5rem;
+		padding: 0.5rem 1rem;
+		cursor: pointer;
+		transition: background 0.2s, border-color 0.2s, color 0.2s;
+		align-self: flex-start;
+		width: 100%;
+		justify-content: center;
+		min-height: 44px;
+	}
+	.chase-btn:hover:not(:disabled) {
+		background: rgba(167, 139, 250, 0.20);
+		border-color: rgba(167, 139, 250, 0.55);
+		color: #c4b5fd;
+	}
+	.chase-btn--active {
+		color: #fbbf24;
+		background: rgba(251, 191, 36, 0.12);
+		border-color: rgba(251, 191, 36, 0.40);
+	}
+	.chase-btn--active:hover:not(:disabled) {
+		background: rgba(251, 191, 36, 0.22);
+		border-color: rgba(251, 191, 36, 0.65);
+		color: #fcd34d;
+	}
+	.chase-btn:disabled { cursor: default; opacity: 0.7; }
 	.add-btn {
 		display: inline-flex;
 		align-items: center;

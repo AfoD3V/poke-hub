@@ -12,6 +12,7 @@
 	let removingId: string | null = null;
 
 	$: entries = data.entries ?? [];
+	$: chaseIds = new Set(data.chaseCardIds ?? []);
 </script>
 
 <svelte:head>
@@ -119,5 +120,5 @@
 
 <!-- Card detail modal -->
 {#if expandedCard}
-	<CardModal card={expandedCard} on:close={() => (expandedCard = null)} />
+	<CardModal card={expandedCard} {chaseIds} on:close={() => (expandedCard = null)} />
 {/if}

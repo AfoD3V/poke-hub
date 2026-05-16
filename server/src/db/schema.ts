@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -17,6 +17,22 @@ export const cardsCache = pgTable("cards_cache", {
   payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).defaultNow().notNull()
 });
+
+export const userChaseCards = pgTable(
+  "user_chase_cards",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cardId: text("card_id").notNull(),
+    cardSnapshot: jsonb("card_snapshot")
+      .$type<{ name: string; setName: string; setId: string; imageSmall: string }>()
+      .notNull(),
+    addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (t) => [unique("user_chase_cards_user_card_unique").on(t.userId, t.cardId)]
+);
 
 export const userCollection = pgTable("user_collection", {
   id: uuid("id").defaultRandom().primaryKey(),

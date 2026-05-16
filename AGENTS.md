@@ -424,3 +424,22 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   alongside a valid `data.cards` array — this is normal and should not abort processing.
   Fix: filter attacks with `a !== null && a.name !== null`. Only throw a 502 when `data.cards`
   itself is absent.
+- **SvelteKit adapter-node has no dev proxy in production — use `+server.ts` endpoints:** In development,
+  Vite's dev server proxies `fetch('/api/*')` from the browser to the Hono backend (port 3000). In Docker
+  (adapter-node), those same client-side fetch calls hit the SvelteKit server and receive HTML 404 responses
+  instead of JSON. Fix: create a SvelteKit `+server.ts` route at the same path that proxies to the Hono
+  backend using `API_BASE_URL`, forwarding the `cookie` header for auth. Pattern: read
+  `request.headers.get('cookie')`, call `fetch(\`\${API_BASE_URL}/api/...\`, { headers: { cookie } })`,
+  and return `new Response(upstreamBody, { status, headers: { 'content-type': 'application/json' } })`.
+  Catch network errors and return JSON 502 so the client always receives parseable JSON.
+- **Svelte TypeScript cast `as Type` in template expressions causes parse error in Svelte 4:** Writing
+  `(e.currentTarget as HTMLImageElement)` inline in a Svelte 4 template attribute (e.g. `on:error={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}`)
+  causes "Unexpected token" from `svelte-check`. Extract the handler into a typed function in the
+  `<script>` block instead.
+- **Drizzle `onConflictDoUpdate` requires explicit target columns for multi-column unique constraints:**
+  When upserting against a composite unique constraint (e.g. `(userId, cardId)`), pass the array form
+  `target: [table.userId, table.cardId]` rather than a single column. Passing a single column silently
+  selects the wrong conflict target and the upsert may throw or create duplicate rows.
+- **`$state.raw` and `SvelteMap` are Svelte 5 features — ignore autofixer suggestions in Svelte 4 projects:**
+  The `@sveltejs/mcp` autofixer may suggest replacing `Map` with `SvelteMap`. This only applies to Svelte 5.
+  In a Svelte 4 project, `Map` is correct; `SvelteMap` does not exist in Svelte 4.

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { _resetSetsCache } from "../services/tcg-proxy";
+import { _resetSetsCache, _resetSeriesCache, _resetSetCardsCache } from "../services/tcg-proxy";
 
 /** Must be set **before** dynamic imports that resolve auth config at load time. */
 process.env.JWT_SECRET = process.env.JWT_SECRET ?? "test-secret";
@@ -10,11 +10,15 @@ describe("tcg-proxy routes", () => {
   beforeEach(() => {
     globalThis.fetch = originalFetch;
     _resetSetsCache();
+    _resetSeriesCache();
+    _resetSetCardsCache();
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
     _resetSetsCache();
+    _resetSeriesCache();
+    _resetSetCardsCache();
   });
 
   const buildApp = async () => {
@@ -286,6 +290,189 @@ describe("tcg-proxy routes", () => {
       const res = await app.request("/api/cards/base1-58");
       expect(res.status).toBe(502);
       await expect(res.json()).resolves.toHaveProperty("error");
+    });
+  });
+
+  // ── Series routes ──────────────────────────────────────────────────────────
+
+  const tcgdexSeriesListItem = (overrides: Partial<Record<string, unknown>> = {}) => ({
+    id: "sv",
+    name: "Scarlet & Violet",
+    logo: "https://assets.tcgdex.net/univ/sv/logo.png",
+    ...overrides
+  });
+
+  const tcgdexSeriesDetail = (overrides: Partial<Record<string, unknown>> = {}) => ({
+    id: "sv",
+    name: "Scarlet & Violet",
+    logo: "https://assets.tcgdex.net/univ/sv/logo.png",
+    releaseDate: "2023-03-31",
+    sets: [
+      { id: "sv03.5", name: "151", logo: "https://assets.tcgdex.net/en/sv/sv03.5/logo.png", cardCount: { official: 165 } }
+    ],
+    ...overrides
+  });
+
+  const stubSeriesFanOut = (list: unknown[], detailFn: (id: string) => unknown): void => {
+    globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+      const urlStr = typeof url === "string" ? url : url.toString();
+      if (urlStr.match(/\/series\/[^/]+$/)) {
+        const id = urlStr.split("/").pop()!;
+        return new Response(JSON.stringify(detailFn(id)), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify(list), { status: 200, headers: { "Content-Type": "application/json" } });
+    };
+  };
+
+  describe("GET /api/series", () => {
+    it("returns 200 with sorted array of series", async () => {
+      stubSeriesFanOut([tcgdexSeriesListItem()], () => tcgdexSeriesDetail());
+
+      const app = await buildApp();
+      const res = await app.request("/api/series");
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(Array.isArray(body)).toBe(true);
+      expect(body[0]).toHaveProperty("id");
+      expect(body[0]).toHaveProperty("name");
+      expect(body[0]).toHaveProperty("releaseDate");
+    });
+
+    it("returns 502 on upstream failure", async () => {
+      stubUpstreamError(500);
+      const app = await buildApp();
+      const res = await app.request("/api/series");
+      expect(res.status).toBe(502);
+      await expect(res.json()).resolves.toHaveProperty("error");
+    });
+
+    it("second call within TTL makes only one upstream list request", async () => {
+      let listFetchCount = 0;
+      globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+        const urlStr = typeof url === "string" ? url : url.toString();
+        if (!urlStr.match(/\/series\/[^/]+$/)) listFetchCount++;
+        return new Response(
+          JSON.stringify(urlStr.match(/\/series\/[^/]+$/) ? tcgdexSeriesDetail() : [tcgdexSeriesListItem()]),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      };
+
+      const app = await buildApp();
+      await app.request("/api/series");
+      await app.request("/api/series");
+      expect(listFetchCount).toBe(1);
+    });
+  });
+
+  describe("GET /api/series/:id", () => {
+    it("returns 200 with series detail including sets array", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify(tcgdexSeriesDetail()), { status: 200, headers: { "Content-Type": "application/json" } });
+
+      const app = await buildApp();
+      const res = await app.request("/api/series/sv");
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toHaveProperty("id", "sv");
+      expect(Array.isArray(body.sets)).toBe(true);
+      expect(body.sets.length).toBeGreaterThan(0);
+    });
+
+    it("returns 404 on unknown series id", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
+
+      const app = await buildApp();
+      const res = await app.request("/api/series/nonexistent");
+      expect(res.status).toBe(404);
+      await expect(res.json()).resolves.toHaveProperty("error");
+    });
+
+    it("returns 502 on upstream failure", async () => {
+      stubUpstreamError(500);
+      const app = await buildApp();
+      const res = await app.request("/api/series/sv");
+      expect(res.status).toBe(502);
+      await expect(res.json()).resolves.toHaveProperty("error");
+    });
+  });
+
+  describe("GET /api/sets/:id/cards", () => {
+    const tcgdexSetDetail = () => ({
+      id: "sv03.5",
+      name: "151",
+      cards: [
+        { id: "sv03.5-1", name: "Bulbasaur", localId: "1", image: "https://assets.tcgdex.net/en/sv/sv03.5/1" },
+        { id: "sv03.5-2", name: "Ivysaur", localId: "2", image: null }
+      ]
+    });
+
+    it("returns 200 with card array", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify(tcgdexSetDetail()), { status: 200, headers: { "Content-Type": "application/json" } });
+
+      const app = await buildApp();
+      const res = await app.request("/api/sets/sv03.5/cards");
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(Array.isArray(body)).toBe(true);
+      expect(body[0]).toHaveProperty("id");
+      expect(body[0]).toHaveProperty("name");
+      expect(body[0]).toHaveProperty("localId");
+      expect(body[0]).toHaveProperty("image");
+    });
+
+    it("returns 404 on unknown set", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
+
+      const app = await buildApp();
+      const res = await app.request("/api/sets/nonexistent/cards");
+      expect(res.status).toBe(404);
+      await expect(res.json()).resolves.toHaveProperty("error");
+    });
+
+    it("returns 502 on upstream failure", async () => {
+      stubUpstreamError(500);
+      const app = await buildApp();
+      const res = await app.request("/api/sets/sv03.5/cards");
+      expect(res.status).toBe(502);
+      await expect(res.json()).resolves.toHaveProperty("error");
+    });
+  });
+
+  describe("GET /api/cards/search with lang param", () => {
+    it("returns 400 for unsupported lang code", async () => {
+      stubGraphQLOk([]);
+      const app = await buildApp();
+      const res = await app.request("/api/cards/search?q=Pikachu&lang=zz");
+      expect(res.status).toBe(400);
+      await expect(res.json()).resolves.toHaveProperty("error");
+    });
+
+    it("uses the base graphql endpoint for any valid lang", async () => {
+      let capturedUrl = "";
+      globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+        capturedUrl = typeof url === "string" ? url : url.toString();
+        return new Response(JSON.stringify({ data: { cards: [] } }), { status: 200, headers: { "Content-Type": "application/json" } });
+      };
+
+      const app = await buildApp();
+      await app.request("/api/cards/search?q=ピカチュウ&lang=ja");
+      // TCGdex GraphQL is language-agnostic; lang param is validated but doesn't change the URL
+      expect(capturedUrl).toContain("/v2/graphql");
+    });
+
+    it("defaults to the base graphql endpoint when lang param is absent", async () => {
+      let capturedUrl = "";
+      globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+        capturedUrl = typeof url === "string" ? url : url.toString();
+        return new Response(JSON.stringify({ data: { cards: [] } }), { status: 200, headers: { "Content-Type": "application/json" } });
+      };
+
+      const app = await buildApp();
+      await app.request("/api/cards/search?q=Pikachu");
+      expect(capturedUrl).toContain("/v2/graphql");
     });
   });
 });

@@ -1,31 +1,49 @@
 import type { PageServerLoad } from './$types';
-import type { TcgSearchResponse, TcgProxyError, TcgCard, SetItem } from '$shared/tcg';
+import type { TcgSearchResponse, TcgProxyError, TcgCard, SeriesItem } from '$shared/tcg';
 
 const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
-async function fetchSets(): Promise<SetItem[]> {
+async function fetchSeries(): Promise<SeriesItem[]> {
 	try {
-		const res = await fetch(`${API_BASE}/api/sets`);
+		const res = await fetch(`${API_BASE}/api/series`);
 		if (!res.ok) return [];
-		return (await res.json()) as SetItem[];
+		return (await res.json()) as SeriesItem[];
 	} catch {
 		return [];
 	}
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+async function fetchChaseCardIds(token: string): Promise<string[]> {
+	if (!token) return [];
+	try {
+		const res = await fetch(`${API_BASE}/api/chase`, {
+			headers: { Cookie: `pokehub_session=${token}` }
+		});
+		if (!res.ok) return [];
+		const body = (await res.json()) as { entries: Array<{ cardId: string }> };
+		return body.entries.map((e) => e.cardId);
+	} catch {
+		return [];
+	}
+}
+
+export const load: PageServerLoad = async ({ url, cookies }) => {
+	const token = cookies.get('pokehub_session') ?? '';
 	const mode = url.searchParams.get('mode');
 
-	// Always fetch sets for the SetPicker combobox (cached on the backend, fast)
-	const sets = await fetchSets();
+	// Pre-fetch series list and chase IDs in parallel
+	const [series, chaseCardIds] = await Promise.all([
+		fetchSeries(),
+		fetchChaseCardIds(token)
+	]);
 
-	// ── Set & number lookup (SSR) ────────────────────────────────────────────
+	// ── Legacy set & number lookup (SSR deep-link compatibility) ─────────────
 	if (mode === 'set') {
 		const setId = url.searchParams.get('setId') ?? '';
 		const cardNumber = url.searchParams.get('cardNumber') ?? '';
 
 		if (!setId.trim() || !cardNumber.trim()) {
-			return { sets, cards: [], totalCount: 0, query: '', mode: 'set', setId, cardNumber, error: null };
+			return { series, chaseCardIds, cards: [], totalCount: 0, query: '', mode: 'set', setId, cardNumber, error: null };
 		}
 
 		const proxyUrl = new URL(`${API_BASE}/api/cards/by-set`);
@@ -38,7 +56,8 @@ export const load: PageServerLoad = async ({ url }) => {
 
 			if (!res.ok) {
 				return {
-					sets,
+					series,
+					chaseCardIds,
 					cards: [],
 					totalCount: 0,
 					query: '',
@@ -51,7 +70,8 @@ export const load: PageServerLoad = async ({ url }) => {
 
 			const card = body as TcgCard;
 			return {
-				sets,
+				series,
+				chaseCardIds,
 				cards: [card],
 				totalCount: 1,
 				query: '',
@@ -62,7 +82,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			};
 		} catch (e) {
 			return {
-				sets,
+				series,
+				chaseCardIds,
 				cards: [],
 				totalCount: 0,
 				query: '',
@@ -78,7 +99,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const q = url.searchParams.get('q');
 
 	if (!q || !q.trim()) {
-		return { sets, cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null };
+		return { series, chaseCardIds, cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null };
 	}
 
 	const proxyUrl = new URL(`${API_BASE}/api/cards/search`);
@@ -90,7 +111,8 @@ export const load: PageServerLoad = async ({ url }) => {
 
 		if (!res.ok) {
 			return {
-				sets,
+				series,
+				chaseCardIds,
 				cards: [],
 				totalCount: 0,
 				query: q.trim(),
@@ -103,7 +125,8 @@ export const load: PageServerLoad = async ({ url }) => {
 
 		const success = body as TcgSearchResponse;
 		return {
-			sets,
+			series,
+			chaseCardIds,
 			cards: success.cards,
 			totalCount: success.totalCount,
 			query: q.trim(),
@@ -114,7 +137,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		};
 	} catch (e) {
 		return {
-			sets,
+			series,
+			chaseCardIds,
 			cards: [],
 			totalCount: 0,
 			query: q.trim(),
