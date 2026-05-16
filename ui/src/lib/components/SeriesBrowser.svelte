@@ -20,6 +20,8 @@
 	let errorColumn3: string | null = null;
 
 	let expandedCard: TcgCard | null = null;
+	let failedSeriesLogos = new Set<string>();
+	let failedSetLogos = new Set<string>();
 
 	// Pagination
 	const PAGE_SIZE = 40;
@@ -179,12 +181,13 @@
 					on:click={() => selectSeries(s)}
 					aria-label={s.name}
 				>
-					{#if s.logo}
+					{#if s.logo && !failedSeriesLogos.has(s.id)}
 						<img
 							src={s.logo}
 							alt={s.name}
 							class="w-full h-16 object-contain"
 							loading="lazy"
+							on:error={() => { failedSeriesLogos = new Set([...failedSeriesLogos, s.id]); }}
 						/>
 					{:else}
 						<div class="w-full h-16 flex items-center justify-center bg-ph-card rounded-lg">
@@ -228,12 +231,13 @@
 						on:click={() => selectSet({ id: set.id, name: set.name })}
 						aria-label={set.name}
 					>
-						{#if set.logo}
+						{#if set.logo && !failedSetLogos.has(set.id)}
 							<img
 								src={set.logo}
 								alt={set.name}
 								class="w-full h-14 object-contain"
 								loading="lazy"
+								on:error={() => { failedSetLogos = new Set([...failedSetLogos, set.id]); }}
 							/>
 						{:else}
 							<div class="w-full h-14 flex items-center justify-center bg-ph-card rounded-lg">

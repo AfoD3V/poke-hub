@@ -66,6 +66,7 @@
 	// ── Flip state ────────────────────────────────────────────────────────────
 	let flipped  = false;
 	let closing  = false;
+	let imgFallback = false;
 
 	// ── Independent spring stores for the modal card ──────────────────────────
 	const seed = { x: Math.random(), y: Math.random() };
@@ -199,11 +200,12 @@
 				<div class="card__perspective">
 					<div class="card__rotator">
 						<img
-							src={card.images.large ?? card.images.small}
+							src={imgFallback ? card.images.small : (card.images.large ?? card.images.small)}
 							alt={card.name}
 							width="660"
 							height="921"
 							draggable="false"
+							on:error={() => { if (!imgFallback) imgFallback = true; }}
 						/>
 						<div class="card__shine" aria-hidden="true"></div>
 						<div class="card__glare"  aria-hidden="true"></div>

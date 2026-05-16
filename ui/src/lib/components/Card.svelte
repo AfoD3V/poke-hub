@@ -48,6 +48,7 @@
 	const springBg    = spring({ x: 50, y: 50 }, SI);
 
 	let interacting = false;
+	let imageError = false;
 
 	function interact(e: PointerEvent) {
 		interacting = true;
@@ -113,13 +114,14 @@
 			on:keypress={(e) => e.key === 'Enter' && dispatch('expand', card)}
 		>
 			<div class="card__front">
-				{#if card.images?.small}
+				{#if card.images?.small && !imageError}
 					<img
 						src={card.images.small}
 						alt={card.name}
 						loading="lazy"
 						width="245"
 						height="342"
+						on:error={() => (imageError = true)}
 					/>
 				{:else}
 					<div class="card__fallback" aria-label={card.name}>
