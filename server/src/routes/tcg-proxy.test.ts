@@ -19,9 +19,18 @@ describe("tcg-proxy routes", () => {
     return createApp();
   };
 
-  const stubOk = (jsonBody: unknown = []): void => {
+  const stubOk = (jsonBody: unknown): void => {
     globalThis.fetch = async (): Promise<Response> => {
       return new Response(JSON.stringify(jsonBody), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+  };
+
+  const stubGraphQLOk = (cards: unknown[] = []): void => {
+    globalThis.fetch = async (): Promise<Response> => {
+      return new Response(JSON.stringify({ data: { cards } }), {
         status: 200,
         headers: { "Content-Type": "application/json" }
       });
@@ -43,7 +52,29 @@ describe("tcg-proxy routes", () => {
     };
   };
 
+  // GraphQL card shape (used by searchCards)
   const tcgdexCard = (overrides: Partial<Record<string, unknown>> = {}) => ({
+    id: "swsh3-136",
+    name: "Charizard",
+    localId: "136",
+    category: "Pokemon",
+    types: ["Fire"],
+    image: "https://assets.tcgdex.net/en/swsh/swsh3/136",
+    rarity: "Rare Holo",
+    hp: 170,
+    illustrator: "5ban Graphics",
+    set: {
+      id: "swsh3",
+      name: "Darkness Ablaze",
+      logo: "https://assets.tcgdex.net/en/swsh/swsh3/logo.png",
+      symbol: "https://assets.tcgdex.net/en/swsh/swsh3/symbol.png"
+    },
+    variants: { normal: false, holo: true, reverse: true, firstEdition: false },
+    ...overrides
+  });
+
+  // REST card shape (used by getCardById)
+  const restCard = (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: "swsh3-136",
     name: "Charizard",
     localId: "136",
@@ -79,7 +110,7 @@ describe("tcg-proxy routes", () => {
     });
 
     it("proxies search and returns cards", async () => {
-      stubOk([tcgdexCard()]);
+      stubGraphQLOk([tcgdexCard()]);
 
       const app = await buildApp();
       const res = await app.request("/api/cards/search?q=Charizard");
@@ -110,7 +141,7 @@ describe("tcg-proxy routes", () => {
 
   describe("GET /api/cards/:id", () => {
     it("returns card by id", async () => {
-      stubOk(tcgdexCard({ id: "base1-58", name: "Pikachu", localId: "58" }));
+      stubOk(restCard({ id: "base1-58", name: "Pikachu", localId: "58" }));
 
       const app = await buildApp();
       const res = await app.request("/api/cards/base1-58");

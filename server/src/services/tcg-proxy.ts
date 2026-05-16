@@ -1,7 +1,99 @@
 import type { TcgCard, TcgSearchResponse } from "../../../shared/tcg";
 
 const UPSTREAM_BASE = "https://api.tcgdex.net/v2/en";
+const GRAPHQL_ENDPOINT = "https://api.tcgdex.net/v2/graphql";
 const DEFAULT_TIMEOUT_MS = 10_000;
+
+// ---------------------------------------------------------------------------
+// GraphQL types — raw TCGdex response shape (attack fields may be null despite
+// the TCGdex schema marking them non-nullable; handle defensively)
+// ---------------------------------------------------------------------------
+
+interface TcgdexGraphQLAttack {
+  name: string | null;
+  cost: string[] | null;
+  damage: string | null;
+  effect: string | null;
+}
+
+interface TcgdexGraphQLSet {
+  id: string;
+  name: string;
+  logo: string | null;
+  symbol: string | null;
+}
+
+interface TcgdexGraphQLVariants {
+  normal: boolean;
+  holo: boolean;
+  reverse: boolean;
+  firstEdition: boolean;
+}
+
+interface TcgdexGraphQLCard {
+  id: string;
+  localId: string | null;
+  name: string;
+  image: string | null;
+  rarity: string | null;
+  hp: number | null;
+  types: string[] | null;
+  stage: string | null;
+  evolveFrom: string | null;
+  description: string | null;
+  illustrator: string | null;
+  retreat: number | null;
+  regulationMark: string | null;
+  category: string;
+  set: TcgdexGraphQLSet | null;
+  variants: TcgdexGraphQLVariants | null;
+  attacks: TcgdexGraphQLAttack[] | null;
+  weaknesses: Array<{ type: string; value: string }> | null;
+}
+
+// Static parameterized query — name passed as a variable, never interpolated
+const SEARCH_QUERY = `
+  query SearchCards($name: String) {
+    cards(filters: { name: $name }) {
+      id
+      localId
+      name
+      image
+      rarity
+      hp
+      types
+      stage
+      evolveFrom
+      description
+      illustrator
+      retreat
+      regulationMark
+      category
+      set {
+        id
+        name
+        logo
+        symbol
+      }
+      variants {
+        normal
+        holo
+        reverse
+        firstEdition
+      }
+      attacks {
+        name
+        cost
+        damage
+        effect
+      }
+      weaknesses {
+        type
+        value
+      }
+    }
+  }
+`;
 
 /**
  * Dedicated error class thrown by the TCG proxy layer. Carries a suggested
@@ -162,6 +254,69 @@ function mapUpstreamCard(raw: unknown): TcgCard {
 }
 
 /**
+ * Maps a raw TCGdex GraphQL card to the internal {@link TcgCard} shape.
+ * Handles nulls on attack sub-fields defensively — attacks with a null name
+ * are filtered out entirely.
+ */
+function mapGraphQLCard(raw: TcgdexGraphQLCard): TcgCard {
+  const imageBase = typeof raw.image === "string" ? raw.image : "";
+
+  const attacks = Array.isArray(raw.attacks)
+    ? raw.attacks
+        .filter((a) => a !== null && a.name !== null)
+        .map((a) => ({
+          name: a.name as string,
+          cost: Array.isArray(a.cost) ? a.cost : [],
+          convertedEnergyCost: Array.isArray(a.cost) ? a.cost.length : 0,
+          damage: a.damage ?? "",
+          text: a.effect ?? ""
+        }))
+    : undefined;
+
+  return {
+    id: String(raw.id ?? ""),
+    name: String(raw.name ?? ""),
+    supertype: String(raw.category ?? ""),
+    types: Array.isArray(raw.types) ? raw.types : undefined,
+    set: raw.set?.name ?? "",
+    setDetails: raw.set
+      ? {
+          id: String(raw.set.id ?? ""),
+          name: String(raw.set.name ?? ""),
+          series: "",
+          printedTotal: 0,
+          total: 0,
+          releaseDate: "",
+          images: {
+            symbol: raw.set.symbol ?? "",
+            logo: raw.set.logo ?? ""
+          }
+        }
+      : undefined,
+    hp: raw.hp != null ? String(raw.hp) : undefined,
+    evolvesFrom: raw.evolveFrom ?? undefined,
+    attacks,
+    weaknesses: Array.isArray(raw.weaknesses)
+      ? raw.weaknesses.map((w) => ({ type: w.type, value: w.value }))
+      : undefined,
+    retreatCost: raw.retreat != null
+      ? Array(Number(raw.retreat)).fill("Colorless")
+      : undefined,
+    convertedRetreatCost: raw.retreat != null ? Number(raw.retreat) : undefined,
+    number: String(raw.localId ?? ""),
+    artist: raw.illustrator ?? undefined,
+    rarity: raw.rarity ?? undefined,
+    flavorText: raw.description ?? undefined,
+    regulationMark: raw.regulationMark ?? undefined,
+    images: {
+      small: imageBase ? `${imageBase}/low.webp` : "",
+      large: imageBase ? `${imageBase}/high.webp` : ""
+    },
+    holofoil: Boolean(raw.variants?.holo ?? raw.variants?.firstEdition ?? false)
+  };
+}
+
+/**
  * Searches TCGdex for cards matching the provided name query.
  *
  * @param query     Plain card name (e.g. `Charizard`) or partial match
@@ -172,17 +327,16 @@ function mapUpstreamCard(raw: unknown): TcgCard {
  */
 export async function searchCards(
   query: string,
-  page = 1,
-  pageSize = 20
+  _page = 1,
+  _pageSize = 20
 ): Promise<TcgSearchResponse> {
-  const url = new URL(`${UPSTREAM_BASE}/cards`);
-  url.searchParams.set("name", query.trim());
-  url.searchParams.set("pagination:page", String(page));
-  url.searchParams.set("pagination:itemsPerPage", String(pageSize));
-
-  const response = await fetchWithTimeout(url.toString(), {
-    method: "GET",
-    headers: { "Content-Type": "application/json" }
+  const response = await fetchWithTimeout(GRAPHQL_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: SEARCH_QUERY,
+      variables: { name: query.trim() }
+    })
   });
 
   if (!response.ok) {
@@ -199,11 +353,23 @@ export async function searchCards(
     throw new TcgProxyServiceError("Invalid upstream response body", 502);
   }
 
-  if (!Array.isArray(body)) {
-    throw new TcgProxyServiceError("Unexpected upstream response shape", 502);
+  const gqlBody = body as { data?: { cards?: unknown[] }; errors?: unknown[] };
+
+  // TCGdex may return field-level errors (e.g. null attack names) alongside
+  // valid data. Only fail hard when data.cards is absent entirely.
+  const rawCards = gqlBody.data?.cards;
+  if (!Array.isArray(rawCards)) {
+    throw new TcgProxyServiceError(
+      Array.isArray(gqlBody.errors)
+        ? "TCGdex GraphQL returned errors"
+        : "Unexpected upstream response shape",
+      502
+    );
   }
 
-  const cards: TcgCard[] = body.map(mapUpstreamCard);
+  const cards: TcgCard[] = rawCards.map((c) =>
+    mapGraphQLCard(c as TcgdexGraphQLCard)
+  );
 
   return { cards, totalCount: cards.length };
 }

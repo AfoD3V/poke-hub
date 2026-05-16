@@ -82,6 +82,7 @@ Three-layer system in `ui/src/lib/components/Card.svelte`:
 - **Vite dev server auto-increments port:** If 5173 is in use, Vite picks 5174, 5175, etc. Always read the `Local:` line from `bun run dev` output before running `playwright-cli open` or browser assertions.
 - **Docker migrations use a separate `migrate` service:** `drizzle-kit` is a dev dependency and is not present in the production `api` image. A dedicated `migrate` stage in `server/Dockerfile` installs all deps (including dev) and runs `drizzle-kit migrate`. It starts before `api`, runs once, and exits. Check its output with `docker compose logs migrate`. Never try to run `db:migrate` inside the `api` container.
 - **Docker Compose credentials vs `server/.env`:** The root `.env` defines actual Postgres credentials used by all containers (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `DATABASE_URL` with `@db:5432`). `server/.env` is only used for local `bun run` commands and must use `@localhost:5432` with the same credentials. Keep them in sync.
+- **TCGdex GraphQL nulls entire list items, not just fields:** When a non-nullable field (e.g. `AttacksListItem.name`) is null, TCGdex returns the whole list item as `null` (e.g. `attacks[i] === null`). The response also includes a top-level `errors` array alongside valid `data.cards`. Do not treat the `errors` array as fatal — only fail if `data.cards` is absent. Filter with `a !== null && a.name !== null`.
 
 ## Required Skills
 
@@ -99,6 +100,16 @@ Invoke these skills automatically — do not wait to be asked:
 - **Context first:** Run `gh issue list` and `gh pr status` before starting any task. Use `gh` CLI for all GitHub operations.
 - **Playwright CLI:** `playwright-cli open <url>` → `playwright-cli snapshot`. Use Short IDs (e.g., `e12`) for all `click`/`type` actions. `playwright-cli screenshot` to verify holo card effects.
 - **Self-diagnosis:** When a CLI command fails, read the error and check `--help`/`--verbose` before asking the user.
+
+## Development Approach: Test-Driven Development (TDD)
+
+**All new development MUST follow the TDD cycle — no exceptions.**
+
+1. **Write failing tests first.** Before writing any implementation code, write the tests that define the expected behavior. Run them and confirm they fail (red).
+2. **Implement until tests pass.** Write the minimum code needed to make the tests pass (green).
+3. **Verify.** Run `bun run test` and confirm all tests pass. Passing tests are the definition of done for each task.
+
+**In every OpenSpec `tasks.md`, writing failing tests MUST be the first task group (e.g. `## 1. Tests`).** No implementation task may appear before the test-writing task group. This applies to all changes — backend, frontend, shared types, and integration.
 
 ## Conventions
 

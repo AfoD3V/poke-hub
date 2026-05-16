@@ -116,14 +116,23 @@ Invoke these skills automatically — do not wait to be asked.
   is forbidden.
 - Environment variables. Never commit `.env` files. Keep `.env.example` updated.
 
-### Test-Driven Mentality
+### Test-Driven Development (TDD) — Mandatory
 
+**All new development MUST follow strict TDD. This is not optional.**
+
+**The TDD cycle:**
+1. **Red** — Write failing tests first. Before any implementation code exists, write the tests that specify the expected behavior. Run them and confirm they fail.
+2. **Green** — Implement the minimum code needed to make the tests pass.
+3. **Done** — Run `bun run test` and confirm all tests pass. Passing tests are the definition of done for each task.
+
+**OpenSpec `tasks.md` rule:** Writing failing tests MUST be the first task group in every `tasks.md` (e.g. `## 1. Tests — write failing tests`). No implementation task group may appear before it. This applies to every change — backend services, frontend components, shared types, and integration flows.
+
+**Other test requirements:**
 - No tests, no merge. Every new feature must include tests.
-- Backend tests. Use Vitest for unit testing services and testing Hono API routes.
-- Frontend tests. Use Vitest + Svelte Testing Library for component rendering and state verification.
-- UI states. Always handle loading and error states in the UI.
+- Backend tests: use Vitest for unit testing services and Hono API routes.
+- Frontend tests: use Vitest + Svelte Testing Library for component rendering and state verification.
+- UI states: always handle loading and error states in the UI.
 - Task verification steps must be actionable. For tasks broken into steps (e.g., 1.1, 1.2, 1.3), each step's verification MUST be executable either manually or with tests at that stage.
-- Always run tests after developing or changing code; all tests must pass before marking any task complete.
 - All API endpoints must include positive and negative test scenarios.
 - Maintain a Postman collection in parallel for all API testing; whenever adding new tests, update the collection with high-quality requests and appropriate test scripts.
 
@@ -409,3 +418,9 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   already occupied, Vite silently picks the next free port (5175, 5176, …). Always read the
   `Local:` line from `bun run dev` output (or check the dev log) to confirm the actual port
   before running `playwright-cli open` or browser tests against it.
+- **TCGdex GraphQL API returns null list items, not just null fields:** When `AttacksListItem.name`
+  (or another non-nullable field) is null, the TCGdex GraphQL API nulls out the **entire list item**
+  (`attacks[i] === null`), not just the field. The response also carries a top-level `errors` array
+  alongside a valid `data.cards` array — this is normal and should not abort processing.
+  Fix: filter attacks with `a !== null && a.name !== null`. Only throw a 502 when `data.cards`
+  itself is absent.
