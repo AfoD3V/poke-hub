@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
 	import CardModal from '$lib/components/CardModal.svelte';
+	import SetPicker from '$lib/components/SetPicker.svelte';
 	import type { TcgCard } from '$shared/tcg';
 
 	export let data: PageData;
@@ -10,16 +11,49 @@
 
 	const PAGE_SIZE = 20;
 
-	let query      = data.query      ?? '';
+	// ── Shared state ──────────────────────────────────────────────────────────
+	let mode: 'name' | 'set' = (data as { mode?: string }).mode === 'set' ? 'set' : 'name';
 	let cards: TcgCard[] = data.cards ?? [];
-	let totalCount = data.totalCount ?? 0;
-	let page       = 1;
 	let loading    = false;
-	let loadingMore = false;
 	let error: string | null = data.error ?? null;
 
-	$: hasMore = cards.length < totalCount && !error;
+	// ── Name-mode state ───────────────────────────────────────────────────────
+	let query      = data.query      ?? '';
+	let totalCount = data.totalCount ?? 0;
+	let page       = 1;
+	let loadingMore = false;
+
+	// ── Set-mode state ────────────────────────────────────────────────────────
+	let setId      = (data as { setId?: string }).setId      ?? '';
+	let cardNumber = (data as { cardNumber?: string }).cardNumber ?? '';
+	const sets     = data.sets ?? [];
+
+	// ── Derived ───────────────────────────────────────────────────────────────
+	$: hasMore  = mode === 'name' && cards.length < totalCount && !error;
 	$: remaining = totalCount - cards.length;
+
+	// ── Mode switching ────────────────────────────────────────────────────────
+	function switchMode(next: 'name' | 'set') {
+		if (next === mode) return;
+		mode   = next;
+		cards  = [];
+		error  = null;
+
+		const url = new URL(window.location.href);
+		if (next === 'name') {
+			url.searchParams.delete('mode');
+			url.searchParams.delete('setId');
+			url.searchParams.delete('cardNumber');
+			if (query) url.searchParams.set('q', query);
+		} else {
+			url.searchParams.set('mode', 'set');
+			url.searchParams.delete('q');
+			url.searchParams.delete('page');
+		}
+		window.history.replaceState({}, '', url);
+	}
+
+	// ── Name-mode handlers ────────────────────────────────────────────────────
 
 	/** Run a fresh search — resets pagination and replaces the card list. */
 	async function handleSearch(event: SubmitEvent) {
@@ -34,7 +68,7 @@
 			const result = await fetchPage(query.trim(), 1);
 			cards      = result.cards;
 			totalCount = result.totalCount;
-			syncUrl(query.trim(), null);
+			syncNameUrl(query.trim(), null);
 		} catch (e) {
 			error      = e instanceof Error ? e.message : 'Something went wrong';
 			cards      = [];
@@ -77,8 +111,8 @@
 		return body as { cards: TcgCard[]; totalCount: number };
 	}
 
-	/** Update the address bar so the URL stays shareable. */
-	function syncUrl(q: string, p: number | null) {
+	/** Update the address bar so the URL stays shareable (name mode). */
+	function syncNameUrl(q: string, p: number | null) {
 		const next = new URL(window.location.href);
 		next.searchParams.set('q', q);
 		if (p && p > 1) {
@@ -86,6 +120,53 @@
 		} else {
 			next.searchParams.delete('page');
 		}
+		window.history.replaceState({}, '', next);
+	}
+
+	// ── Set-mode handler ──────────────────────────────────────────────────────
+
+	/** Look up a single card by set ID + card number. */
+	async function handleSetSearch(event: SubmitEvent) {
+		event.preventDefault();
+		if (!setId.trim() || !cardNumber.trim()) return;
+
+		loading = true;
+		error   = null;
+		cards   = [];
+
+		try {
+			const url = new URL('/api/cards/by-set', window.location.origin);
+			url.searchParams.set('setId', setId.trim());
+			url.searchParams.set('cardNumber', cardNumber.trim());
+
+			const res  = await fetch(url.toString());
+			const body = await res.json();
+
+			if (!res.ok) {
+				throw new Error(body.error || `Lookup failed (${res.status})`);
+			}
+
+			const card = body as TcgCard | null;
+			cards = card ? [card] : [];
+			if (!card) {
+				error = `No card found for set "${setId.trim()}" #${cardNumber.trim()}.`;
+			}
+
+			syncSetUrl(setId.trim(), cardNumber.trim());
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Something went wrong';
+			cards = [];
+		} finally {
+			loading = false;
+		}
+	}
+
+	/** Update the address bar so the URL stays shareable (set mode). */
+	function syncSetUrl(sid: string, num: string) {
+		const next = new URL(window.location.href);
+		next.searchParams.set('mode', 'set');
+		next.searchParams.set('setId', sid);
+		next.searchParams.set('cardNumber', num);
 		window.history.replaceState({}, '', next);
 	}
 </script>
@@ -100,32 +181,105 @@
 		<p class="text-ph-muted text-sm mt-2 font-geist">Find cards across all TCG sets</p>
 	</div>
 
-	<form on:submit={handleSearch} class="flex gap-3 mb-8">
-		<input
-			type="text"
-			bind:value={query}
-			placeholder="Search for a Pokémon (e.g. Charizard)..."
-			class="form-input flex-1"
-			aria-label="Search query"
-		/>
-		<button type="submit" class="btn-primary w-auto whitespace-nowrap" disabled={loading}>
-			{#if loading}
-				<span class="flex items-center gap-2">
-					<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-						<path
-							class="opacity-75"
-							fill="currentColor"
-							d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-						/>
-					</svg>
-					Searching…
-				</span>
-			{:else}
-				Search
-			{/if}
+	<!-- Segmented mode toggle -->
+	<div class="flex rounded-lg bg-ph-surface border border-ph-border p-1 gap-1 mb-8">
+		<button
+			type="button"
+			class={mode === 'name'
+				? 'flex-1 py-2 px-4 rounded-md text-sm font-geist font-semibold text-white bg-ph-accent transition-colors duration-200'
+				: 'flex-1 py-2 px-4 rounded-md text-sm font-geist font-semibold text-ph-muted hover:text-ph-text transition-colors duration-200'}
+			on:click={() => switchMode('name')}
+			aria-pressed={mode === 'name'}
+		>
+			By Name
 		</button>
-	</form>
+		<button
+			type="button"
+			class={mode === 'set'
+				? 'flex-1 py-2 px-4 rounded-md text-sm font-geist font-semibold text-white bg-ph-accent transition-colors duration-200'
+				: 'flex-1 py-2 px-4 rounded-md text-sm font-geist font-semibold text-ph-muted hover:text-ph-text transition-colors duration-200'}
+			on:click={() => switchMode('set')}
+			aria-pressed={mode === 'set'}
+		>
+			By Set &amp; Number
+		</button>
+	</div>
+
+	<!-- ── Name search form ─────────────────────────────────────────────────── -->
+	{#if mode === 'name'}
+		<form on:submit={handleSearch} class="flex gap-3 mb-8">
+			<input
+				type="text"
+				bind:value={query}
+				placeholder="Search for a Pokémon (e.g. Charizard)..."
+				class="form-input flex-1"
+				aria-label="Search query"
+			/>
+			<button type="submit" class="btn-primary w-auto whitespace-nowrap" disabled={loading}>
+				{#if loading}
+					<span class="flex items-center gap-2">
+						<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+							<path
+								class="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+							/>
+						</svg>
+						Searching…
+					</span>
+				{:else}
+					Search
+				{/if}
+			</button>
+		</form>
+
+	<!-- ── Set & number search form ─────────────────────────────────────────── -->
+	{:else}
+		<form on:submit={handleSetSearch} class="mb-8">
+			<div class="flex gap-3 items-end">
+				<div class="flex flex-col gap-1 flex-1">
+					<span class="text-xs font-geist font-medium text-ph-muted uppercase tracking-wide" aria-hidden="true">
+						Set
+					</span>
+					<SetPicker
+						{sets}
+						on:select={(e) => { setId = e.detail.id; }}
+					/>
+				</div>
+				<div class="flex flex-col gap-1 flex-1">
+					<label for="card-number" class="text-xs font-geist font-medium text-ph-muted uppercase tracking-wide">
+						Card Number
+					</label>
+					<input
+						id="card-number"
+						type="text"
+						bind:value={cardNumber}
+						placeholder="e.g. 136"
+						class="form-input"
+						aria-label="Card number"
+					/>
+				</div>
+				<button type="submit" class="btn-primary w-auto whitespace-nowrap" disabled={loading}>
+					{#if loading}
+						<span class="flex items-center gap-2">
+							<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+								/>
+							</svg>
+							Searching…
+						</span>
+					{:else}
+						Look up
+					{/if}
+				</button>
+			</div>
+		</form>
+	{/if}
 
 	<!-- Error state -->
 	{#if error}
@@ -151,12 +305,14 @@
 		</div>
 	{:else if cards.length > 0}
 
-		<!-- Result count -->
-		<p class="text-sm text-ph-muted font-geist mb-6">
-			Showing <span class="text-ph-text font-medium">{cards.length}</span>
-			of <span class="text-ph-text font-medium">{totalCount}</span>
-			result{totalCount === 1 ? '' : 's'}
-		</p>
+		<!-- Result count — only shown in name mode (set mode always returns 0 or 1) -->
+		{#if mode === 'name'}
+			<p class="text-sm text-ph-muted font-geist mb-6">
+				Showing <span class="text-ph-text font-medium">{cards.length}</span>
+				of <span class="text-ph-text font-medium">{totalCount}</span>
+				result{totalCount === 1 ? '' : 's'}
+			</p>
+		{/if}
 
 		<!-- Card grid -->
 		<div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));">
@@ -172,37 +328,39 @@
 			{/if}
 		</div>
 
-		<!-- Load more -->
-		{#if hasMore}
-			<div class="mt-10 flex flex-col items-center gap-2">
-				<button
-					class="btn-primary w-auto px-8"
-					on:click={loadMore}
-					disabled={loadingMore}
-				>
-					{#if loadingMore}
-						<span class="flex items-center gap-2">
-							<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-							</svg>
-							Loading…
-						</span>
-					{:else}
-						Load more
-					{/if}
-				</button>
-				<p class="text-xs text-ph-muted font-geist">
-					{remaining} more card{remaining === 1 ? '' : 's'} available
+		<!-- Load more — name mode only -->
+		{#if mode === 'name'}
+			{#if hasMore}
+				<div class="mt-10 flex flex-col items-center gap-2">
+					<button
+						class="btn-primary w-auto px-8"
+						on:click={loadMore}
+						disabled={loadingMore}
+					>
+						{#if loadingMore}
+							<span class="flex items-center gap-2">
+								<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+								</svg>
+								Loading…
+							</span>
+						{:else}
+							Load more
+						{/if}
+					</button>
+					<p class="text-xs text-ph-muted font-geist">
+						{remaining} more card{remaining === 1 ? '' : 's'} available
+					</p>
+				</div>
+			{:else if totalCount > 0}
+				<p class="mt-8 text-xs text-ph-muted text-center font-geist">
+					All {totalCount} cards loaded
 				</p>
-			</div>
-		{:else if totalCount > 0}
-			<p class="mt-8 text-xs text-ph-muted text-center font-geist">
-				All {totalCount} cards loaded
-			</p>
+			{/if}
 		{/if}
 
-	{:else if !loading && !error && query}
+	{:else if !loading && !error && (mode === 'name' ? query : setId && cardNumber)}
 		<!-- Empty state -->
 		<div class="text-center mt-16">
 			<svg
@@ -216,7 +374,11 @@
 				<path d="M3 9h18" />
 				<path d="M9 21V9" />
 			</svg>
-			<p class="text-ph-muted font-geist">No cards found for "{query}".</p>
+			{#if mode === 'name'}
+				<p class="text-ph-muted font-geist">No cards found for "{query}".</p>
+			{:else}
+				<p class="text-ph-muted font-geist">No card found in set "{setId}" with number "{cardNumber}".</p>
+			{/if}
 		</div>
 	{/if}
 </div>

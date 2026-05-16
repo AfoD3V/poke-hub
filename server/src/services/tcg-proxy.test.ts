@@ -1,6 +1,9 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import {
   getCardById,
+  getCardBySetAndNumber,
+  getSets,
+  _resetSetsCache,
   searchCards,
   TcgProxyServiceError
 } from "./tcg-proxy";
@@ -362,6 +365,69 @@ describe("tcg-proxy service", () => {
   });
 
   // ---------------------------------------------------------------------------
+  // getCardBySetAndNumber — REST
+  // ---------------------------------------------------------------------------
+  describe("getCardBySetAndNumber", () => {
+    it("returns mapped card on success", async () => {
+      stubOk(upstreamCard({ id: "svn-112", name: "Pikachu", localId: "112" }));
+      const card = await getCardBySetAndNumber("SVN", "112");
+
+      expect(card.id).toBe("svn-112");
+      expect(card.name).toBe("Pikachu");
+      expect(card.number).toBe("112");
+    });
+
+    it("builds the correct upstream URL", async () => {
+      stubOk(upstreamCard());
+      await getCardBySetAndNumber("SVN", "112");
+      expect(capturedRequest?.url).toContain("/sets/SVN/112");
+    });
+
+    it("throws TcgProxyServiceError with status 404 when upstream returns 404", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
+
+      try {
+        await getCardBySetAndNumber("SVN", "999");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(TcgProxyServiceError);
+        expect((err as TcgProxyServiceError).statusCode).toBe(404);
+        expect((err as TcgProxyServiceError).message).toBe("Card not found");
+      }
+    });
+
+    it("throws TcgProxyServiceError with status 502 when upstream returns 500", async () => {
+      globalThis.fetch = async (): Promise<Response> =>
+        new Response(JSON.stringify({ error: "fail" }), { status: 500 });
+
+      try {
+        await getCardBySetAndNumber("SVN", "112");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(TcgProxyServiceError);
+        expect((err as TcgProxyServiceError).statusCode).toBe(502);
+      }
+    });
+
+    it("throws TcgProxyServiceError with status 504 on timeout", async () => {
+      globalThis.fetch = async (): Promise<Response> => {
+        const err = new Error("The operation was aborted.");
+        err.name = "AbortError";
+        throw err;
+      };
+
+      try {
+        await getCardBySetAndNumber("SVN", "112");
+        throw new Error("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(TcgProxyServiceError);
+        expect((err as TcgProxyServiceError).statusCode).toBe(504);
+      }
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // getCardById — REST (unchanged)
   // ---------------------------------------------------------------------------
   describe("getCardById", () => {
@@ -397,5 +463,108 @@ describe("tcg-proxy service", () => {
         "https://assets.tcgdex.net/en/swsh/swsh3/136/high.webp"
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TCGdex sets GraphQL fixture
+// ---------------------------------------------------------------------------
+const tcgdexSet = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  id: "sv03.5",
+  name: "151",
+  abbreviation: { official: "MEW" },
+  releaseDate: "2023-09-22",
+  cardCount: { official: 165 },
+  ...overrides
+});
+
+describe("getSets service", () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    _resetSetsCache();
+    globalThis.fetch = originalFetch;
+  });
+
+  afterEach(() => {
+    _resetSetsCache();
+    globalThis.fetch = originalFetch;
+  });
+
+  const stubSetsGraphQLOk = (sets: unknown[] = []): void => {
+    globalThis.fetch = async (): Promise<Response> => {
+      return new Response(JSON.stringify({ data: { sets } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+  };
+
+  const stubUpstreamError = (status: number): void => {
+    globalThis.fetch = async (): Promise<Response> => {
+      return new Response(JSON.stringify({ error: "fail" }), {
+        status,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+  };
+
+  it("returns array with id, name, abbreviation, cardCount, releaseDate", async () => {
+    stubSetsGraphQLOk([tcgdexSet()]);
+
+    const sets = await getSets();
+    expect(sets).toHaveLength(1);
+    expect(sets[0].id).toBe("sv03.5");
+    expect(sets[0].name).toBe("151");
+    expect(sets[0].abbreviation).toBe("MEW");
+    expect(sets[0].cardCount).toBe(165);
+    expect(sets[0].releaseDate).toBe("2023-09-22");
+  });
+
+  it("returns sets sorted by releaseDate descending", async () => {
+    stubSetsGraphQLOk([
+      tcgdexSet({ id: "swsh3", name: "Darkness Ablaze", abbreviation: { official: "DAA" }, releaseDate: "2020-08-14", cardCount: { official: 189 } }),
+      tcgdexSet({ id: "sv03.5", name: "151", abbreviation: { official: "MEW" }, releaseDate: "2023-09-22", cardCount: { official: 165 } })
+    ]);
+
+    const sets = await getSets();
+    expect(sets[0].id).toBe("sv03.5");  // newest first
+    expect(sets[1].id).toBe("swsh3");
+  });
+
+  it("returns empty string for abbreviation when null", async () => {
+    stubSetsGraphQLOk([
+      tcgdexSet({ id: "base1", name: "Base Set", abbreviation: null, releaseDate: "1999-01-09", cardCount: { official: 102 } })
+    ]);
+
+    const sets = await getSets();
+    expect(sets[0].abbreviation).toBe("");
+  });
+
+  it("throws TcgProxyServiceError with status 502 on upstream failure", async () => {
+    stubUpstreamError(500);
+
+    try {
+      await getSets();
+      throw new Error("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(TcgProxyServiceError);
+      expect((err as TcgProxyServiceError).statusCode).toBe(502);
+    }
+  });
+
+  it("uses in-memory cache: second call within TTL makes only one upstream request", async () => {
+    let fetchCount = 0;
+    globalThis.fetch = async (): Promise<Response> => {
+      fetchCount++;
+      return new Response(JSON.stringify({ data: { sets: [tcgdexSet()] } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+
+    await getSets();
+    await getSets();
+    expect(fetchCount).toBe(1);
   });
 });

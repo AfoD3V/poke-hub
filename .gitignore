@@ -23,3 +23,5 @@ resources/
 opencode.jsonc
 
 .playwright-cli/
+.postman/
+postman/
