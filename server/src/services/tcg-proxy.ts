@@ -606,6 +606,14 @@ function normalizeLogo(logo: unknown): string {
 }
 
 /**
+ * TCGdex series IDs to exclude from the browser. These are catch-all
+ * buckets (Miscellaneous, Trainer kits) or promotional sub-collections
+ * (McDonald's) that have no logos, few/no card images, and don't
+ * correspond to a real TCG expansion series.
+ */
+const EXCLUDED_SERIES_IDS = new Set(["misc", "tk", "mc"]);
+
+/**
  * Returns all TCGdex series, merged with release dates (fetched from detail
  * endpoints in parallel), sorted newest-first then alphabetically for undated.
  * Results are cached in-memory for 24 hours.
@@ -638,7 +646,8 @@ export async function getSeries(): Promise<SeriesItem[]> {
     throw new TcgProxyServiceError("Unexpected upstream response shape", 502);
   }
 
-  const listItems = listBody as Array<Record<string, unknown>>;
+  const listItems = (listBody as Array<Record<string, unknown>>)
+    .filter((item) => !EXCLUDED_SERIES_IDS.has(String(item.id ?? "")));
 
   // Fan-out to all series detail endpoints in parallel to collect releaseDate + logo
   const detailResults = await Promise.allSettled(
