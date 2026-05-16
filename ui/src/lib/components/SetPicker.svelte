@@ -15,15 +15,13 @@
 	$: filtered = (() => {
 		if (!query.trim()) return sets.slice(0, 10);
 		const q = query.toLowerCase();
-		return sets
-			.filter((s) => {
-				return (
-					s.name.toLowerCase().includes(q) ||
-					(s.abbreviation && s.abbreviation.toLowerCase().includes(q)) ||
-					s.id.toLowerCase().startsWith(q)
-				);
-			})
-			.slice(0, 10);
+		return sets.filter((s) => {
+			return (
+				s.name.toLowerCase().includes(q) ||
+				(s.abbreviation && s.abbreviation.toLowerCase().includes(q)) ||
+				s.id.toLowerCase().startsWith(q)
+			);
+		});
 	})();
 
 	$: activeDescendant =
