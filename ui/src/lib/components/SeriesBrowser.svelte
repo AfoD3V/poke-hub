@@ -44,8 +44,8 @@
 		: 'width:30%;min-width:30%;';
 
 	$: col3Style = activeColumn < 2
-		? 'width:0;min-width:0;overflow:hidden;'
-		: 'width:70%;min-width:70%;';
+		? 'flex:none;width:0;min-width:0;overflow:hidden;'
+		: 'flex:1;min-width:0;';
 
 	// ── Map SetCardItem → TcgCard for the Card component ─────────────────────
 	function toTcgCard(item: SetCardItem): TcgCard {
@@ -132,6 +132,25 @@
 	function retryColumn3() {
 		if (selectedSet) selectSet(selectedSet);
 	}
+
+	// ── Logo image fallback: try .png if .webp fails ──────────────────────────
+	function handleSeriesLogoError(e: Event, id: string) {
+		const img = e.currentTarget as HTMLImageElement;
+		if (img.src.endsWith('.webp')) {
+			img.src = img.src.replace('.webp', '.png');
+		} else {
+			failedSeriesLogos = new Set([...failedSeriesLogos, id]);
+		}
+	}
+
+	function handleSetLogoError(e: Event, id: string) {
+		const img = e.currentTarget as HTMLImageElement;
+		if (img.src.endsWith('.webp')) {
+			img.src = img.src.replace('.webp', '.png');
+		} else {
+			failedSetLogos = new Set([...failedSetLogos, id]);
+		}
+	}
 </script>
 
 <!-- Breadcrumb -->
@@ -187,7 +206,7 @@
 							alt={s.name}
 							class="w-full h-16 object-contain"
 							loading="lazy"
-							on:error={() => { failedSeriesLogos = new Set([...failedSeriesLogos, s.id]); }}
+							on:error={(e) => handleSeriesLogoError(e, s.id)}
 						/>
 					{:else}
 						<div class="w-full h-16 flex items-center justify-center bg-ph-card rounded-lg">
@@ -237,7 +256,7 @@
 								alt={set.name}
 								class="w-full h-14 object-contain"
 								loading="lazy"
-								on:error={() => { failedSetLogos = new Set([...failedSetLogos, set.id]); }}
+								on:error={(e) => handleSetLogoError(e, set.id)}
 							/>
 						{:else}
 							<div class="w-full h-14 flex items-center justify-center bg-ph-card rounded-lg">
@@ -254,7 +273,7 @@
 
 	<!-- Column 3: Card grid -->
 	<div
-		class="transition-all duration-300 ease-in-out overflow-y-auto shrink-0"
+		class="transition-all duration-300 ease-in-out overflow-y-auto"
 		style={col3Style}
 	>
 		{#if loadingColumn3}

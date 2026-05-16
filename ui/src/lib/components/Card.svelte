@@ -48,7 +48,19 @@
 	const springBg    = spring({ x: 50, y: 50 }, SI);
 
 	let interacting = false;
-	let imageError = false;
+
+	let imgSrcIdx = 0;
+	$: imgSrcs = card.images?.small
+		? [
+			card.images.small,
+			card.images.small.replace('.webp', '.png')
+		  ]
+		: [];
+	$: currentCardSrc = imgSrcs[imgSrcIdx] ?? '';
+
+	function handleCardImgError() {
+		imgSrcIdx = Math.min(imgSrcIdx + 1, imgSrcs.length);
+	}
 
 	function interact(e: PointerEvent) {
 		interacting = true;
@@ -114,14 +126,14 @@
 			on:keypress={(e) => e.key === 'Enter' && dispatch('expand', card)}
 		>
 			<div class="card__front">
-				{#if card.images?.small && !imageError}
+				{#if currentCardSrc}
 					<img
-						src={card.images.small}
+						src={currentCardSrc}
 						alt={card.name}
 						loading="lazy"
 						width="245"
 						height="342"
-						on:error={() => (imageError = true)}
+						on:error={handleCardImgError}
 					/>
 				{:else}
 					<div class="card__fallback" aria-label={card.name}>

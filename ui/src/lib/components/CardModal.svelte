@@ -66,7 +66,24 @@
 	// ── Flip state ────────────────────────────────────────────────────────────
 	let flipped  = false;
 	let closing  = false;
-	let imgFallback = false;
+
+	let imgSrcIdx = 0;
+	$: imgSrcs = (() => {
+		const large = card.images?.large ?? '';
+		const small = card.images?.small ?? '';
+		const srcs: string[] = [];
+		if (large) srcs.push(large);
+		if (small && small !== large) srcs.push(small);
+		if (large) srcs.push(large.replace('.webp', '.png'));
+		if (small && small !== large) srcs.push(small.replace('.webp', '.png'));
+		return srcs;
+	})();
+	$: modalImgSrc = imgSrcs[imgSrcIdx] ?? (card.images?.small ?? '');
+	$: if (card) imgSrcIdx = 0;
+
+	function handleModalImgError() {
+		imgSrcIdx = Math.min(imgSrcIdx + 1, imgSrcs.length);
+	}
 
 	// ── Independent spring stores for the modal card ──────────────────────────
 	const seed = { x: Math.random(), y: Math.random() };
@@ -143,7 +160,6 @@
 </script>
 
 <!-- Backdrop: click-to-close on the overlay itself (not its children) -->
-<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div
 	class="overlay"
 	on:click={(e) => e.target === e.currentTarget && close()}
@@ -200,12 +216,12 @@
 				<div class="card__perspective">
 					<div class="card__rotator">
 						<img
-							src={imgFallback ? card.images.small : (card.images.large ?? card.images.small)}
+							src={modalImgSrc}
 							alt={card.name}
 							width="660"
 							height="921"
 							draggable="false"
-							on:error={() => { if (!imgFallback) imgFallback = true; }}
+							on:error={handleModalImgError}
 						/>
 						<div class="card__shine" aria-hidden="true"></div>
 						<div class="card__glare"  aria-hidden="true"></div>
