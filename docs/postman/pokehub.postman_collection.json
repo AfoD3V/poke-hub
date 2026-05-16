@@ -1108,6 +1108,208 @@
       }
     },
     {
+      "name": "Chase - Get List (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has entries array', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('entries');",
+              "  pm.expect(body.entries).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/chase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Get List (Negative - unauthenticated)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 401', () => {",
+              "  pm.expect(pm.response.code).to.equal(401);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/chase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Add Card (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 201', () => {",
+              "  pm.expect(pm.response.code).to.equal(201);",
+              "});",
+              "pm.test('response has entry with cardId', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('entry');",
+              "  pm.expect(body.entry).to.have.property('cardId');",
+              "  pm.expect(body.entry).to.have.property('cardSnapshot');",
+              "  pm.expect(body.entry).to.have.property('addedAt');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardId\":\"sv1-001\",\"cardSnapshot\":{\"name\":\"Bulbasaur\",\"setName\":\"Scarlet & Violet\",\"setId\":\"sv1\",\"imageSmall\":\"https://images.pokemontcg.io/sv1/1_hires.png\"}}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/chase/add",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase", "add"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Add Card (Negative - missing cardId)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 400', () => {",
+              "  pm.expect(pm.response.code).to.equal(400);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardSnapshot\":{\"name\":\"Bulbasaur\",\"setName\":\"Scarlet & Violet\",\"setId\":\"sv1\",\"imageSmall\":\"\"}}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/chase/add",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase", "add"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Remove Card (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response has success true', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.equal(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardId\":\"sv1-001\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/chase/remove",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase", "remove"]
+        }
+      }
+    },
+    {
+      "name": "Chase - Remove Card (Negative - not found)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 404', () => {",
+              "  pm.expect(pm.response.code).to.equal(404);",
+              "});",
+              "pm.test('response has error', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Cookie", "value": "{{sessionCookie}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardId\":\"card-does-not-exist\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/chase/remove",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chase", "remove"]
+        }
+      }
+    },
+    {
       "name": "Auth - Logout",
       "event": [
         {

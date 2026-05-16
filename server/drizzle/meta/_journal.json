@@ -8,6 +8,13 @@
       "when": 1777846565250,
       "tag": "0000_striped_prima",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1778955785793,
+      "tag": "0001_cooing_komodo",
+      "breakpoints": true
     }
   ]
 }

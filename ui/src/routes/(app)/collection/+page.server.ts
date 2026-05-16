@@ -11,20 +11,32 @@ export const load: PageServerLoad = async ({ cookies }) => {
 		throw redirect(302, '/auth/login');
 	}
 
-	try {
-		const res = await fetch(`${API_BASE}/api/collection`, {
-			headers: { Cookie: `${SESSION_COOKIE}=${token}` }
-		});
+	const authHeader = { Cookie: `${SESSION_COOKIE}=${token}` };
 
-		if (!res.ok) {
-			return { entries: [] as CollectionEntry[], error: 'Failed to load collection' };
+	try {
+		const [collectionRes, chaseRes] = await Promise.all([
+			fetch(`${API_BASE}/api/collection`, { headers: authHeader }),
+			fetch(`${API_BASE}/api/chase`, { headers: authHeader })
+		]);
+
+		if (!collectionRes.ok) {
+			return { entries: [] as CollectionEntry[], chaseCardIds: [] as string[], error: 'Failed to load collection' };
 		}
 
-		const body = (await res.json()) as CollectionResponse;
-		return { entries: body.entries, error: null };
+		const body = (await collectionRes.json()) as CollectionResponse;
+		const chaseBody = chaseRes.ok
+			? ((await chaseRes.json()) as { entries: Array<{ cardId: string }> })
+			: { entries: [] };
+
+		return {
+			entries: body.entries,
+			chaseCardIds: chaseBody.entries.map((e) => e.cardId),
+			error: null
+		};
 	} catch (e) {
 		return {
 			entries: [] as CollectionEntry[],
+			chaseCardIds: [] as string[],
 			error: e instanceof Error ? e.message : 'Network error'
 		};
 	}

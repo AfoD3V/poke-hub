@@ -9,6 +9,7 @@
 	export let data: PageData;
 
 	let expandedCard: TcgCard | null = null;
+	$: chaseIds = new Set(data.chaseCardIds ?? []);
 
 	const PAGE_SIZE = 20;
 
@@ -281,5 +282,5 @@
 </div>
 
 {#if expandedCard}
-	<CardModal card={expandedCard} on:close={() => (expandedCard = null)} />
+	<CardModal card={expandedCard} {chaseIds} on:close={() => (expandedCard = null)} />
 {/if}

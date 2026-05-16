@@ -15,6 +15,7 @@ function mockFetch(response: unknown, ok = true, status = 200) {
 
 const defaultData = {
 	series: [],
+	chaseCardIds: [] as string[],
 	cards: [],
 	totalCount: 0,
 	query: '',

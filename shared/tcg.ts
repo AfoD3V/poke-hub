@@ -181,6 +181,27 @@ export interface SeriesDetail {
 }
 
 /**
+ * Minimal card snapshot stored with a chase entry for offline rendering.
+ */
+export interface CardSnapshot {
+  name: string;
+  setName: string;
+  setId: string;
+  imageSmall: string;
+}
+
+/**
+ * A single entry in the user's chase list.
+ */
+export interface ChaseEntry {
+  id: string;
+  userId: string;
+  cardId: string;
+  cardSnapshot: CardSnapshot;
+  addedAt: string;
+}
+
+/**
  * Lightweight card entry returned by the set-cards endpoint.
  */
 export interface SetCardItem {
