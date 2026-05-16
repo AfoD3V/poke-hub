@@ -598,6 +598,13 @@ export async function getCardById(id: string): Promise<TcgCard | null> {
 // Series service functions
 // ---------------------------------------------------------------------------
 
+/** Appends .webp to a TCGdex logo URL that has no file extension. */
+function normalizeLogo(logo: unknown): string {
+  if (typeof logo !== "string" || !logo) return "";
+  if (/\.\w{2,5}$/.test(logo)) return logo; // already has extension
+  return `${logo}.webp`;
+}
+
 /**
  * Returns all TCGdex series, merged with release dates (fetched from detail
  * endpoints in parallel), sorted newest-first then alphabetically for undated.
@@ -651,7 +658,7 @@ export async function getSeries(): Promise<SeriesItem[]> {
     return {
       id: String(item.id ?? ""),
       name: String(item.name ?? ""),
-      logo: typeof detail?.logo === "string" ? detail.logo : (typeof item.logo === "string" ? item.logo : ""),
+      logo: normalizeLogo(detail?.logo ?? item.logo),
       releaseDate: typeof detail?.releaseDate === "string" ? detail.releaseDate : ""
     };
   });
@@ -712,14 +719,14 @@ export async function getSeriesById(id: string): Promise<SeriesDetail> {
   const detail: SeriesDetail = {
     id: String(raw.id ?? ""),
     name: String(raw.name ?? ""),
-    logo: typeof raw.logo === "string" ? raw.logo : "",
+    logo: normalizeLogo(raw.logo),
     releaseDate: typeof raw.releaseDate === "string" ? raw.releaseDate : "",
     sets: rawSets.map((s) => {
       const cardCount = s.cardCount as Record<string, unknown> | null;
       return {
         id: String(s.id ?? ""),
         name: String(s.name ?? ""),
-        logo: typeof s.logo === "string" ? s.logo : "",
+        logo: normalizeLogo(s.logo),
         cardCount: Number(cardCount?.official ?? cardCount?.total ?? s.cardCount ?? 0)
       };
     })
