@@ -280,6 +280,83 @@
       }
     },
     {
+      "name": "Sets - List (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => {",
+              "  pm.expect(pm.response.code).to.equal(200);",
+              "});",
+              "pm.test('response is a non-empty array with id, name, abbreviation', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array').that.is.not.empty;",
+              "  pm.expect(body[0]).to.have.property('id');",
+              "  pm.expect(body[0]).to.have.property('name');",
+              "  pm.expect(body[0]).to.have.property('abbreviation');",
+              "  pm.expect(body[0]).to.have.property('cardCount');",
+              "  pm.expect(body[0]).to.have.property('releaseDate');",
+              "});",
+              "pm.test('sets are sorted newest first', () => {",
+              "  const body = pm.response.json();",
+              "  if (body.length > 1) {",
+              "    pm.expect(body[0].releaseDate >= body[1].releaseDate).to.be.true;",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/sets",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "sets"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Sets - List (Upstream Error)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// This request documents the 502 upstream-error scenario.",
+              "// To trigger it manually, temporarily route /api/sets to an invalid URL.",
+              "// Expected: HTTP 502 with { error: '...' }",
+              "pm.test('if upstream fails, status is 502', () => {",
+              "  // Informational only \u2014 cannot reliably trigger upstream failure in Postman.",
+              "  pm.expect([200, 502]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/sets",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "sets"
+          ]
+        }
+      }
+    },
+    {
       "name": "Auth - Register (Positive)",
       "event": [
         {

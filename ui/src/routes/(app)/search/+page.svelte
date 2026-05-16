@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
 	import CardModal from '$lib/components/CardModal.svelte';
+	import SetPicker from '$lib/components/SetPicker.svelte';
 	import type { TcgCard } from '$shared/tcg';
 
 	export let data: PageData;
@@ -25,6 +26,7 @@
 	// ── Set-mode state ────────────────────────────────────────────────────────
 	let setId      = (data as { setId?: string }).setId      ?? '';
 	let cardNumber = (data as { cardNumber?: string }).cardNumber ?? '';
+	const sets     = data.sets ?? [];
 
 	// ── Derived ───────────────────────────────────────────────────────────────
 	$: hasMore  = mode === 'name' && cards.length < totalCount && !error;
@@ -237,16 +239,12 @@
 		<form on:submit={handleSetSearch} class="mb-8">
 			<div class="flex gap-3 items-end">
 				<div class="flex flex-col gap-1 flex-1">
-					<label for="set-id" class="text-xs font-geist font-medium text-ph-muted uppercase tracking-wide">
-						Set ID
-					</label>
-					<input
-						id="set-id"
-						type="text"
-						bind:value={setId}
-						placeholder="e.g. swsh3"
-						class="form-input"
-						aria-label="Set ID"
+					<span class="text-xs font-geist font-medium text-ph-muted uppercase tracking-wide" aria-hidden="true">
+						Set
+					</span>
+					<SetPicker
+						{sets}
+						on:select={(e) => { setId = e.detail.id; }}
 					/>
 				</div>
 				<div class="flex flex-col gap-1 flex-1">

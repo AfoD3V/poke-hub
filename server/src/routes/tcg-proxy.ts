@@ -1,16 +1,31 @@
 import { Hono } from "hono";
-import { searchCards, getCardById, getCardBySetAndNumber, TcgProxyServiceError } from "../services/tcg-proxy";
+import { searchCards, getCardById, getCardBySetAndNumber, getSets, TcgProxyServiceError } from "../services/tcg-proxy";
 import type { TcgProxyError, TcgSearchResponse } from "../../../shared/tcg";
 
 /**
  * Registers TCG proxy routes on the Hono app.
  *
  * Routes:
+ * - `GET /api/sets` — list all sets (cached 24 h)
  * - `GET /api/cards/search?q=<query>&page=<n>&pageSize=<n>` — search cards by name
  * - `GET /api/cards/by-set?setId=<id>&cardNumber=<n>` — fetch a card by set + local number
  * - `GET /api/cards/:id` — fetch a single card by id
  */
 export function registerTcgProxyRoutes(app: Hono): void {
+  app.get("/api/sets", async (context) => {
+    try {
+      const sets = await getSets();
+      return context.json(sets, 200);
+    } catch (err) {
+      if (err instanceof TcgProxyServiceError) {
+        const error: TcgProxyError = { error: err.message };
+        return context.json(error, err.statusCode);
+      }
+      const error: TcgProxyError = { error: "Internal error" };
+      return context.json(error, 500);
+    }
+  });
+
   app.get("/api/cards/search", async (context) => {
     const q = context.req.query("q") ?? "";
     const page = Number(context.req.query("page") ?? "1");

@@ -119,3 +119,19 @@ export interface TcgSearchResponse {
 export interface TcgProxyError {
   error: string;
 }
+
+/**
+ * A single TCG set entry returned by the sets list endpoint.
+ */
+export interface SetItem {
+  /** TCGdex internal set ID (e.g. "sv03.5") */
+  id: string;
+  /** Human-readable set name (e.g. "151") */
+  name: string;
+  /** Official printed abbreviation (e.g. "MEW"), or empty string if absent */
+  abbreviation: string;
+  /** Number of official cards in the set */
+  cardCount: number;
+  /** Release date string (e.g. "2023-09-22") */
+  releaseDate: string;
+}

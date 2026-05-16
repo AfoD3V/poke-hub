@@ -1,10 +1,23 @@
 import type { PageServerLoad } from './$types';
-import type { TcgSearchResponse, TcgProxyError, TcgCard } from '$shared/tcg';
+import type { TcgSearchResponse, TcgProxyError, TcgCard, SetItem } from '$shared/tcg';
 
 const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
+async function fetchSets(): Promise<SetItem[]> {
+	try {
+		const res = await fetch(`${API_BASE}/api/sets`);
+		if (!res.ok) return [];
+		return (await res.json()) as SetItem[];
+	} catch {
+		return [];
+	}
+}
+
 export const load: PageServerLoad = async ({ url }) => {
 	const mode = url.searchParams.get('mode');
+
+	// Always fetch sets for the SetPicker combobox (cached on the backend, fast)
+	const sets = await fetchSets();
 
 	// ── Set & number lookup (SSR) ────────────────────────────────────────────
 	if (mode === 'set') {
@@ -12,7 +25,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		const cardNumber = url.searchParams.get('cardNumber') ?? '';
 
 		if (!setId.trim() || !cardNumber.trim()) {
-			return { cards: [], totalCount: 0, query: '', mode: 'set', setId, cardNumber, error: null };
+			return { sets, cards: [], totalCount: 0, query: '', mode: 'set', setId, cardNumber, error: null };
 		}
 
 		const proxyUrl = new URL(`${API_BASE}/api/cards/by-set`);
@@ -25,6 +38,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 			if (!res.ok) {
 				return {
+					sets,
 					cards: [],
 					totalCount: 0,
 					query: '',
@@ -37,6 +51,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 			const card = body as TcgCard;
 			return {
+				sets,
 				cards: [card],
 				totalCount: 1,
 				query: '',
@@ -47,6 +62,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			};
 		} catch (e) {
 			return {
+				sets,
 				cards: [],
 				totalCount: 0,
 				query: '',
@@ -62,7 +78,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const q = url.searchParams.get('q');
 
 	if (!q || !q.trim()) {
-		return { cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null };
+		return { sets, cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null };
 	}
 
 	const proxyUrl = new URL(`${API_BASE}/api/cards/search`);
@@ -74,6 +90,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 		if (!res.ok) {
 			return {
+				sets,
 				cards: [],
 				totalCount: 0,
 				query: q.trim(),
@@ -86,6 +103,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 		const success = body as TcgSearchResponse;
 		return {
+			sets,
 			cards: success.cards,
 			totalCount: success.totalCount,
 			query: q.trim(),
@@ -96,6 +114,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		};
 	} catch (e) {
 		return {
+			sets,
 			cards: [],
 			totalCount: 0,
 			query: q.trim(),

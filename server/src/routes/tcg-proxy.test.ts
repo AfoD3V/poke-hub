@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { _resetSetsCache } from "../services/tcg-proxy";
 
 /** Must be set **before** dynamic imports that resolve auth config at load time. */
 process.env.JWT_SECRET = process.env.JWT_SECRET ?? "test-secret";
@@ -8,10 +9,12 @@ describe("tcg-proxy routes", () => {
 
   beforeEach(() => {
     globalThis.fetch = originalFetch;
+    _resetSetsCache();
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    _resetSetsCache();
   });
 
   const buildApp = async () => {
@@ -194,6 +197,64 @@ describe("tcg-proxy routes", () => {
       const res = await app.request("/api/cards/by-set?setId=SVN&cardNumber=112");
       expect(res.status).toBe(502);
       await expect(res.json()).resolves.toHaveProperty("error");
+    });
+  });
+
+  describe("GET /api/sets", () => {
+    const tcgdexSet = (overrides: Partial<Record<string, unknown>> = {}) => ({
+      id: "sv03.5",
+      name: "151",
+      abbreviation: { official: "MEW" },
+      releaseDate: "2023-09-22",
+      cardCount: { official: 165 },
+      ...overrides
+    });
+
+    const stubSetsOk = (sets: unknown[] = []): void => {
+      globalThis.fetch = async (): Promise<Response> => {
+        return new Response(JSON.stringify({ data: { sets } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      };
+    };
+
+    it("returns 200 with array of sets", async () => {
+      stubSetsOk([tcgdexSet()]);
+
+      const app = await buildApp();
+      const res = await app.request("/api/sets");
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(Array.isArray(body)).toBe(true);
+      expect(body).toHaveLength(1);
+      expect(body[0].id).toBe("sv03.5");
+      expect(body[0].name).toBe("151");
+      expect(body[0].abbreviation).toBe("MEW");
+    });
+
+    it("returns 502 when upstream fails", async () => {
+      stubUpstreamError(500);
+      const app = await buildApp();
+      const res = await app.request("/api/sets");
+      expect(res.status).toBe(502);
+      await expect(res.json()).resolves.toHaveProperty("error");
+    });
+
+    it("second call within TTL makes only one upstream request", async () => {
+      let fetchCount = 0;
+      globalThis.fetch = async (): Promise<Response> => {
+        fetchCount++;
+        return new Response(JSON.stringify({ data: { sets: [tcgdexSet()] } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      };
+
+      const app = await buildApp();
+      await app.request("/api/sets");
+      await app.request("/api/sets");
+      expect(fetchCount).toBe(1);
     });
   });
 

@@ -1,8 +1,37 @@
-import type { TcgCard, TcgSearchResponse } from "../../../shared/tcg";
+import type { TcgCard, TcgSearchResponse, SetItem } from "../../../shared/tcg";
 
 const UPSTREAM_BASE = "https://api.tcgdex.net/v2/en";
 const GRAPHQL_ENDPOINT = "https://api.tcgdex.net/v2/graphql";
 const DEFAULT_TIMEOUT_MS = 10_000;
+
+const SETS_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/** Module-level cache for the sets list to avoid repeated upstream calls. */
+const setsCache: { data: SetItem[] | null; expiresAt: number } = {
+  data: null,
+  expiresAt: 0
+};
+
+/** Reset the sets cache — for use in tests only. */
+export function _resetSetsCache(): void {
+  setsCache.data = null;
+  setsCache.expiresAt = 0;
+}
+
+// Static GraphQL query for all sets — no interpolation, safe from injection.
+// NOTE: TCGdex GraphQL does not expose an `abbreviation` field on the Set type;
+// abbreviation data is only available via the REST detail endpoint (N+1 problem).
+// Sets are returned with `abbreviation: ""` — users can still filter by name or ID.
+const SETS_QUERY = `
+  query {
+    sets {
+      id
+      name
+      releaseDate
+      cardCount { official }
+    }
+  }
+`;
 
 // ---------------------------------------------------------------------------
 // GraphQL types — raw TCGdex response shape (attack fields may be null despite
@@ -314,6 +343,71 @@ function mapGraphQLCard(raw: TcgdexGraphQLCard): TcgCard {
     },
     holofoil: Boolean(raw.variants?.holo ?? raw.variants?.firstEdition ?? false)
   };
+}
+
+/**
+ * Returns all TCG sets from TCGdex, sorted by release date (newest first).
+ * Results are cached in-memory for 24 hours.
+ *
+ * @throws TcgProxyServiceError on upstream failure or timeout
+ */
+export async function getSets(): Promise<SetItem[]> {
+  const now = Date.now();
+  if (setsCache.data !== null && now < setsCache.expiresAt) {
+    return setsCache.data;
+  }
+
+  const response = await fetchWithTimeout(GRAPHQL_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: SETS_QUERY })
+  });
+
+  if (!response.ok) {
+    throw new TcgProxyServiceError(
+      `Upstream returned ${response.status}`,
+      502
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new TcgProxyServiceError("Invalid upstream response body", 502);
+  }
+
+  const gqlBody = body as { data?: { sets?: unknown[] }; errors?: unknown[] };
+  const rawSets = gqlBody.data?.sets;
+
+  if (!Array.isArray(rawSets)) {
+    throw new TcgProxyServiceError(
+      Array.isArray(gqlBody.errors)
+        ? "TCGdex GraphQL returned errors"
+        : "Unexpected upstream response shape",
+      502
+    );
+  }
+
+  const sets: SetItem[] = rawSets
+    .map((s) => {
+      const raw = s as Record<string, unknown>;
+      const abbr = raw.abbreviation as Record<string, unknown> | null;
+      const cardCount = raw.cardCount as Record<string, unknown> | null;
+      return {
+        id: String(raw.id ?? ""),
+        name: String(raw.name ?? ""),
+        abbreviation: typeof abbr?.official === "string" ? abbr.official : "",
+        cardCount: Number(cardCount?.official ?? 0),
+        releaseDate: String(raw.releaseDate ?? "")
+      };
+    })
+    .sort((a, b) => (a.releaseDate < b.releaseDate ? 1 : a.releaseDate > b.releaseDate ? -1 : 0));
+
+  setsCache.data = sets;
+  setsCache.expiresAt = now + SETS_TTL_MS;
+
+  return sets;
 }
 
 /**

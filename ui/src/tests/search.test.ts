@@ -25,7 +25,7 @@ describe('Search page', () => {
 	});
 
 	it('renders the search heading and input', () => {
-		render(SearchPage, { props: { data: { cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null } } });
+		render(SearchPage, { props: { data: { sets: [], cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null } } });
 		expect(screen.getByRole('heading', { name: /card search/i })).toBeInTheDocument();
 		expect(screen.getByLabelText(/search query/i)).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe('Search page', () => {
 
 	it('shows a loading state during fetch', async () => {
 		globalThis.fetch = mockFetch({ cards: [], totalCount: 0 });
-		render(SearchPage, { props: { data: { cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null } } });
+		render(SearchPage, { props: { data: { sets: [], cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null } } });
 
 		const input = screen.getByLabelText(/search query/i);
 		const button = screen.getByRole('button', { name: /search/i });
@@ -61,7 +61,7 @@ describe('Search page', () => {
 			totalCount: 1
 		});
 
-		render(SearchPage, { props: { data: { cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null } } });
+		render(SearchPage, { props: { data: { sets: [], cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null } } });
 
 		const input = screen.getByLabelText(/search query/i);
 		const button = screen.getByRole('button', { name: /search/i });
@@ -77,7 +77,7 @@ describe('Search page', () => {
 	it('shows an error message when the request fails', async () => {
 		globalThis.fetch = mockFetch({ error: 'Upstream failed' }, false, 502);
 
-		render(SearchPage, { props: { data: { cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null } } });
+		render(SearchPage, { props: { data: { sets: [], cards: [], totalCount: 0, query: '', mode: 'name', setId: '', cardNumber: '', error: null } } });
 
 		const input = screen.getByLabelText(/search query/i);
 		const button = screen.getByRole('button', { name: /search/i });
