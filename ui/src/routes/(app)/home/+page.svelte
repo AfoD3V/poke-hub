@@ -71,17 +71,12 @@
 		sv:     'rgba(90, 12, 140, 0.55)'
 	};
 
-	// Left-rail dark overlay — always covers the full panel height because it lives on the
-	// parent's background stack, not on the child element.
-	const LEFT_RAIL_OVERLAY =
-		'linear-gradient(to right, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 160px, transparent 161px)';
-
 	// Full-panel horizontal gradient: theme color on the left, fading to dark surface
 	function panelGradient(setId: string): string {
 		const prefix = Object.keys(SET_THEME).find((k) => setId.startsWith(k));
 		const color = prefix ? SET_THEME[prefix] : 'rgba(40, 32, 100, 0.55)';
 		const surface = '#12121e';
-		return `${LEFT_RAIL_OVERLAY}, linear-gradient(to right, ${color} 0%, rgba(18,18,30,0) 70%), ${surface}`;
+		return `linear-gradient(to right, ${color} 0%, rgba(18,18,30,0) 85%), ${surface}`;
 	}
 
 	function rarityGlow(rarity: string | undefined): string {
@@ -99,7 +94,6 @@
 	}
 
 	// ── Card hover glow — full-panel rarity ambient glow ─────────────────────
-	// Tracks which set panel is hovered and what color to use
 	let hoveredSet: string | null = null;
 	let hoveredColor = 'rgba(255,255,255,0.35)';
 
@@ -113,12 +107,10 @@
 	}
 
 	// Returns the full background for a panel: rarity glow overlay + themed gradient + surface.
-	// hovered and glowColor are passed as explicit parameters so Svelte 4 tracks them as
-	// reactive dependencies in the template expression.
 	function panelBackground(setId: string, setName: string, hovered: string | null, glowColor: string): string {
 		const base = panelGradient(setId);
 		if (hovered !== setName) return base;
-		return `radial-gradient(ellipse 70% 80% at 60% 50%, ${glowColor} 0%, transparent 100%), ${base}`;
+		return `radial-gradient(circle farthest-corner at 50% 50%, ${glowColor} 0%, transparent 100%), ${base}`;
 	}
 </script>
 
@@ -127,20 +119,17 @@
 </svelte:head>
 
 <div>
-	<!-- Heading -->
 	<div class="mb-8">
 		<h1 class="font-geist font-black text-3xl text-white">Welcome to PokeHub</h1>
 		<p class="text-ph-muted font-geist text-sm mt-2">Your personal Pokémon TCG collection manager.</p>
 	</div>
 
-	<!-- Error banner -->
 	{#if data.error}
 		<div class="mb-6 rounded-lg bg-red-900/30 border border-red-700/40 text-red-300 font-geist text-sm px-4 py-3">
 			{data.error}
 		</div>
 	{/if}
 
-	<!-- ── Tab bar ────────────────────────────────────────────────────────────── -->
 	<div class="tab-bar" role="tablist" aria-label="Home sections">
 		<button
 			role="tab"
@@ -165,13 +154,10 @@
 		</button>
 	</div>
 
-	<!-- ── Overview tab ───────────────────────────────────────────────────────── -->
 	{#if activeTab === 'overview'}
-		<!-- Stats -->
 		<section aria-labelledby="stats-heading" class="mb-10">
 			<h2 id="stats-heading" class="font-geist font-bold text-sm text-ph-muted uppercase tracking-widest mb-4">Collection Stats</h2>
 
-			<!-- Top-line numbers -->
 			<div class="grid grid-cols-2 gap-4 mb-6 max-w-sm">
 				<div class="rounded-xl bg-ph-surface border border-white/4 px-5 py-4">
 					<p class="font-geist text-xs text-ph-muted uppercase tracking-widest mb-1">Total Cards</p>
@@ -185,7 +171,6 @@
 
 			{#if data.totalCards > 0}
 				<div class="grid grid-cols-1 gap-6 max-w-lg">
-					<!-- By Set -->
 					{#if data.setBreakdown?.length > 0}
 						<div class="rounded-xl bg-ph-surface border border-white/4 px-5 py-4">
 							<p class="font-geist text-xs text-ph-muted uppercase tracking-widest mb-3">By Set</p>
@@ -210,7 +195,6 @@
 						</div>
 					{/if}
 
-					<!-- Rarity Breakdown -->
 					{#if Object.keys(data.rarityBreakdown ?? {}).length > 0}
 						<div class="rounded-xl bg-ph-surface border border-white/4 px-5 py-4">
 							<p class="font-geist text-xs text-ph-muted uppercase tracking-widest mb-3">By Rarity</p>
@@ -228,7 +212,6 @@
 			{/if}
 		</section>
 
-		<!-- Quick actions -->
 		<div class="flex flex-col gap-3 max-w-sm">
 			<h2 class="font-geist font-bold text-sm text-ph-muted uppercase tracking-widest mb-1">Quick Actions</h2>
 
@@ -269,7 +252,6 @@
 		</div>
 	{/if}
 
-	<!-- ── Chase Board tab ────────────────────────────────────────────────────── -->
 	{#if activeTab === 'chase'}
 		{#if (data.chaseEntries?.length ?? 0) === 0}
 			<div class="chase-empty">
@@ -283,7 +265,6 @@
 			<div class="flex flex-col gap-4">
 				{#each chaseBySet as { setName, setLogo, setId, entries } (setName)}
 					<div class="chase-set-card" style="background: {panelBackground(setId, setName, hoveredSet, hoveredColor)}">
-						<!-- Left: logo + set name + count pill -->
 						<div class="chase-set-identity">
 							{#if setLogo}
 								<img
@@ -297,7 +278,6 @@
 							<span class="chase-count-pill">· {entries.length} card{entries.length === 1 ? '' : 's'}</span>
 						</div>
 
-						<!-- Right: flex-wrap card grid -->
 						<div class="chase-cards-row">
 							{#each entries as entry (entry.id)}
 								<button
@@ -328,7 +308,6 @@
 	{/if}
 </div>
 
-<!-- Chase card modal -->
 {#if expandedCard}
 	<CardModal card={expandedCard} {chaseIds} on:close={() => (expandedCard = null)} />
 {/if}
@@ -400,13 +379,11 @@
 		align-items: stretch;
 		border-radius: 16px;
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		/* background set inline via panelBackground() — themed fade + rarity glow overlay */
-		/* No overflow:hidden — would clip the 3D card tilt */
 		transition: background 0.3s ease;
 	}
 
 	/* Left panel: logo + set name + pill.
-	   Background comes from the parent's gradient stack so it always spans full panel height. */
+	   Effects (background masks, tints, blurs, and ::before pseudo-sheens) completely removed. */
 	.chase-set-identity {
 		display: flex;
 		flex-direction: column;
@@ -417,6 +394,10 @@
 		min-width: 160px;
 		padding: 20px 16px;
 		border-right: 1px solid rgba(255, 255, 255, 0.07);
+		
+		/* Fully transparent context */
+		background: transparent;
+		position: relative;
 	}
 
 	.chase-set-logo-img {
@@ -426,6 +407,8 @@
 		object-fit: contain;
 		display: block;
 		filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+		position: relative;
+		z-index: 2;
 	}
 
 	.chase-set-name {
@@ -438,6 +421,8 @@
 		text-align: center;
 		line-height: 1.3;
 		margin: 0;
+		position: relative;
+		z-index: 2;
 	}
 
 	.chase-count-pill {
@@ -446,6 +431,8 @@
 		font-weight: 600;
 		color: rgba(255, 255, 255, 0.4);
 		letter-spacing: 0.05em;
+		position: relative;
+		z-index: 2;
 	}
 
 	/* Right panel: flex-wrap card grid */
@@ -456,7 +443,7 @@
 		gap: 10px;
 		flex: 1;
 		padding: 16px;
-		position: relative; /* glow column positions relative to this */
+		position: relative;
 	}
 
 	/* Card thumbnails */
@@ -477,22 +464,6 @@
 		border-color: rgba(255, 255, 255, 0.25);
 		transform: perspective(800px) rotateY(-6deg) rotateX(4deg) translateY(-8px) scale(1.04);
 		z-index: 2;
-	}
-
-	/* Shine sweep */
-	.chase-thumb::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: 5px;
-		background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.18) 50%, transparent 70%);
-		transform: translateX(-100%);
-		transition: transform 0.8s ease;
-		pointer-events: none;
-	}
-
-	.chase-thumb:hover::after {
-		transform: translateX(100%);
 	}
 
 	.chase-thumb img {
