@@ -1,0 +1,111 @@
+name: CI / Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  API_IMAGE: ghcr.io/${{ github.repository_owner }}/pokehub-api
+  UI_IMAGE:  ghcr.io/${{ github.repository_owner }}/pokehub-ui
+
+jobs:
+  # ── Job 1: Tests ──────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+
+    - name: Install server deps
+      run: bun install --frozen-lockfile
+      working-directory: server
+
+    - name: Install ui deps
+      run: bun install --frozen-lockfile
+      working-directory: ui
+
+    - name: Lint
+      run: bun run lint
+      # runs from repo root — see CLAUDE.md
+
+    - name: Test server
+      run: bun run test
+      working-directory: server
+
+    - name: Test ui
+      run: bun run test
+      working-directory: ui
+
+  # ── Job 2: Build & Deploy ─────────────────────────────────────────
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    needs: test                          # only runs if test passes
+    if: github.ref == 'refs/heads/main'  # only on main branch
+    permissions:
+      contents: write    # to push values.yaml back to the repo
+      packages: write    # to push images to ghcr.io
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        # fetch-depth: 0 not needed since we push to same branch
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set image tag (git SHA)
+      id: tag
+      run: echo "TAG=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+      # Uses first 8 chars of commit SHA, e.g. "a1b2c3d4"
+
+    - name: Build and push API image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./server
+        push: true
+        tags: |
+          ${{ env.API_IMAGE }}:${{ steps.tag.outputs.TAG }}
+          ${{ env.API_IMAGE }}:latest
+
+    - name: Build and push UI image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./ui
+        push: true
+        tags: |
+          ${{ env.UI_IMAGE }}:${{ steps.tag.outputs.TAG }}
+          ${{ env.UI_IMAGE }}:latest
+
+    - name: Update image tags in Helm values
+      run: |
+        # Install yq (YAML processor)
+        sudo wget -qO /usr/local/bin/yq \
+          https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
+
+        TAG=${{ steps.tag.outputs.TAG }}
+
+        yq e ".api.image.tag = \"$TAG\""  -i helm/values.yaml
+        yq e ".ui.image.tag  = \"$TAG\""  -i helm/values.yaml
+
+    - name: Commit and push updated values
+      run: |
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add helm/values.yaml
+        git commit -m "chore: deploy ${{ steps.tag.outputs.TAG }} [skip ci]"
+        git push
+        # [skip ci] prevents this commit from triggering another workflow run
