@@ -26,7 +26,7 @@ ui:
       memory: "128Mi"
       cpu: "250m"
   port: 4000
-  origin: "http://46.224.147.37" # update to https://yourdomain.com when you add a domain
+  origin: "https://poke-hub.eu"
 postgres:
   image: postgres:16-alpine
   database: pokehub
@@ -51,9 +51,8 @@ redis:
       cpu: "100m"
 ingress:
   enabled: true
-  # No domain yet — Traefik will serve on the VPS IP
-  # When you get a domain, set this:
-  # host: pokehub.yourdomain.com
+  host: poke-hub.eu
+  acmeEmail: roman@poke-hub.eu  # used for Let's Encrypt cert expiry notifications
 migrate:
   image:
     repository: ghcr.io/afod3v/pokehub-migrate
