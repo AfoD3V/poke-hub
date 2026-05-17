@@ -1,6 +1,6 @@
 api:
   image:
-    repository: ghcr.io/AfoD3V/pokehub-api
+    repository: ghcr.io/afod3v/pokehub-api
     tag: "latest"
     pullPolicy: Always
   replicas: 1
@@ -15,7 +15,7 @@ api:
 
 ui:
   image:
-    repository: ghcr.io/AfoD3V/pokehub-ui
+    repository: ghcr.io/afod3v/pokehub-ui
     tag: "latest"
     pullPolicy: Always
   replicas: 1

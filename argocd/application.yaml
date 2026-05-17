@@ -7,7 +7,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/AfoD3V/poke-hub
+    repoURL: https://github.com/afod3v/poke-hub
     targetRevision: main
     path: helm
 
