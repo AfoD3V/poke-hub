@@ -68,5 +68,5 @@
   - *Verification: Human review of screenshot.*
 - [x] 5.6 Run `security-secure-coding` skill and resolve all findings.
   - *Verification: No unresolved security findings.*
-- [ ] 5.7 Create feature branch, push, open PR via `gh pr create`.
+- [x] 5.7 Create feature branch, push, open PR via `gh pr create`.
   - *Verification: `gh pr status` shows open PR.*
