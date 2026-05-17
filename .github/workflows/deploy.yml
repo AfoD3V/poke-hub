@@ -23,6 +23,9 @@ jobs:
       with:
         bun-version: latest
 
+    - name: Install root deps
+      run: bun install --frozen-lockfile
+
     - name: Install server deps
       run: bun install --frozen-lockfile
       working-directory: server
@@ -33,7 +36,6 @@ jobs:
 
     - name: Lint
       run: bun run lint
-      # runs from repo root — see CLAUDE.md
 
     - name: Test server
       run: bun run test
