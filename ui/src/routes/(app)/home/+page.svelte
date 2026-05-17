@@ -31,14 +31,24 @@
 	}
 
 	// ── Chase board grouping ──────────────────────────────────────────────────
+	function resolveSetId(entry: ChaseEntry): string {
+		if (entry.cardSnapshot.setId) return entry.cardSnapshot.setId;
+		const lastDash = entry.cardId.lastIndexOf('-');
+		return lastDash > 0 ? entry.cardId.slice(0, lastDash) : '';
+	}
+
 	$: chaseBySet = (() => {
-		const map = new Map<string, ChaseEntry[]>();
+		const map = new Map<string, { entries: ChaseEntry[]; setId: string }>();
 		for (const e of (data.chaseEntries ?? [])) {
 			const setName = e.cardSnapshot.setName || 'Unknown Set';
-			if (!map.has(setName)) map.set(setName, []);
-			map.get(setName)!.push(e);
+			if (!map.has(setName)) map.set(setName, { entries: [], setId: resolveSetId(e) });
+			map.get(setName)!.entries.push(e);
 		}
-		return Array.from(map.entries()).map(([setName, entries]) => ({ setName, entries }));
+		return Array.from(map.entries()).map(([setName, { entries, setId }]) => ({
+			setName,
+			setLogo: (data.setLogos ?? {})[setId] ?? '',
+			entries
+		}));
 	})();
 
 	// ── Rarity display order ──────────────────────────────────────────────────
@@ -134,11 +144,24 @@
 				Chase Board
 			</h2>
 
-			<div class="flex flex-col gap-6 max-w-2xl">
-				{#each chaseBySet as { setName, entries } (setName)}
-					<div class="rounded-xl bg-ph-surface border border-white/4 px-5 py-4">
-						<p class="font-geist text-xs font-semibold text-ph-muted uppercase tracking-wider mb-3">{setName}</p>
-						<div class="flex flex-wrap gap-2">
+			<div class="flex flex-col gap-3 max-w-3xl">
+				{#each chaseBySet as { setName, setLogo, entries } (setName)}
+					<div class="chase-set-card">
+						<!-- Left: logo + set name -->
+						<div class="chase-set-identity">
+							{#if setLogo}
+								<img
+									src={setLogo}
+									alt="{setName} logo"
+									class="chase-set-logo-img"
+									on:error={hideImgOnError}
+								/>
+							{/if}
+							<p class="chase-set-name">{setName}</p>
+						</div>
+
+						<!-- Right: horizontally scrollable card strip -->
+						<div class="chase-cards-strip">
 							{#each entries as entry (entry.id)}
 								<button
 									class="chase-thumb"
@@ -150,15 +173,11 @@
 										<img
 											src={entry.cardSnapshot.imageSmall}
 											alt={entry.cardSnapshot.name}
-											width="48"
-											height="67"
 											loading="lazy"
 											on:error={hideImgOnError}
 										/>
 									{:else}
-										<div class="w-12 h-[67px] bg-ph-card rounded flex items-center justify-center">
-											<span class="text-ph-muted text-xs">?</span>
-										</div>
+										<div class="chase-thumb-placeholder">?</div>
 									{/if}
 								</button>
 							{/each}
@@ -216,27 +235,105 @@
 {/if}
 
 <style>
+	/* ── Chase Board ──────────────────────────────────────────────────────── */
+
+	/* ── Chase Board ──────────────────────────────────────────────────────── */
+
+	.chase-set-card {
+		display: flex;
+		align-items: stretch;
+		border-radius: 16px;
+		border: 1px solid rgba(255, 255, 255, 0.16);
+		overflow: hidden;
+		height: 128px;
+		background: var(--color-ph-surface, #12121e);
+	}
+
+	/* Left panel: logo + set name on a distinct accent background */
+	.chase-set-identity {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 7px;
+		width: 160px;
+		min-width: 160px;
+		padding: 14px 18px;
+		background: linear-gradient(145deg, #1e1b4b 0%, #1a1040 100%);
+		border-right: 1px solid rgba(255, 255, 255, 0.16);
+		outline: none;
+	}
+
+	.chase-set-logo-img {
+		height: 52px;
+		max-width: 124px;
+		width: 100%;
+		object-fit: contain;
+		display: block;
+		filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+	}
+
+	.chase-set-name {
+		font-family: var(--font-geist, sans-serif);
+		font-size: 9px;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.45);
+		text-align: center;
+		line-height: 1.3;
+		margin: 0;
+	}
+
+	/* Right panel: horizontally scrollable, single row, no wrapping */
+	.chase-cards-strip {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 10px;
+		flex: 1;
+		overflow-x: auto;
+		overflow-y: hidden;
+		padding: 12px 18px;
+		scrollbar-width: none;
+	}
+	.chase-cards-strip::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* Card thumbnails — large enough to read art */
 	.chase-thumb {
 		cursor: pointer;
-		border-radius: 4px;
+		flex-shrink: 0;
+		border-radius: 6px;
 		overflow: hidden;
-		border: 1px solid transparent;
-		transition: border-color 0.15s, transform 0.15s;
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		transition: border-color 0.15s, transform 0.18s, box-shadow 0.18s;
 		display: block;
 		background: none;
 		padding: 0;
-		min-width: 44px;
-		min-height: 44px;
 	}
 	.chase-thumb:hover {
-		border-color: rgba(251, 191, 36, 0.5);
-		transform: scale(1.06);
+		border-color: rgba(251, 191, 36, 0.7);
+		transform: scale(1.07);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 	}
 	.chase-thumb img {
 		display: block;
-		width: 48px;
-		height: 67px;
+		width: 72px;
+		height: 100px;
 		object-fit: cover;
-		border-radius: 3px;
+		border-radius: 5px;
+	}
+	.chase-thumb-placeholder {
+		width: 72px;
+		height: 100px;
+		background: rgba(255, 255, 255, 0.04);
+		border-radius: 5px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 14px;
+		color: rgba(255, 255, 255, 0.2);
 	}
 </style>

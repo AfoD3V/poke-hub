@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { searchCards, getCardById, getCardBySetAndNumber, getSets, getSeries, getSeriesById, getSetCards, TcgProxyServiceError } from "../services/tcg-proxy";
+import { searchCards, getCardById, getCardBySetAndNumber, getSets, getSeries, getSeriesById, getSetCards, getSetInfo, TcgProxyServiceError } from "../services/tcg-proxy";
 import type { TcgProxyError, TcgSearchResponse } from "../../../shared/tcg";
 
 /**
@@ -9,6 +9,7 @@ import type { TcgProxyError, TcgSearchResponse } from "../../../shared/tcg";
  * - `GET /api/sets` — list all sets (cached 24 h)
  * - `GET /api/series` — list all series with release dates (cached 24 h)
  * - `GET /api/series/:id` — series detail with sets (cached 24 h)
+ * - `GET /api/sets/:id/info` — set logo (cached 24 h)
  * - `GET /api/sets/:id/cards` — lightweight card list for a set (cached 24 h)
  * - `GET /api/cards/search?q=<query>&lang=<code>` — search cards by name
  * - `GET /api/cards/by-set?setId=<id>&cardNumber=<n>` — fetch a card by set + local number
@@ -48,6 +49,21 @@ export function registerTcgProxyRoutes(app: Hono): void {
     try {
       const detail = await getSeriesById(id);
       return context.json(detail, 200);
+    } catch (err) {
+      if (err instanceof TcgProxyServiceError) {
+        const error: TcgProxyError = { error: err.message };
+        return context.json(error, err.statusCode);
+      }
+      const error: TcgProxyError = { error: "Internal error" };
+      return context.json(error, 500);
+    }
+  });
+
+  app.get("/api/sets/:id/info", async (context) => {
+    const id = context.req.param("id");
+    try {
+      const info = await getSetInfo(id);
+      return context.json({ id, ...info }, 200);
     } catch (err) {
       if (err instanceof TcgProxyServiceError) {
         const error: TcgProxyError = { error: err.message };

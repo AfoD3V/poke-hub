@@ -41,6 +41,8 @@ export const load: PageServerLoad = async ({ cookies }) => {
 				setBreakdown: [],
 				rarityBreakdown: {} as Record<string, number>,
 				chaseEntries: [] as ChaseEntry[],
+				setLogos: {} as Record<string, string>,
+				setNames: {} as Record<string, string>,
 				error: 'Failed to load stats'
 			};
 		}
@@ -74,12 +76,47 @@ export const load: PageServerLoad = async ({ cookies }) => {
 			? ((await chaseRes.json()) as { entries: ChaseEntry[] }).entries ?? []
 			: [];
 
+		// Derive setId from cardId when snapshot.setId is empty (e.g. "sv01-001" → "sv01")
+		function resolveSetId(entry: ChaseEntry): string {
+			if (entry.cardSnapshot.setId) return entry.cardSnapshot.setId;
+			const lastDash = entry.cardId.lastIndexOf('-');
+			return lastDash > 0 ? entry.cardId.slice(0, lastDash) : '';
+		}
+
+		// Resolve set info (name + logo) for all unique setIds in the chase list
+		const uniqueSetIds = [...new Set(chaseEntries.map(resolveSetId).filter(Boolean))];
+		const infoResults = await Promise.allSettled(
+			uniqueSetIds.map((setId) =>
+				fetch(`${API_BASE}/api/sets/${encodeURIComponent(setId)}/info`, { headers: authHeader })
+					.then((r) => r.ok ? r.json() as Promise<{ id: string; name: string; logo: string }> : Promise.resolve({ id: setId, name: '', logo: '' }))
+					.catch(() => ({ id: setId, name: '', logo: '' }))
+			)
+		);
+		const setLogos: Record<string, string> = {};
+		const setNames: Record<string, string> = {};
+		for (const result of infoResults) {
+			if (result.status === 'fulfilled') {
+				setLogos[result.value.id] = result.value.logo;
+				if (result.value.name) setNames[result.value.id] = result.value.name;
+			}
+		}
+
+		// Patch empty setName in chase entries using the resolved names
+		for (const entry of chaseEntries) {
+			if (!entry.cardSnapshot.setName) {
+				const sid = resolveSetId(entry);
+				if (sid && setNames[sid]) entry.cardSnapshot.setName = setNames[sid];
+			}
+		}
+
 		return {
 			totalCards,
 			uniquePokemon,
 			setBreakdown,
 			rarityBreakdown,
 			chaseEntries,
+			setLogos,
+			setNames,
 			error: null
 		};
 	} catch (e) {
@@ -89,6 +126,8 @@ export const load: PageServerLoad = async ({ cookies }) => {
 			setBreakdown: [],
 			rarityBreakdown: {} as Record<string, number>,
 			chaseEntries: [] as ChaseEntry[],
+			setLogos: {} as Record<string, string>,
+			setNames: {} as Record<string, string>,
 			error: e instanceof Error ? e.message : 'Network error'
 		};
 	}
