@@ -71,13 +71,17 @@
 		sv:     'rgba(90, 12, 140, 0.55)'
 	};
 
+	// Left-rail dark overlay — always covers the full panel height because it lives on the
+	// parent's background stack, not on the child element.
+	const LEFT_RAIL_OVERLAY =
+		'linear-gradient(to right, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 160px, transparent 161px)';
+
 	// Full-panel horizontal gradient: theme color on the left, fading to dark surface
-	// Uses two-layer background: gradient on top of the dark surface
 	function panelGradient(setId: string): string {
 		const prefix = Object.keys(SET_THEME).find((k) => setId.startsWith(k));
 		const color = prefix ? SET_THEME[prefix] : 'rgba(40, 32, 100, 0.55)';
 		const surface = '#12121e';
-		return `linear-gradient(to right, ${color} 0%, rgba(18,18,30,0) 70%), ${surface}`;
+		return `${LEFT_RAIL_OVERLAY}, linear-gradient(to right, ${color} 0%, rgba(18,18,30,0) 70%), ${surface}`;
 	}
 
 	function rarityGlow(rarity: string | undefined): string {
@@ -401,7 +405,8 @@
 		transition: background 0.3s ease;
 	}
 
-	/* Left panel: logo + set name + pill — transparent so the panel gradient shows through */
+	/* Left panel: logo + set name + pill.
+	   Background comes from the parent's gradient stack so it always spans full panel height. */
 	.chase-set-identity {
 		display: flex;
 		flex-direction: column;
@@ -411,10 +416,7 @@
 		width: 160px;
 		min-width: 160px;
 		padding: 20px 16px;
-		/* subtle dark overlay to keep logo readable against the gradient */
-		background: rgba(0, 0, 0, 0.25);
 		border-right: 1px solid rgba(255, 255, 255, 0.07);
-		border-radius: 16px 0 0 16px;
 	}
 
 	.chase-set-logo-img {
