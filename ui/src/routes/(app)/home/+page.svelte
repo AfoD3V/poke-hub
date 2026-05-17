@@ -243,7 +243,7 @@
 		display: flex;
 		align-items: stretch;
 		border-radius: 16px;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.16);
 		overflow: hidden;
 		height: 128px;
 		background: var(--color-ph-surface, #12121e);
@@ -260,7 +260,7 @@
 		min-width: 160px;
 		padding: 14px 18px;
 		background: linear-gradient(145deg, #1e1b4b 0%, #1a1040 100%);
-		border-right: 1px solid rgba(255, 255, 255, 0.12);
+		border-right: 1px solid rgba(255, 255, 255, 0.16);
 		outline: none;
 	}
 
