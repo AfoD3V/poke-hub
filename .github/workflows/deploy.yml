@@ -68,10 +68,13 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set image tag (git SHA)
+    - name: Set image tag and owner
       id: tag
-      run: echo "TAG=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
-      # Uses first 8 chars of commit SHA, e.g. "a1b2c3d4"
+      run: |
+        echo "TAG=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+        echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+      # GITHUB_SHA::8 = first 8 chars of commit SHA
+      # ${VAR,,} = lowercase in bash
 
     - name: Build and push API image
       uses: docker/build-push-action@v5
@@ -79,8 +82,8 @@ jobs:
         context: ./server
         push: true
         tags: |
-          ${{ env.API_IMAGE }}:${{ steps.tag.outputs.TAG }}
-          ${{ env.API_IMAGE }}:latest
+          ghcr.io/${{ steps.tag.outputs.OWNER }}/pokehub-api:${{ steps.tag.outputs.TAG }}
+          ghcr.io/${{ steps.tag.outputs.OWNER }}/pokehub-api:latest
 
     - name: Build and push UI image
       uses: docker/build-push-action@v5
@@ -88,8 +91,8 @@ jobs:
         context: ./ui
         push: true
         tags: |
-          ${{ env.UI_IMAGE }}:${{ steps.tag.outputs.TAG }}
-          ${{ env.UI_IMAGE }}:latest
+          ghcr.io/${{ steps.tag.outputs.OWNER }}/pokehub-ui:${{ steps.tag.outputs.TAG }}
+          ghcr.io/${{ steps.tag.outputs.OWNER }}/pokehub-ui:latest
 
     - name: Update image tags in Helm values
       run: |
@@ -99,9 +102,12 @@ jobs:
         sudo chmod +x /usr/local/bin/yq
 
         TAG=${{ steps.tag.outputs.TAG }}
+        OWNER=${{ steps.tag.outputs.OWNER }}
 
-        yq e ".api.image.tag = \"$TAG\""  -i helm/values.yaml
-        yq e ".ui.image.tag  = \"$TAG\""  -i helm/values.yaml
+        yq e ".api.image.tag        = \"$TAG\""   -i helm/values.yaml
+        yq e ".ui.image.tag         = \"$TAG\""   -i helm/values.yaml
+        yq e ".api.image.repository = \"ghcr.io/$OWNER/pokehub-api\"" -i helm/values.yaml
+        yq e ".ui.image.repository  = \"ghcr.io/$OWNER/pokehub-ui\""  -i helm/values.yaml
 
     - name: Commit and push updated values
       run: |
