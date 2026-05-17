@@ -26,6 +26,7 @@ ui:
       memory: "128Mi"
       cpu: "250m"
   port: 4000
+  origin: "http://46.224.147.37"  # update to https://yourdomain.com when you add a domain
 postgres:
   image: postgres:16-alpine
   database: pokehub

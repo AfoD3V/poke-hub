@@ -27,8 +27,10 @@ spec:
         - containerPort: {{ .Values.ui.port }}
         env:
         - name: API_BASE_URL
-          value: "http://api-svc:3000"   # SvelteKit SSR talks to api Service
+          value: "http://api-svc:3000"
         - name: PORT
           value: "{{ .Values.ui.port }}"
+        - name: ORIGIN
+          value: "{{ .Values.ui.origin }}"
         resources:
           {{- toYaml .Values.ui.resources | nindent 10 }}
