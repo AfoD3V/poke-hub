@@ -2,15 +2,24 @@
 	import { page } from '$app/stores';
 	import { enhance } from '$app/forms';
 
+	export let isAdmin: boolean = false;
+
 	const navLinks = [
 		{ href: '/home', label: 'Home', icon: 'home' },
 		{ href: '/search', label: 'Search', icon: 'search' },
 		{ href: '/collection', label: 'Collection', icon: 'collection' }
 	];
 
+	const adminLinks = [
+		{ href: '/admin', label: 'Dashboard', icon: 'dashboard' },
+		{ href: '/admin/users', label: 'Users', icon: 'users' },
+		{ href: '/admin/cache', label: 'Cache', icon: 'cache' }
+	];
+
 	$: pathname = $page.url.pathname;
 
 	function isActive(href: string, path: string): boolean {
+		if (href === '/admin') return path === '/admin';
 		return path === href || (href !== '/home' && path.startsWith(href));
 	}
 </script>
@@ -28,7 +37,7 @@
 	</div>
 
 	<!-- Nav links -->
-	<nav aria-label="Main navigation" class="flex-1 py-4 flex flex-col gap-1">
+	<nav aria-label="Main navigation" class="flex-1 py-4 flex flex-col gap-1 overflow-y-auto">
 		{#each navLinks as link (link.href)}
 			<a
 				href={link.href}
@@ -59,6 +68,47 @@
 				{link.label}
 			</a>
 		{/each}
+
+		<!-- Admin section -->
+		{#if isAdmin}
+			<div class="mt-4 mb-1 px-[10px]">
+				<p class="text-[10px] font-semibold uppercase tracking-widest text-ph-muted/60">Admin</p>
+			</div>
+			{#each adminLinks as link (link.href)}
+				<a
+					href={link.href}
+					class="flex items-center gap-3 py-2 pr-3 rounded-r-lg text-sm transition-colors
+					       focus-visible:outline focus-visible:outline-2 focus-visible:outline-ph-accent
+					       {isActive(link.href, pathname)
+						? 'border-l-2 border-ph-accent text-ph-text font-medium pl-[10px]'
+						: 'border-l-2 border-transparent text-ph-muted hover:text-ph-text pl-[10px]'}"
+					aria-current={isActive(link.href, pathname) ? 'page' : undefined}
+				>
+					{#if link.icon === 'dashboard'}
+						<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<rect x="3" y="3" width="7" height="7" rx="1"/>
+							<rect x="14" y="3" width="7" height="7" rx="1"/>
+							<rect x="3" y="14" width="7" height="7" rx="1"/>
+							<rect x="14" y="14" width="7" height="7" rx="1"/>
+						</svg>
+					{:else if link.icon === 'users'}
+						<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+							<circle cx="9" cy="7" r="4"/>
+							<path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+							<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+						</svg>
+					{:else if link.icon === 'cache'}
+						<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<ellipse cx="12" cy="5" rx="9" ry="3"/>
+							<path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+							<path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+						</svg>
+					{/if}
+					{link.label}
+				</a>
+			{/each}
+		{/if}
 	</nav>
 
 	<!-- Logout -->

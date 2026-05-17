@@ -15,6 +15,13 @@
       "when": 1778955785793,
       "tag": "0001_cooing_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778961151746,
+      "tag": "0002_redundant_galactus",
+      "breakpoints": true
     }
   ]
 }
