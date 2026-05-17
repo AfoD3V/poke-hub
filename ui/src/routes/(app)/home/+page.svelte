@@ -93,6 +93,29 @@
 		const snap = entry.cardSnapshot as unknown as Record<string, unknown>;
 		return rarityGlow(typeof snap.rarity === 'string' ? snap.rarity : undefined);
 	}
+
+	// ── Card hover glow — full-panel rarity ambient glow ─────────────────────
+	// Tracks which set panel is hovered and what color to use
+	let hoveredSet: string | null = null;
+	let hoveredColor = 'rgba(255,255,255,0.35)';
+
+	function onCardEnter(setName: string, entry: ChaseEntry) {
+		hoveredSet = setName;
+		hoveredColor = entryGlow(entry);
+	}
+
+	function onCardLeave() {
+		hoveredSet = null;
+	}
+
+	// Returns the full background for a panel: rarity glow overlay + themed gradient + surface.
+	// hovered and glowColor are passed as explicit parameters so Svelte 4 tracks them as
+	// reactive dependencies in the template expression.
+	function panelBackground(setId: string, setName: string, hovered: string | null, glowColor: string): string {
+		const base = panelGradient(setId);
+		if (hovered !== setName) return base;
+		return `radial-gradient(ellipse 70% 80% at 60% 50%, ${glowColor} 0%, transparent 100%), ${base}`;
+	}
 </script>
 
 <svelte:head>
@@ -255,7 +278,7 @@
 		{:else}
 			<div class="flex flex-col gap-4">
 				{#each chaseBySet as { setName, setLogo, setId, entries } (setName)}
-					<div class="chase-set-card" style="background: {panelGradient(setId)}">
+					<div class="chase-set-card" style="background: {panelBackground(setId, setName, hoveredSet, hoveredColor)}">
 						<!-- Left: logo + set name + count pill -->
 						<div class="chase-set-identity">
 							{#if setLogo}
@@ -275,8 +298,9 @@
 							{#each entries as entry (entry.id)}
 								<button
 									class="chase-thumb"
-									style="--glow: {entryGlow(entry)}"
 									on:click={() => openChaseCard(entry)}
+									on:mouseenter={() => onCardEnter(setName, entry)}
+									on:mouseleave={() => onCardLeave()}
 									aria-label="View {entry.cardSnapshot.name}"
 									title={entry.cardSnapshot.name}
 								>
@@ -372,8 +396,9 @@
 		align-items: stretch;
 		border-radius: 16px;
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		/* background set inline via panelGradient() — horizontal themed fade */
+		/* background set inline via panelBackground() — themed fade + rarity glow overlay */
 		/* No overflow:hidden — would clip the 3D card tilt */
+		transition: background 0.3s ease;
 	}
 
 	/* Left panel: logo + set name + pill — transparent so the panel gradient shows through */
@@ -429,6 +454,7 @@
 		gap: 10px;
 		flex: 1;
 		padding: 16px;
+		position: relative; /* glow column positions relative to this */
 	}
 
 	/* Card thumbnails */
@@ -448,32 +474,7 @@
 	.chase-thumb:hover {
 		border-color: rgba(255, 255, 255, 0.25);
 		transform: perspective(800px) rotateY(-6deg) rotateX(4deg) translateY(-8px) scale(1.04);
-		z-index: 5;
-	}
-
-	/* Rarity glow — tall vertical column spanning the full panel row height */
-	.chase-thumb::before {
-		content: '';
-		position: absolute;
-		/* extend far above and below the card so glow fills full panel height */
-		top: -500px;
-		bottom: -500px;
-		left: -16px;
-		right: -16px;
-		background: radial-gradient(
-			ellipse 100% 80px at 50% 50%,
-			var(--glow, rgba(255, 255, 255, 0.35)) 0%,
-			transparent 100%
-		);
-		filter: blur(20px);
-		opacity: 0;
-		transition: opacity 0.3s;
-		z-index: -1;
-		pointer-events: none;
-	}
-
-	.chase-thumb:hover::before {
-		opacity: 1;
+		z-index: 2;
 	}
 
 	/* Shine sweep */
@@ -486,7 +487,6 @@
 		transform: translateX(-100%);
 		transition: transform 0.8s ease;
 		pointer-events: none;
-		overflow: hidden;
 	}
 
 	.chase-thumb:hover::after {
