@@ -32,6 +32,9 @@ const seriesDetailCache: Map<string, { data: SeriesDetail; expiresAt: number }> 
 /** Per-setId cache for set cards. */
 const setCardsCache: Map<string, { data: SetCardItem[]; expiresAt: number }> = new Map();
 
+/** Per-setId cache for set info lookups. */
+const setLogoCache: Map<string, { data: { name: string; logo: string }; expiresAt: number }> = new Map();
+
 /** Reset the sets cache — for use in tests only. */
 export function _resetSetsCache(): void {
   setsCache.data = null;
@@ -48,6 +51,11 @@ export function _resetSeriesCache(): void {
 /** Reset the set cards cache — for use in tests only. */
 export function _resetSetCardsCache(): void {
   setCardsCache.clear();
+}
+
+/** Reset the set logo cache — for use in tests only. */
+export function _resetSetLogoCache(): void {
+  setLogoCache.clear();
 }
 
 // Static GraphQL query for all sets — no interpolation, safe from injection.
@@ -800,4 +808,49 @@ export async function getSetCards(setId: string): Promise<SetCardItem[]> {
   setCardsCache.set(setId, { data: cards, expiresAt: now + CACHE_TTL_MS });
 
   return cards;
+}
+
+/**
+ * Returns the name and logo URL for a single set.
+ * Results are cached per setId for 24 hours.
+ *
+ * @throws TcgProxyServiceError(502/504) on upstream failure
+ */
+export async function getSetInfo(setId: string): Promise<{ name: string; logo: string }> {
+  const now = Date.now();
+  const cached = setLogoCache.get(setId);
+  if (cached && now < cached.expiresAt) {
+    return cached.data;
+  }
+
+  const response = await fetchWithTimeout(UPSTREAM_SET_DETAIL(setId), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  });
+
+  if (response.status === 404) {
+    const empty = { name: "", logo: "" };
+    setLogoCache.set(setId, { data: empty, expiresAt: now + CACHE_TTL_MS });
+    return empty;
+  }
+
+  if (!response.ok) {
+    throw new TcgProxyServiceError(`Upstream returned ${response.status}`, 502);
+  }
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new TcgProxyServiceError("Invalid upstream response body", 502);
+  }
+
+  const raw = body as Record<string, unknown>;
+  const info = {
+    name: typeof raw.name === "string" ? raw.name : "",
+    logo: normalizeLogo(raw.logo)
+  };
+
+  setLogoCache.set(setId, { data: info, expiresAt: now + CACHE_TTL_MS });
+  return info;
 }
