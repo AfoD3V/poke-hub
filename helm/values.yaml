@@ -53,5 +53,11 @@ ingress:
   # No domain yet — Traefik will serve on the VPS IP
   # When you get a domain, set this:
   # host: pokehub.yourdomain.com
+migrate:
+  image:
+    repository: ghcr.io/afod3v/pokehub-migrate
+    tag: "latest"
+    pullPolicy: Always
+
 imagePullSecrets:
   - name: ghcr-secret

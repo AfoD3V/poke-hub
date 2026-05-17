@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pokehub-migrate
+  namespace: pokehub
+  annotations:
+    # Run this Job BEFORE helm install/upgrade applies other resources
+    helm.sh/hook: pre-install,pre-upgrade
+    # Delete the previous Job before creating a new one (keeps cluster clean)
+    helm.sh/hook-delete-policy: before-hook-creation
+    helm.sh/hook-weight: "-5"
+spec:
+  ttlSecondsAfterFinished: 120   # auto-delete the Job 2 minutes after it completes
+  template:
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      restartPolicy: Never       # if migrations fail, don't retry — fail the deploy
+      containers:
+      - name: migrate
+        image: "{{ .Values.migrate.image.repository }}:{{ .Values.migrate.image.tag }}"
+        imagePullPolicy: {{ .Values.migrate.image.pullPolicy }}
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: pokehub-secrets
+              key: postgres-url

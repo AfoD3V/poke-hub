@@ -86,6 +86,17 @@ jobs:
           ghcr.io/${{ steps.tag.outputs.OWNER }}/pokehub-api:${{ steps.tag.outputs.TAG }}
           ghcr.io/${{ steps.tag.outputs.OWNER }}/pokehub-api:latest
 
+    - name: Build and push migrate image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./server/Dockerfile
+        target: migrate
+        push: true
+        tags: |
+          ghcr.io/${{ steps.tag.outputs.OWNER }}/pokehub-migrate:${{ steps.tag.outputs.TAG }}
+          ghcr.io/${{ steps.tag.outputs.OWNER }}/pokehub-migrate:latest
+
     - name: Build and push UI image
       uses: docker/build-push-action@v5
       with:
@@ -108,8 +119,10 @@ jobs:
 
         yq e ".api.image.tag        = \"$TAG\""   -i helm/values.yaml
         yq e ".ui.image.tag         = \"$TAG\""   -i helm/values.yaml
-        yq e ".api.image.repository = \"ghcr.io/$OWNER/pokehub-api\"" -i helm/values.yaml
-        yq e ".ui.image.repository  = \"ghcr.io/$OWNER/pokehub-ui\""  -i helm/values.yaml
+        yq e ".migrate.image.tag    = \"$TAG\""   -i helm/values.yaml
+        yq e ".api.image.repository     = \"ghcr.io/$OWNER/pokehub-api\""     -i helm/values.yaml
+        yq e ".ui.image.repository      = \"ghcr.io/$OWNER/pokehub-ui\""      -i helm/values.yaml
+        yq e ".migrate.image.repository = \"ghcr.io/$OWNER/pokehub-migrate\"" -i helm/values.yaml
 
     - name: Commit and push updated values
       run: |
