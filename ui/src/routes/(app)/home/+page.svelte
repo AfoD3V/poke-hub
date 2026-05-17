@@ -57,24 +57,27 @@
 	// ── Rarity display order ──────────────────────────────────────────────────
 	const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Holo Rare', 'Ultra Rare', 'Special Rare', 'Secret Rare', 'Other'];
 
-	// ── Themed rail colors ────────────────────────────────────────────────────
-	const SET_THEME: Record<string, { from: string; to: string }> = {
-		base:   { from: '#3b0a0a', to: '#1a0505' },
-		jungle: { from: '#0a2e12', to: '#051509' },
-		fossil: { from: '#2a2a1a', to: '#141409' },
-		neo:    { from: '#0a1a3b', to: '#05091a' },
-		hgss:   { from: '#1a2e3b', to: '#0a1520' },
-		bw:     { from: '#1a1a1a', to: '#090909' },
-		xy:     { from: '#1a0a2e', to: '#09051a' },
-		sm:     { from: '#1a2e0a', to: '#0a1505' },
-		swsh:   { from: '#0a2a2e', to: '#05141a' },
-		sv:     { from: '#1a0a2e', to: '#0d0518' }
+	// ── Themed panel colors (horizontal fade across the full panel) ──────────
+	const SET_THEME: Record<string, string> = {
+		base:   'rgba(140, 12, 12, 0.55)',
+		jungle: 'rgba(12, 100, 30, 0.55)',
+		fossil: 'rgba(100, 90, 20, 0.55)',
+		neo:    'rgba(12, 30, 140, 0.55)',
+		hgss:   'rgba(20, 70, 130, 0.55)',
+		bw:     'rgba(50, 50, 50, 0.55)',
+		xy:     'rgba(80, 12, 140, 0.55)',
+		sm:     'rgba(12, 100, 70, 0.55)',
+		swsh:   'rgba(12, 80, 120, 0.55)',
+		sv:     'rgba(90, 12, 140, 0.55)'
 	};
 
-	function railGradient(setId: string): string {
+	// Full-panel horizontal gradient: theme color on the left, fading to dark surface
+	// Uses two-layer background: gradient on top of the dark surface
+	function panelGradient(setId: string): string {
 		const prefix = Object.keys(SET_THEME).find((k) => setId.startsWith(k));
-		const theme = prefix ? SET_THEME[prefix] : { from: '#1e1b4b', to: '#1a1040' };
-		return `linear-gradient(180deg, ${theme.from} 0%, ${theme.to} 100%)`;
+		const color = prefix ? SET_THEME[prefix] : 'rgba(40, 32, 100, 0.55)';
+		const surface = '#12121e';
+		return `linear-gradient(to right, ${color} 0%, rgba(18,18,30,0) 70%), ${surface}`;
 	}
 
 	function rarityGlow(rarity: string | undefined): string {
@@ -252,9 +255,9 @@
 		{:else}
 			<div class="flex flex-col gap-4">
 				{#each chaseBySet as { setName, setLogo, setId, entries } (setName)}
-					<div class="chase-set-card">
+					<div class="chase-set-card" style="background: {panelGradient(setId)}">
 						<!-- Left: logo + set name + count pill -->
-						<div class="chase-set-identity" style="background: {railGradient(setId)}">
+						<div class="chase-set-identity">
 							{#if setLogo}
 								<img
 									src={setLogo}
@@ -369,11 +372,11 @@
 		align-items: stretch;
 		border-radius: 16px;
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		overflow: hidden;
-		background: var(--color-ph-surface, #12121e);
+		/* background set inline via panelGradient() — horizontal themed fade */
+		/* No overflow:hidden — would clip the 3D card tilt */
 	}
 
-	/* Left panel: logo + set name + pill */
+	/* Left panel: logo + set name + pill — transparent so the panel gradient shows through */
 	.chase-set-identity {
 		display: flex;
 		flex-direction: column;
@@ -383,7 +386,10 @@
 		width: 160px;
 		min-width: 160px;
 		padding: 20px 16px;
-		border-right: 1px solid rgba(255, 255, 255, 0.08);
+		/* subtle dark overlay to keep logo readable against the gradient */
+		background: rgba(0, 0, 0, 0.25);
+		border-right: 1px solid rgba(255, 255, 255, 0.07);
+		border-radius: 16px 0 0 16px;
 	}
 
 	.chase-set-logo-img {
