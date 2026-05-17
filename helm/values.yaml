@@ -1,7 +1,7 @@
 api:
   image:
     repository: ghcr.io/afod3v/pokehub-api
-    tag: "latest"
+    tag: "a1268f07"
     pullPolicy: Always
   replicas: 1
   resources:
@@ -12,11 +12,10 @@ api:
       memory: "256Mi"
       cpu: "500m"
   port: 3000
-
 ui:
   image:
     repository: ghcr.io/afod3v/pokehub-ui
-    tag: "latest"
+    tag: "a1268f07"
     pullPolicy: Always
   replicas: 1
   resources:
@@ -27,7 +26,6 @@ ui:
       memory: "128Mi"
       cpu: "250m"
   port: 4000
-
 postgres:
   image: postgres:16-alpine
   database: pokehub
@@ -40,7 +38,6 @@ postgres:
     limits:
       memory: "256Mi"
       cpu: "500m"
-
 redis:
   image: redis:7-alpine
   storage: 1Gi
@@ -51,12 +48,10 @@ redis:
     limits:
       memory: "64Mi"
       cpu: "100m"
-
 ingress:
   enabled: true
   # No domain yet — Traefik will serve on the VPS IP
   # When you get a domain, set this:
   # host: pokehub.yourdomain.com
-
 imagePullSecrets:
   - name: ghcr-secret
