@@ -451,16 +451,23 @@
 		z-index: 5;
 	}
 
-	/* Rarity glow behind card */
+	/* Rarity glow — tall vertical column spanning the full panel row height */
 	.chase-thumb::before {
 		content: '';
 		position: absolute;
-		inset: -4px;
-		border-radius: 10px;
-		background: radial-gradient(closest-side, var(--glow, rgba(255, 255, 255, 0.35)) 0%, transparent 75%);
-		filter: blur(8px);
+		/* extend far above and below the card so glow fills full panel height */
+		top: -500px;
+		bottom: -500px;
+		left: -16px;
+		right: -16px;
+		background: radial-gradient(
+			ellipse 100% 80px at 50% 50%,
+			var(--glow, rgba(255, 255, 255, 0.35)) 0%,
+			transparent 100%
+		);
+		filter: blur(20px);
 		opacity: 0;
-		transition: opacity 0.25s;
+		transition: opacity 0.3s;
 		z-index: -1;
 		pointer-events: none;
 	}
