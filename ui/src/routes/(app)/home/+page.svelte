@@ -79,39 +79,6 @@
 		return `linear-gradient(to right, ${color} 0%, rgba(18,18,30,0) 85%), ${surface}`;
 	}
 
-	function rarityGlow(rarity: string | undefined): string {
-		const r = (rarity ?? '').toLowerCase();
-		if (r.includes('secret') || r === 'hyper rare') return 'rgba(251,191,36,0.6)';
-		if (r.includes('ultra') || r === 'double rare') return 'rgba(168,85,247,0.6)';
-		if (r.includes('special illustration') || r === 'illustration rare') return 'rgba(236,72,153,0.6)';
-		if (r.includes('holo')) return 'rgba(96,165,250,0.6)';
-		return 'rgba(255,255,255,0.35)';
-	}
-
-	function entryGlow(entry: ChaseEntry): string {
-		const snap = entry.cardSnapshot as unknown as Record<string, unknown>;
-		return rarityGlow(typeof snap.rarity === 'string' ? snap.rarity : undefined);
-	}
-
-	// ── Card hover glow — full-panel rarity ambient glow ─────────────────────
-	let hoveredSet: string | null = null;
-	let hoveredColor = 'rgba(255,255,255,0.35)';
-
-	function onCardEnter(setName: string, entry: ChaseEntry) {
-		hoveredSet = setName;
-		hoveredColor = entryGlow(entry);
-	}
-
-	function onCardLeave() {
-		hoveredSet = null;
-	}
-
-	// Returns the full background for a panel: rarity glow overlay + themed gradient + surface.
-	function panelBackground(setId: string, setName: string, hovered: string | null, glowColor: string): string {
-		const base = panelGradient(setId);
-		if (hovered !== setName) return base;
-		return `radial-gradient(circle farthest-corner at 50% 50%, ${glowColor} 0%, transparent 100%), ${base}`;
-	}
 </script>
 
 <svelte:head>
@@ -264,7 +231,7 @@
 		{:else}
 			<div class="flex flex-col gap-4">
 				{#each chaseBySet as { setName, setLogo, setId, entries } (setName)}
-					<div class="chase-set-card" style="background: {panelBackground(setId, setName, hoveredSet, hoveredColor)}">
+					<div class="chase-set-card" style="background: {panelGradient(setId)}">
 						<div class="chase-set-identity">
 							{#if setLogo}
 								<img
@@ -283,8 +250,6 @@
 								<button
 									class="chase-thumb"
 									on:click={() => openChaseCard(entry)}
-									on:mouseenter={() => onCardEnter(setName, entry)}
-									on:mouseleave={() => onCardLeave()}
 									aria-label="View {entry.cardSnapshot.name}"
 									title={entry.cardSnapshot.name}
 								>
@@ -379,7 +344,6 @@
 		align-items: stretch;
 		border-radius: 16px;
 		border: 1px solid rgba(255, 255, 255, 0.1);
-		transition: background 0.3s ease;
 	}
 
 	/* Left panel: logo + set name + pill.
