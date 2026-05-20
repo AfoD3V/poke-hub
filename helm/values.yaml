@@ -1,7 +1,7 @@
 api:
   image:
     repository: ghcr.io/afod3v/pokehub-api
-    tag: "9fa157ef"
+    tag: "04dddffa"
     pullPolicy: Always
   replicas: 1
   resources:
@@ -15,7 +15,7 @@ api:
 ui:
   image:
     repository: ghcr.io/afod3v/pokehub-ui
-    tag: "9fa157ef"
+    tag: "04dddffa"
     pullPolicy: Always
   replicas: 1
   resources:
@@ -56,7 +56,7 @@ ingress:
 migrate:
   image:
     repository: ghcr.io/afod3v/pokehub-migrate
-    tag: "9fa157ef"
+    tag: "04dddffa"
     pullPolicy: Always
 imagePullSecrets:
   - name: ghcr-secret
