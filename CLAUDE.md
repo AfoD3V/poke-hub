@@ -84,6 +84,8 @@ Three-layer system in `ui/src/lib/components/Card.tsx`:
 - **TCGdex GraphQL nulls entire list items, not just fields:** When a non-nullable field (e.g. `AttacksListItem.name`) is null, TCGdex returns the whole list item as `null` (e.g. `attacks[i] === null`). The response also includes a top-level `errors` array alongside valid `data.cards`. Do not treat the `errors` array as fatal — only fail if `data.cards` is absent. Filter with `a !== null && a.name !== null`.
 - **`cancelAnimationFrame` stub in tests:** Use `Object.defineProperty(window, 'cancelAnimationFrame', ...)` (not `vi.stubGlobal`) in `setup.ts` so the stub survives `vi.restoreAllMocks()`.
 - **Next.js Route Groups `(name)` for layout isolation:** Use `(app)/` route group to share a sidebar shell layout across authenticated pages without affecting the URL. Auth routes stay outside the group and render without the sidebar.
+- **CSS Module media query order matters — base rules before overrides:** If a base rule (e.g. `.bottom-nav { display: none }`) appears AFTER a media query override (e.g. `@media (max-width: 767px) { .bottom-nav { display: flex } }`), the base rule wins at all viewports due to cascade order. Always declare base/default styles first, then responsive overrides last.
+- **Docker rebuilds required for CSS changes:** The Docker UI container uses a production Next.js build. CSS Module changes are not hot-reloaded. Run `docker compose up -d --build` after any CSS change and verify with `playwright-cli` before marking done.
 
 ## Required Skills
 

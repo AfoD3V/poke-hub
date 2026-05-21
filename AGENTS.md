@@ -415,3 +415,11 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
 - **`cancelAnimationFrame` must be stubbed via `Object.defineProperty` in tests:** `vi.stubGlobal` stubs are
   reset by `vi.restoreAllMocks()`. Use `Object.defineProperty(window, 'cancelAnimationFrame', { value: ... })`
   in `setup.ts` so the stub persists through all test files.
+- **CSS Module media queries must declare base rules BEFORE overriding media queries:** In CSS Modules, the
+  cascade still applies in declaration order. If a base rule (e.g. `.bottom-nav { display: none }`) is placed
+  AFTER a media query that sets `.bottom-nav { display: flex }`, the base rule wins at all viewport widths.
+  Always declare base/default styles first, then responsive overrides last.
+- **Docker rebuilds required for CSS changes in production mode:** The Docker UI container builds a static
+  Next.js production export. Unlike `next dev`, CSS Module changes are NOT hot-reloaded. Always run
+  `docker compose up -d --build` after any CSS change and verify visually with `playwright-cli` before
+  marking tasks done.
