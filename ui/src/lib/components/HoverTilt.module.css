@@ -1,0 +1,48 @@
+.hover-tilt-container {
+  perspective: 600px;
+  touch-action: none;
+}
+
+.hover-tilt {
+  --hover-tilt-default-gradient: radial-gradient(
+    farthest-corner circle at var(--gradient-x) var(--gradient-y),
+    lch(95% 2.7 var(--hover-tilt-glare-hue, 270) / calc(var(--hover-tilt-glare-intensity, 1) * 0.66)) 8%,
+    lch(88% 5.5 var(--hover-tilt-glare-hue, 270) / calc(var(--hover-tilt-glare-intensity, 1) * 0.5)) 28%,
+    lch(05% 3.5 var(--hover-tilt-glare-hue, 270) / calc(var(--hover-tilt-glare-intensity, 1) * 0.25)) 90%
+  );
+  position: relative;
+  border-radius: inherit;
+  transform: scale(var(--scale)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
+  transform-style: preserve-3d;
+  will-change: transform, box-shadow, opacity;
+}
+
+.hover-tilt::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: var(--hover-tilt-custom-gradient, var(--hover-tilt-default-gradient));
+  mix-blend-mode: var(--hover-tilt-blend-mode, overlay);
+  opacity: var(--hover-tilt-opacity, 0);
+  will-change: background-image, opacity;
+}
+
+.hover-tilt-shadow {
+  --shadow-blur-1: calc(var(--hover-tilt-shadow-blur, 12) * 1px);
+  --shadow-blur-2: calc(var(--shadow-blur-1) / 2);
+  --hover-tilt-default-shadow:
+    calc(var(--shadow-x) * var(--shadow-blur-1)) calc(var(--shadow-y) * var(--shadow-blur-1) / 2 + var(--shadow-blur-1) / 4) calc(var(--shadow-blur-1) / 2) calc(var(--shadow-blur-1) * -0.25) lch(0% 0 0 / calc(var(--hover-tilt-opacity, 0) * 0.125)),
+    calc(var(--shadow-x) * var(--shadow-blur-2)) calc(var(--shadow-y) * var(--shadow-blur-2) / 2 + var(--shadow-blur-2) / 4) calc(var(--shadow-blur-2) / 2) calc(var(--shadow-blur-2) * -0.25) lch(0% 0 0 / calc(var(--hover-tilt-opacity, 0) * 0.125));
+  box-shadow: var(--hover-tilt-custom-shadow, var(--hover-tilt-default-shadow));
+}
+
+.hover-tilt-glare-mask::before {
+  mask-image: var(--hover-tilt-glare-mask, none);
+  mask-size: cover;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-mode: var(--hover-tilt-glare-mask-mode, match-source);
+  mask-composite: var(--hover-tilt-glare-mask-composite, add);
+}

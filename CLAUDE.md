@@ -19,7 +19,7 @@ docker compose down            # Stop all services
 ```
 
 Services when running:
-- UI:    http://localhost:4000
+- UI:    http://localhost:4000  (Next.js 14 App Router)
 - API:   http://localhost:3000
 - DB:    localhost:5432 (exposed for local tooling)
 - Redis: localhost:6379
@@ -41,9 +41,9 @@ bun run lint         # ESLint for server/src
 
 ### Frontend (`ui/`) — for tests and type-checking only; runtime is Docker
 ```bash
-bun run check        # svelte-check type checking
+npm run check        # tsc --noEmit type checking
 bun run test         # Run Vitest in jsdom environment
-bun run lint         # ESLint for ui/src (TypeScript + Svelte)
+bun run lint         # ESLint for ui/src (TypeScript + React)
 ```
 
 ## Architecture
@@ -51,47 +51,46 @@ bun run lint         # ESLint for ui/src (TypeScript + Svelte)
 This is a monorepo with three packages:
 
 - **`server/`** — Bun + Hono API. Route handlers are thin; business logic lives in `server/src/services/`. Routes: `/auth/*`, `/api/cards/*`, `/health`.
-- **`ui/`** — SvelteKit frontend. Uses SSR form actions for auth (not client-side fetch). Communicates only with the Hono backend — never directly with external APIs.
+- **`ui/`** — Next.js 14 App Router frontend. Server Components for data fetching; Client Components (`'use client'`) for interactivity. API Route Handlers proxy all backend calls (no direct external API access from client). Auth via Server Actions + HttpOnly cookies.
+- **`ui-svelte/`** — Legacy SvelteKit frontend (kept as backup reference; not deployed).
 - **`shared/`** — TypeScript types crossing the client/server boundary (`shared/auth.ts`, `shared/tcg.ts`). No `any` types allowed; use `unknown` with type guards.
 
 ### Auth Flow
-JWT (HS256, 7-day, HttpOnly + SameSite=Strict cookie). SvelteKit SSR form actions receive `Set-Cookie` from Hono, extract the JWT string, then call `cookies.set()` — simply forwarding the raw header does not work (SvelteKit sanitizes it). SSR `load()` functions must forward cookies to the backend via `Cookie:` header for session validation.
+JWT (HS256, 7-day, HttpOnly + SameSite=Strict cookie). Next.js Server Actions POST to `BACKEND_URL/auth/login`, extract the `set-cookie` header value, then call `cookies().set()` — forwarding the raw header via `NextResponse` does not work in App Router. Server Components must forward cookies via `Cookie:` header using `cookies().get()` from `next/headers`.
 
 ### Database
 PostgreSQL + Drizzle ORM. Schema is in `server/src/db/schema.ts`. Never modify applied migration files — create a new migration instead. Raw SQL is forbidden; all DB access goes through Drizzle.
 
 ### Holographic Card Effect
-Three-layer system in `ui/src/lib/components/Card.svelte`:
-1. Svelte `spring()` stores for `rotate`, `glare`, `background` — gives physical bounce feel
+Three-layer system in `ui/src/lib/components/Card.tsx`:
+1. Custom `useSpring` hook implementing Svelte spring ODE: `velocity += (target - value) * stiffness; velocity *= (1 - damping); value += velocity` — gives physical bounce feel
 2. JS computes CSS variables with correct units every frame (`--rotate-x`, `--rotate-y`, `--pointer-x/y`, `--pointer-from-center/top/left`, `--background-x/y`, `--card-opacity`) — CSS `calc()` cannot multiply `%` by `deg`
-3. Two overlay divs: `.card__shine` (`mix-blend-mode: color-dodge`) + `.card__glare` (`mix-blend-mode: overlay`) — rarity via `data-rarity` attribute selectors
+3. Two overlay divs: `.card__shine` (`mix-blend-mode: color-dodge`) + `.card__glare` (`mix-blend-mode: overlay`) — rarity via `data-rarity` attribute selectors in CSS Modules (data-* attributes are NOT hashed by CSS Modules, only class names are)
 
 ## Key Gotchas
 
 - **`bun test` vs `bun run test`:** `bun test` invokes Bun's native runner and skips Vitest + jsdom config. Always use `bun run test`.
-- **`$app/*` mocks required:** SvelteKit's `$app/forms`, `$app/stores`, `$app/navigation`, `$app/environment` don't exist in jsdom. Mock them in `ui/src/tests/setup.ts` with `vi.mock()`.
-- **3D flip + `overflow: hidden`:** `overflow: hidden` on a `.face` element creates a stacking context that breaks `backface-visibility: hidden`. Move it to a nested `.face-inner` wrapper. Similarly, `filter` on a `transform-style: preserve-3d` element flattens 3D space — move the filter to an outer wrapper.
-- **`overflow: hidden` on any ancestor of a tilt causes "invisible frame" clipping:** Even when `overflow: hidden` is on a non-face wrapper (e.g. `.face-inner`), tilting the card via `card__rotator` extends the projected card outside that ancestor's 2D bounds — the card is clipped as if by an invisible box. Fix: remove `overflow: hidden` from `.face-inner` entirely; the flip is controlled by `backface-visibility` on `.face`, not by overflow. Move rounded-corner clipping to `border-radius` directly on `<img>` (images are clipped by their own `border-radius` without an overflow parent).
-- **`getByLabelText` ambiguity:** When a password input and its show/hide toggle share "password" in their labels, use `getByLabelText(/password/i, { selector: "input" })`.
+- **CSS Modules + `data-*` selectors:** CSS Modules hash class names but NOT `data-*` attribute selectors. Selectors like `[data-rarity="rare holo"] .card__shine` work verbatim — do NOT wrap them in `:local()`.
+- **`useSpring` TDZ self-reference:** The RAF callback in `useSpring` references itself for the next frame. Use a `frameRef = useRef<FrameRequestCallback>(() => {})` pattern — assign the real function to `frameRef.current` inside `useEffect`, and call `requestAnimationFrame(frameRef.current)` rather than the function directly. This avoids the `react-hooks/exhaustive-deps` TDZ lint error.
+- **`useState` for spring display value (not `useRef`):** `useRef` mutations don't trigger re-renders. The displayed spring value must be `useState` so React re-renders on each tick.
+- **`useState(() => Math.random())` for seed values:** `Math.random()` in the render body triggers `react-hooks/purity`. Use the initializer form `useState(() => Math.random())` instead.
+- **`Array.from(new Set(...))` not `[...new Set(...)]`:** The Docker build TS target doesn't support Set spread. Always use `Array.from()`.
+- **Next.js API Route Handlers as proxies:** `next dev` has no proxy layer; adapter-node has none either. Any client-side `fetch('/api/...')` that reaches Hono must have a corresponding `ui/src/app/api/.../route.ts` handler. Use the shared `proxyGet/proxyPost/proxyDelete` helpers in `ui/src/lib/apiProxy.ts`.
+- **`playwright-cli open` resets the browser session:** Each `playwright-cli open <url>` creates a new context and discards all cookies (including auth). Navigate within the same session using `playwright-cli click` on sidebar links — do not call `open` again.
 - **Never work on local `main`:** Changes on `main` create untracked files that conflict on `git pull` after a PR merge. Always branch first: `git checkout -b feature/...`.
 - **Always branch from an up-to-date `main`:** Before creating any branch, run `git checkout main && git fetch origin && git pull origin main` to ensure local `main` is fully in sync with remote.
 - **Return to `main` after PR:** Once a PR is created, immediately run `git checkout main` so the next task starts from a clean base.
-- **`tsconfig.json` `paths` overrides `$lib` alias:** Adding a `paths` block to `tsconfig.json` (which extends `.svelte-kit/tsconfig.json`) silently drops the auto-generated `$lib/*` aliases. Symptom: `Cannot find module '$lib/...'` in `svelte-check`. Fix: put custom aliases (e.g. `$shared/*`) in `svelte.config.js` `kit.alias`, not `tsconfig.json`.
-- **Route groups `(name)` for layout isolation:** Use `(app)/` route group to share a sidebar shell layout across authenticated pages without affecting the URL. Auth routes stay outside the group and render without the sidebar. Run `svelte-kit sync` after any route restructure before type-checking.
-- **`playwright-cli open` resets the browser session:** Each `playwright-cli open <url>` creates a new context and discards all cookies (including auth). To visit authenticated pages during verification, navigate within the same session using `playwright-cli click <ref>` on sidebar links — do not call `open` again.
-- **Vite dev server auto-increments port:** If 5173 is in use, Vite picks 5174, 5175, etc. Always read the `Local:` line from `bun run dev` output before running `playwright-cli open` or browser assertions.
 - **Docker migrations use a separate `migrate` service:** `drizzle-kit` is a dev dependency and is not present in the production `api` image. A dedicated `migrate` stage in `server/Dockerfile` installs all deps (including dev) and runs `drizzle-kit migrate`. It starts before `api`, runs once, and exits. Check its output with `docker compose logs migrate`. Never try to run `db:migrate` inside the `api` container.
 - **Docker Compose credentials vs `server/.env`:** The root `.env` defines actual Postgres credentials used by all containers (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `DATABASE_URL` with `@db:5432`). `server/.env` is only used for local `bun run` commands and must use `@localhost:5432` with the same credentials. Keep them in sync.
 - **TCGdex GraphQL nulls entire list items, not just fields:** When a non-nullable field (e.g. `AttacksListItem.name`) is null, TCGdex returns the whole list item as `null` (e.g. `attacks[i] === null`). The response also includes a top-level `errors` array alongside valid `data.cards`. Do not treat the `errors` array as fatal — only fail if `data.cards` is absent. Filter with `a !== null && a.name !== null`.
-- **SvelteKit adapter-node has no dev proxy — use `+server.ts` for client API calls:** Vite dev server proxies `/api/*` to Hono; adapter-node does not. Any client-side `fetch('/api/...')` that needs to reach Hono in Docker must have a corresponding `ui/src/routes/api/.../+server.ts` proxy endpoint that forwards the request (including the `cookie` header) to `API_BASE_URL`. Return `new Response(upstreamBody, { status })` and catch fetch errors with JSON 502.
-- **Svelte 4 template `as Type` cast causes parse error:** TypeScript type assertions inside Svelte 4 template event handlers (e.g. `on:error={(e) => { (e.currentTarget as HTMLImageElement)... }}`) cause "Unexpected token" from svelte-check. Extract to a typed function in `<script>` instead.
-- **`SvelteMap` is Svelte 5 only:** The `@sveltejs/mcp` autofixer may suggest replacing `Map` with `SvelteMap`. Ignore this in Svelte 4 projects.
+- **`cancelAnimationFrame` stub in tests:** Use `Object.defineProperty(window, 'cancelAnimationFrame', ...)` (not `vi.stubGlobal`) in `setup.ts` so the stub survives `vi.restoreAllMocks()`.
+- **Next.js Route Groups `(name)` for layout isolation:** Use `(app)/` route group to share a sidebar shell layout across authenticated pages without affecting the URL. Auth routes stay outside the group and render without the sidebar.
 
 ## Required Skills
 
 Invoke these skills automatically — do not wait to be asked:
 
-- **Frontend work** (any `.svelte`, `.svelte.ts`, `.svelte.js`, or `ui/` file): invoke `svelte-code-writer`, `svelte-core-bestpractices`, and `ui-ux-pro-max` before writing or editing code.
+- **Frontend work** (any `.tsx`, `.ts`, or `ui/` file): invoke `ui-ux-pro-max` before writing or editing code.
 - **Backend work** (any `server/` file or Hono route/middleware): invoke `hono` before writing or editing code.
 - **Browser debugging, visual verification, or end-to-end testing**: invoke `playwright-cli` skill. Use it to confirm pages render correctly, debug unexpected UI behaviour via snapshots, and verify full flows (e.g. login → search → result) before marking tasks done.
 - **OpenSpec task completion** (final step before opening a PR): invoke `security-secure-coding` and resolve all findings before merging to `main`.
@@ -127,7 +126,7 @@ Invoke these skills automatically — do not wait to be asked:
 
 A task is complete only when:
 1. ESLint passes (`bun run lint` from repo root — zero errors).
-2. Type checks pass (`bun run check` in `ui/`; TypeScript clean in `server/`).
+2. Type checks pass (`npm run check` in `ui/`; TypeScript clean in `server/`).
 3. All tests pass (`bun run test` in both packages).
 4. Frontend changes verified via `playwright-cli snapshot`/`screenshot` (no visual regressions).
 5. New API endpoints have tests + Postman collection updated.

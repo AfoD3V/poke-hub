@@ -1,40 +1,28 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
 
-// Mock SvelteKit's $app/* modules which are not available in the jsdom test
-// environment (they're injected by the SvelteKit Vite plugin at build time).
-
-vi.mock('$app/forms', () => ({
-	/** Minimal Svelte action stub — does nothing in unit tests. */
-	enhance: () => undefined
-}));
-
-vi.mock('$app/navigation', () => ({
-	goto: vi.fn(),
-	invalidate: vi.fn(),
-	preloadData: vi.fn()
-}));
-
-vi.mock('$app/stores', async () => {
-	const { readable } = await vi.importActual<typeof import('svelte/store')>('svelte/store');
-	return {
-		page: readable({
-			url: new URL('http://localhost/'),
-			params: {},
-			route: { id: '' },
-			status: 200,
-			error: null,
-			data: {},
-			form: null
-		}),
-		navigating: readable(null),
-		updated: readable(false)
-	};
+// jsdom doesn't define RAF/cAF — provide stubs that survive vi.restoreAllMocks()
+// These are direct property assignments (not vi.stubGlobal) so they are not restored by vitest
+Object.defineProperty(global, 'requestAnimationFrame', {
+  writable: true, configurable: true,
+  value: (cb: FrameRequestCallback) => { setTimeout(() => cb(Date.now()), 16); return 0; },
+});
+Object.defineProperty(global, 'cancelAnimationFrame', {
+  writable: true, configurable: true,
+  value: (_id: number) => {},
 });
 
-vi.mock('$app/environment', () => ({
-	browser: false,
-	building: false,
-	dev: true,
-	version: 'test'
+// Mock next/navigation used by Sidebar and pages
+vi.mock('next/navigation', () => ({
+  usePathname: vi.fn(() => '/'),
+  useRouter: vi.fn(() => ({ push: vi.fn(), replace: vi.fn() })),
+  redirect: vi.fn(),
+}));
+
+// Mock next/headers used by Server Actions
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(() => ({
+    get: vi.fn(),
+    set: vi.fn(),
+    delete: vi.fn(),
+  })),
 }));

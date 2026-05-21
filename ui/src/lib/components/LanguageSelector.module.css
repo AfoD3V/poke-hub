@@ -1,0 +1,14 @@
+.select {
+  background: var(--ph-surface);
+  border: 1px solid var(--ph-border);
+  color: var(--ph-text);
+  font-family: 'Geist', sans-serif;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  width: auto;
+}
+.select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(227,0,11,0.4);
+}
