@@ -340,15 +340,15 @@
 
 .chase-thumb img {
   display: block;
-  width: 80px;
-  height: 112px;
+  width: 107px;
+  height: 150px;
   object-fit: cover;
   border-radius: 5px;
 }
 
 .chase-thumb-placeholder {
-  width: 80px;
-  height: 112px;
+  width: 107px;
+  height: 150px;
   background: rgba(255,255,255,0.04);
   border-radius: 5px;
   display: flex;
@@ -360,12 +360,12 @@
 
 @media (max-width: 767px) {
   .chase-thumb img {
-    width: 64px;
-    height: 90px;
+    width: 85px;
+    height: 119px;
   }
   .chase-thumb-placeholder {
-    width: 64px;
-    height: 90px;
+    width: 85px;
+    height: 119px;
   }
   .chase-set-identity {
     width: 110px;
