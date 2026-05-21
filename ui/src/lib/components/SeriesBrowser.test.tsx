@@ -28,7 +28,7 @@ describe('SeriesBrowser', () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  it('renders cards in column 3 after selectSet is called', async () => {
+  it('renders cards after navigating series → set', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {
       if (url.includes('/api/series/')) {
         return Promise.resolve({
@@ -45,16 +45,17 @@ describe('SeriesBrowser', () => {
       return Promise.reject(new Error('Unknown URL'));
     }));
 
-    const { getByText } = render(<SeriesBrowser series={mockSeries} onSelect={() => {}} />);
+    const { getAllByText, getByText } = render(<SeriesBrowser series={mockSeries} onSelect={() => {}} />);
 
-    // Click a series to load sets (col 2)
-    fireEvent.click(getByText('Base'));
+    // "Base" appears in both the sidebar nav and the showcase grid — click the sidebar item (first)
+    const baseButtons = getAllByText('Base');
+    fireEvent.click(baseButtons[0]);
 
-    // Wait for sets to load then click the set (col 3)
+    // Wait for sets to load then click the set
     await waitFor(() => getByText('Base Set'));
     fireEvent.click(getByText('Base Set'));
 
-    // Cards should render in column 3
+    // Cards should render in the card grid
     await waitFor(() => {
       expect(getByText('Charizard')).toBeInTheDocument();
       expect(getByText('Gyarados')).toBeInTheDocument();
