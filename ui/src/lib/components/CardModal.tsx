@@ -203,7 +203,7 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
     >
       <button className={styles['close-btn']} onClick={onClose} aria-label="Close">×</button>
 
-      <div className={styles['modal-content']}>
+      <div className={styles['modal-content']} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={styles['flip-shadow-wrap']}>
         <div className={`${styles['flip-wrap']} ${flipped ? styles.flipped : ''}`}>
           {/* Back face */}
