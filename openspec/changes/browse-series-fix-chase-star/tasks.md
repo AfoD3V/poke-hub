@@ -44,4 +44,4 @@
   - Search for a card NOT on the chase list → no star badge ✓
   - `playwright-cli screenshot` captures both scenarios
   - Verification: Screenshots confirm expected behavior
-- [ ] 5.5 Manual sign-off: human verifier confirms the Browse Series card grid and chase star badge work as described on `localhost:4000`.
+- [ ] 5.5 Manual sign-off: human verifier confirms the Browse Series card grid and chase star badge work as described on `localhost:4000`. PR: https://github.com/AfoD3V/poke-hub/pull/31
