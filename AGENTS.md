@@ -54,7 +54,6 @@ poke-hub/
 |-- openspec/
 |-- shared/
 |-- ui/           ← Next.js 14 App Router (primary frontend)
-|-- ui-svelte/    ← Legacy SvelteKit (backup reference, not deployed)
 |-- server/
 `-- resources/
 ```
@@ -119,7 +118,7 @@ Invoke these skills automatically — do not wait to be asked.
 
 - Zero trust. All backend routes (except explicit public ones like `/auth/login`)
   must be protected by authentication middleware.
-- Hide secrets. External API keys must never touch the frontend. The SvelteKit
+- Hide secrets. External API keys must never touch the frontend. The Next.js
   client only communicates with the Hono backend, which acts as a secure proxy.
 - Safe queries. All database interactions must go through Drizzle ORM. Raw SQL
   is forbidden.
@@ -139,7 +138,7 @@ Invoke these skills automatically — do not wait to be asked.
 **Other test requirements:**
 - No tests, no merge. Every new feature must include tests.
 - Backend tests: use Vitest for unit testing services and Hono API routes.
-- Frontend tests: use Vitest + Svelte Testing Library for component rendering and state verification.
+- Frontend tests: use Vitest + React Testing Library for component rendering and state verification.
 - UI states: always handle loading and error states in the UI.
 - Task verification steps must be actionable. For tasks broken into steps (e.g., 1.1, 1.2, 1.3), each step's verification MUST be executable either manually or with tests at that stage.
 
@@ -282,7 +281,7 @@ A task is complete **only** when all of the following are true:
 - Never commit the `resources/` directory. It must remain gitignored.
 - Never remove or rename existing API endpoints without flagging it as a
   breaking change.
-- Never bypass the Hono proxy to fetch external data directly from the SvelteKit client.
+- Never bypass the Hono proxy to fetch external data directly from the Next.js client.
 - Never write `any` in TypeScript. Use `unknown` with type guards if necessary.
 - Never modify Drizzle migration files once they have been applied. Create a new migration.
 - Never implement complex backend logic inside route handlers; extract it to
@@ -295,15 +294,6 @@ A task is complete **only** when all of the following are true:
 **Agents must update this section immediately when discovering a new caveat,
 bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
 
-- **SvelteKit SSR + HttpOnly cookies:** SvelteKit SSR needs to correctly pass
-  the HttpOnly cookie to the Hono backend during `load()` functions, otherwise
-  SSR requests will fail authentication.
-- **`$app/*` modules must be mocked in Vitest:** SvelteKit's `$app/forms`,
-  `$app/stores`, `$app/navigation`, and `$app/environment` are injected by the
-  SvelteKit Vite plugin at build time and are **not** available in the jsdom
-  test environment. Always mock them in `src/tests/setup.ts` using
-  `vi.mock()` before running Vitest component tests. Failure to do so results
-  in `document is not defined` errors from `@testing-library/svelte`.
 - **Vitest `environment` config is in `vitest.config.ts`:** Unlike old Vite
   setups, the `jsdom` environment must be set in `vitest.config.ts`
   (`defineConfig` from `vitest/config`, not `vite`). A typo like `engvironment`
@@ -314,12 +304,6 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   `aria-label`, `getByLabelText(/password/i)` throws a multiple-elements
   error. Use `getByLabelText(/password/i, { selector: "input" })` to target
   only the form field.
-- **SvelteKit form actions + cookie forwarding:** When implementing auth form
-  actions in `+page.server.ts`, the `fetch()` response from the Hono backend
-  contains the `Set-Cookie` header as a raw string. You must parse the JWT
-  token out of that string and then call `cookies.set()` on the SvelteKit
-  `cookies` store to forward the session to the browser. Simply forwarding
-  the raw header does not work because SvelteKit sanitizes headers.
 - **`bun test` vs `bun run test`:** `bun test` invokes Bun's native test runner
   and ignores `package.json` scripts. As a result, Vitest and its `jsdom`
   environment config are skipped, which produces `document is not defined`
@@ -341,13 +325,13 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   `calc((var(--my, 50%) - 50%) * 0.24deg)` is invalid CSS — you cannot multiply
   a `<percentage>` type by an `<angle>` type in `calc()`. The expression silently
   resolves to 0 in most browsers, producing no tilt. The fix is to compute the
-  rotation value in JavaScript (using Svelte `spring()` stores), append the `deg`
+  rotation value in JavaScript (using the `useSpring` hook), append the `deg`
   unit there, and store the result as a dimensioned CSS variable like
   `--rotate-x: 8.5deg`. The CSS transform then reads it verbatim:
   `rotateY(var(--rotate-x, 0deg))`.
 - **Holographic card effect architecture (reference: simeydotme/pokemon-cards-css):**
   The production-quality holo effect requires three things working together:
-  (1) Svelte `spring()` stores for `rotate`, `glare`, and `background` — this
+  (1) Custom `useSpring` hook for `rotate`, `glare`, and `background` spring values — this
   gives the bouncy physical feel; raw CSS `transition` looks mechanical.
   (2) JS-computed CSS variables with correct units written every animation frame
   (`--rotate-x`, `--rotate-y`, `--pointer-x`, `--pointer-y`,
@@ -378,7 +362,7 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   Fix: Remove `overflow: hidden` from `.face-inner`. Move the rounded-corner clip directly onto
   the `<img>` element via `border-radius: 4.55% / 3.5%` — images are clipped by their own
   `border-radius` without needing an overflow parent.
-  Also remove `transform-style: preserve-3d` from `.card__rotator` in Card.svelte (grid cards):
+  Also remove `transform-style: preserve-3d` from `.card__rotator` in Card.tsx (grid cards):
   HoverTilt's `.hover-tilt` is the `preserve-3d` root; keeping it on the rotator puts
   `.card__front`'s `overflow: hidden` inside a 3D stacking context causing the same artifact.
 - **Bun `mock.module` intercepts dynamic imports:** When route handlers use
@@ -387,29 +371,10 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   intercepts the import correctly — the mock is registered in the module
   registry before the handler runs. Register mocks at the top of the test file
   (before any `describe` or `it` blocks) to guarantee they take effect.
-- **Svelte template inline TypeScript generics are invalid:** Writing
-  `on:expand={(e: CustomEvent<TcgCard>) => ...}` inside a `.svelte` template
-  causes a parse error ("Unexpected token"). TypeScript generic syntax is not
-  supported inside Svelte event handler expressions. Either accept the implicit
-  `any` (matching the existing pattern in this codebase) or extract the handler
-  to a typed function in the `<script>` block.
 - **Drizzle `inArray` for multi-key lookups:** When fetching `cards_cache` rows
   for a list of card IDs, use `inArray(cardsCache.cardId, cardIds)` from
   `drizzle-orm` rather than issuing N individual queries. `inArray` emits a
   single `WHERE card_id IN (...)` clause and avoids N+1 query patterns.
-- **SvelteKit `tsconfig.json` `paths` overrides `$lib` alias:** If the project's
-  `tsconfig.json` extends `.svelte-kit/tsconfig.json` and also defines a `paths`
-  block, the extension's `paths` (which includes the `$lib`/`$lib/*` aliases) is
-  completely overridden by the local `paths`. Symptom: `Cannot find module
-  '$lib/components/...'` in `svelte-check`. Fix: move custom path aliases (e.g.
-  `$shared/*`) to `svelte.config.js` `kit.alias` instead of `tsconfig.json
-  paths`. SvelteKit merges kit aliases into the generated tsconfig automatically.
-- **SvelteKit route group `(name)` for authenticated layout isolation:** Use
-  parentheses-prefixed route group directories (e.g. `(app)/`) to apply a shared
-  sidebar/shell layout to authenticated pages without adding a URL segment. Auth
-  pages placed outside the group inherit the root layout only, keeping them
-  sidebar-free. After moving routes into a group, run `svelte-kit sync` to
-  regenerate `$types` before running `svelte-check`.
 - **`playwright-cli open <url>` resets the browser session:** Calling `playwright-cli open`
   creates a brand-new browser context, discarding all existing cookies including auth sessions.
   To navigate to an authenticated page during visual verification, stay within the existing
@@ -425,25 +390,10 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   alongside a valid `data.cards` array — this is normal and should not abort processing.
   Fix: filter attacks with `a !== null && a.name !== null`. Only throw a 502 when `data.cards`
   itself is absent.
-- **SvelteKit adapter-node has no dev proxy in production — use `+server.ts` endpoints:** In development,
-  Vite's dev server proxies `fetch('/api/*')` from the browser to the Hono backend (port 3000). In Docker
-  (adapter-node), those same client-side fetch calls hit the SvelteKit server and receive HTML 404 responses
-  instead of JSON. Fix: create a SvelteKit `+server.ts` route at the same path that proxies to the Hono
-  backend using `API_BASE_URL`, forwarding the `cookie` header for auth. Pattern: read
-  `request.headers.get('cookie')`, call `fetch(\`\${API_BASE_URL}/api/...\`, { headers: { cookie } })`,
-  and return `new Response(upstreamBody, { status, headers: { 'content-type': 'application/json' } })`.
-  Catch network errors and return JSON 502 so the client always receives parseable JSON.
-- **Svelte TypeScript cast `as Type` in template expressions causes parse error in Svelte 4:** Writing
-  `(e.currentTarget as HTMLImageElement)` inline in a Svelte 4 template attribute (e.g. `on:error={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}`)
-  causes "Unexpected token" from `svelte-check`. Extract the handler into a typed function in the
-  `<script>` block instead.
 - **Drizzle `onConflictDoUpdate` requires explicit target columns for multi-column unique constraints:**
   When upserting against a composite unique constraint (e.g. `(userId, cardId)`), pass the array form
   `target: [table.userId, table.cardId]` rather than a single column. Passing a single column silently
   selects the wrong conflict target and the upsert may throw or create duplicate rows.
-- **`$state.raw` and `SvelteMap` are Svelte 5 features — ignore autofixer suggestions in Svelte 4 projects:**
-  The `@sveltejs/mcp` autofixer may suggest replacing `Map` with `SvelteMap`. This only applies to Svelte 5.
-  In a Svelte 4 project, `Map` is correct; `SvelteMap` does not exist in Svelte 4.
 - **Next.js CSS Modules do NOT hash `data-*` attribute selectors:** CSS Modules hash class names but leave
   `data-*` attribute selectors untouched. Selectors like `[data-rarity="rare holo"] .card__shine` work verbatim
   in CSS Modules files — do not wrap them in `:local()`.
