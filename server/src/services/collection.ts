@@ -1,4 +1,4 @@
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql as drizzleSql } from "drizzle-orm";
 import { db, sql } from "../db/client";
 import { userCollection, cardsCache } from "../db/schema";
 import type { TcgCard } from "../../../shared/tcg";
@@ -8,6 +8,8 @@ import type { CollectionEntry } from "../../../shared/collection";
  * Adds a card to the user's collection. Also upserts the card payload into
  * cards_cache so the collection page can render full card data without hitting
  * the upstream TCG API again.
+ * 
+ * If the card is already in the collection, the quantity is incremented.
  */
 export async function addCardToCollection(
   userId: string,
@@ -27,6 +29,14 @@ export async function addCardToCollection(
   const [entry] = await db
     .insert(userCollection)
     .values({ userId, cardId, language, quantity })
+    .onConflictDoUpdate({
+      target: [userCollection.userId, userCollection.cardId],
+      set: {
+        quantity: drizzleSql`${userCollection.quantity} + ${quantity}`,
+        language,
+        addedAt: new Date()
+      }
+    })
     .returning();
 
   // Notify any LISTEN subscribers so WebSocket clients get a real-time event.
@@ -42,8 +52,9 @@ export async function addCardToCollection(
 }
 
 /**
- * Removes all copies of a card (by cardId) from the user's collection.
- * Returns true if at least one row was deleted, false if the card wasn't found.
+ * Removes a card (by cardId) from the user's collection.
+ * With the unique constraint on (userId, cardId), this removes exactly one row.
+ * Returns true if the row was deleted, false if the card wasn't found.
  */
 export async function removeCardFromCollection(userId: string, cardId: string): Promise<boolean> {
   const deleted = await db
