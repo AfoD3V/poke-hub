@@ -52,7 +52,6 @@ This is a monorepo with three packages:
 
 - **`server/`** — Bun + Hono API. Route handlers are thin; business logic lives in `server/src/services/`. Routes: `/auth/*`, `/api/cards/*`, `/health`.
 - **`ui/`** — Next.js 14 App Router frontend. Server Components for data fetching; Client Components (`'use client'`) for interactivity. API Route Handlers proxy all backend calls (no direct external API access from client). Auth via Server Actions + HttpOnly cookies.
-- **`ui-svelte/`** — Legacy SvelteKit frontend (kept as backup reference; not deployed).
 - **`shared/`** — TypeScript types crossing the client/server boundary (`shared/auth.ts`, `shared/tcg.ts`). No `any` types allowed; use `unknown` with type guards.
 
 ### Auth Flow
