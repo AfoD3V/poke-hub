@@ -35,13 +35,17 @@ export const userChaseCards = pgTable(
   (t) => [unique("user_chase_cards_user_card_unique").on(t.userId, t.cardId)]
 );
 
-export const userCollection = pgTable("user_collection", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  cardId: text("card_id").notNull(),
-  language: text("language").default("en").notNull(),
-  quantity: integer("quantity").default(1).notNull(),
-  addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull()
-});
+export const userCollection = pgTable(
+  "user_collection",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cardId: text("card_id").notNull(),
+    language: text("language").default("en").notNull(),
+    quantity: integer("quantity").default(1).notNull(),
+    addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (t) => [unique("user_collection_user_card_unique").on(t.userId, t.cardId)]
+);

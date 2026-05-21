@@ -6,6 +6,7 @@ import { CollectionView } from './CollectionView';
 const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
 export const metadata = { title: 'Collection · PokeHub' };
+export const dynamic = 'force-dynamic';
 
 export default async function Page() {
   const token = cookies().get('pokehub_session')?.value;

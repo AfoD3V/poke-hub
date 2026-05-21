@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { CollectionEntry } from '$shared/collection';
 import type { TcgCard } from '$shared/tcg';
 import { Card } from '@/lib/components/Card';
@@ -16,6 +16,13 @@ export interface CollectionViewProps {
 export function CollectionView({ entries, chaseIds: initialChaseIds, error }: CollectionViewProps) {
   const [expandedCard, setExpandedCard] = useState<TcgCard | null>(null);
   const [chaseIds] = useState(new Set(initialChaseIds));
+  const [collectionEntries, setCollectionEntries] = useState(entries);
+
+  const collectionIds = new Set(collectionEntries.map((e) => e.cardId));
+
+  const handleCollectionRemove = useCallback((cardId: string) => {
+    setCollectionEntries((prev) => prev.filter((e) => e.cardId !== cardId));
+  }, []);
 
   if (error) {
     return (
@@ -30,17 +37,17 @@ export function CollectionView({ entries, chaseIds: initialChaseIds, error }: Co
     <div className={styles.page}>
       <div className={styles['page-header']}>
         <h1 className={styles['page-title']}>My Collection</h1>
-        <p className={styles['page-count']}>{entries.length} card{entries.length === 1 ? '' : 's'}</p>
+        <p className={styles['page-count']}>{collectionEntries.length} card{collectionEntries.length === 1 ? '' : 's'}</p>
       </div>
 
-      {entries.length === 0 ? (
+      {collectionEntries.length === 0 ? (
         <div className={styles.empty}>
           <p className={styles['empty-text']}>Your collection is empty.</p>
           <a href="/search" className={styles['empty-link']}>Search for cards to add →</a>
         </div>
       ) : (
         <ul className={styles['card-grid']} role="list">
-          {entries.map((entry) => (
+          {collectionEntries.map((entry) => (
             <Card
               key={entry.id}
               card={entry.card}
@@ -54,7 +61,9 @@ export function CollectionView({ entries, chaseIds: initialChaseIds, error }: Co
         <CardModal
           card={expandedCard}
           chaseIds={chaseIds}
+          collectionIds={collectionIds}
           onClose={() => setExpandedCard(null)}
+          onCollectionRemove={handleCollectionRemove}
         />
       )}
     </div>

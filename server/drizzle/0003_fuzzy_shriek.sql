@@ -1,0 +1,1 @@
+ALTER TABLE "user_collection" ADD CONSTRAINT "user_collection_user_card_unique" UNIQUE("user_id","card_id");
