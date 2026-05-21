@@ -67,4 +67,4 @@
 - [x] 12.1 Create feature branch: `git checkout main && git fetch origin && git pull origin main && git checkout -b feat/responsive-layout-and-ui-polish`. Verification: `git branch` shows new branch checked out.
 - [x] 12.2 Stage and commit all changes with message `feat(ui): responsive layout, sidebar polish, and space management`. Verification: `git status` clean after commit.
 - [x] 12.3 Document any new gotchas discovered during implementation in `AGENTS.md` > Project Learnings, and mirror in `CLAUDE.md`. Verification: both files updated in same commit.
-- [ ] 12.4 Create PR via `gh pr create`. Verification: PR URL returned, status shows open.
+- [x] 12.4 Create PR via `gh pr create`. Verification: PR URL returned, status shows open.
