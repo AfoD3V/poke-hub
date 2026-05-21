@@ -1,5 +1,5 @@
 # Build context: repo root
-# docker build -f ui-react/Dockerfile -t pokehub-ui-react .
+# docker build -f ui/Dockerfile -t pokehub-ui .
 
 # ── Stage 1: build ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
@@ -9,23 +9,23 @@ WORKDIR /app
 COPY shared/ ./shared/
 
 # Install deps
-COPY ui-react/package.json ui-react/package-lock.json* ./ui-react/
-RUN cd ui-react && npm ci
+COPY ui/package.json ui/package-lock.json* ./ui/
+RUN cd ui && npm ci
 
 # Source
-COPY ui-react/ ./ui-react/
+COPY ui/ ./ui/
 
-# next build outputs standalone server to ui-react/.next/standalone/
+# next build outputs standalone server to ui/.next/standalone/
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN cd ui-react && npm run build
+RUN cd ui && npm run build
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 WORKDIR /app
 
-COPY --from=builder /app/ui-react/.next/standalone ./
-COPY --from=builder /app/ui-react/.next/static ./.next/static
-COPY --from=builder /app/ui-react/public ./public
+COPY --from=builder /app/ui/.next/standalone ./
+COPY --from=builder /app/ui/.next/static ./.next/static
+COPY --from=builder /app/ui/public ./public
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
