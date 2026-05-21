@@ -127,12 +127,16 @@
 .browser-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.625rem 1.25rem;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
   background: var(--ph-surface, #17171f);
   border-bottom: 1px solid var(--ph-border, rgba(255,255,255,0.07));
   flex-shrink: 0;
+}
+
+.browser-toolbar .breadcrumbs {
+  flex: 1;
+  min-width: 0;
 }
 
 .breadcrumbs {
@@ -282,8 +286,9 @@
 }
 
 .showcase-card__logo {
-  max-width: 100%;
-  max-height: 100%;
+  height: 3rem;
+  width: auto;
+  max-width: 85%;
   object-fit: contain;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
 }
@@ -331,6 +336,7 @@
 .set-card {
   display: flex;
   flex-direction: column;
+  height: 7.5rem;
   background: var(--ph-surface, #1a1a24);
   border: 1px solid var(--ph-border, rgba(255,255,255,0.07));
   border-radius: 0.625rem;
@@ -347,32 +353,43 @@
 }
 
 .set-card__media {
-  aspect-ratio: 16 / 7;
+  height: 3.5rem;
   background: var(--ph-card, #1e1e2a);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  flex-shrink: 0;
 }
 
 .set-card__logo {
-  max-width: 100%;
-  max-height: 100%;
+  height: 2rem;
+  width: auto;
+  max-width: 85%;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .set-card__fallback {
-  font-size: 1.25rem;
+  height: 2rem;
+  width: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--ph-muted, #6b7280);
+  background: rgba(255,255,255,0.06);
+  border-radius: 0.375rem;
 }
 
 .set-card__info {
   display: flex;
   flex-direction: column;
   gap: 0.1875rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.625rem;
   border-top: 1px solid var(--ph-border, rgba(255,255,255,0.07));
+  flex: 1;
 }
 
 .set-card__name {
@@ -389,6 +406,7 @@
 .set-card__count {
   font-size: 0.6875rem;
   color: var(--ph-muted, #6b7280);
+  margin-top: auto;
 }
 
 /* ── State 3: Cards grid ─────────────────────────────────────────────────── */
@@ -436,7 +454,7 @@
 }
 
 .skeleton-set {
-  aspect-ratio: 16 / 7;
+  height: 7.5rem;
 }
 
 .skeleton-card {
