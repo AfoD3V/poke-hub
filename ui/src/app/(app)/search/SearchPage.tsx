@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { TcgCard, SeriesItem } from '$shared/tcg';
 import { Card } from '@/lib/components/Card';
 import { CardModal } from '@/lib/components/CardModal';
@@ -39,7 +39,18 @@ export function SearchPage({ series, initialChaseIds }: SearchPageProps) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError]             = useState<string | null>(null);
   const [expandedCard, setExpandedCard] = useState<TcgCard | null>(null);
-  const [chaseIds]                    = useState(new Set(initialChaseIds));
+  const [chaseIds, setChaseIds]       = useState(new Set(initialChaseIds));
+
+  useEffect(() => {
+    fetch('/api/chase')
+      .then(r => r.json())
+      .then((data: { entries?: Array<{ cardId: string }> }) => {
+        if (data.entries?.length) {
+          setChaseIds(new Set(data.entries.map(e => e.cardId)));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const hasMore = mode === 'name' && cards.length < totalCount && !error;
 
