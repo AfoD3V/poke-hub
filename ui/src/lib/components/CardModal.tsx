@@ -8,7 +8,10 @@ import styles from './CardModal.module.css';
 export interface CardModalProps {
   card: TcgCard;
   chaseIds?: Set<string>;
+  collectionIds?: Set<string>;
   onClose: () => void;
+  onChaseChange?: (cardId: string, added: boolean) => void;
+  onCollectionAdd?: (cardId: string) => void;
 }
 
 const round  = (v: number, p = 3) => parseFloat(v.toFixed(p));
@@ -35,7 +38,7 @@ function resolveRarity(raw: string): string {
 
 const SI = { stiffness: 0.066, damping: 0.25 };
 
-export function CardModal({ card, chaseIds = new Set(), onClose }: CardModalProps) {
+export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(), onClose, onChaseChange, onCollectionAdd }: CardModalProps) {
   const [seed] = useState(() => ({ x: Math.random(), y: Math.random() }));
 
   const [springRotate, setSpringRotate] = useSpring({ x: 0,  y: 0  }, SI);
@@ -48,7 +51,7 @@ export function CardModal({ card, chaseIds = new Set(), onClose }: CardModalProp
 
   // Chase / add-to-collection state
   type AddState = 'idle' | 'loading' | 'success' | 'error';
-  const [addState,    setAddState   ] = useState<AddState>('idle');
+  const [addState,    setAddState   ] = useState<AddState>(() => collectionIds.has(card.id) ? 'success' : 'idle');
   const [addError,    setAddError   ] = useState('');
   const [localChasing, setLocalChasing] = useState<boolean | null>(null);
   const [chaseLoading, setChaseLoading] = useState(false);
@@ -125,12 +128,13 @@ export function CardModal({ card, chaseIds = new Set(), onClose }: CardModalProp
         });
         if (!res.ok) throw new Error('Failed');
       }
+      onChaseChange?.(card.id, newVal);
     } catch {
       setLocalChasing(!newVal);
     } finally {
       setChaseLoading(false);
     }
-  }, [chaseLoading, isChasing, card]);
+  }, [chaseLoading, isChasing, card, onChaseChange]);
 
   const addToCollection = useCallback(async () => {
     if (addState === 'loading' || addState === 'success') return;
@@ -147,11 +151,12 @@ export function CardModal({ card, chaseIds = new Set(), onClose }: CardModalProp
         throw new Error(body.error ?? `Request failed (${res.status})`);
       }
       setAddState('success');
+      onCollectionAdd?.(card.id);
     } catch (e) {
       setAddError(e instanceof Error ? e.message : 'Failed to add card');
       setAddState('error');
     }
-  }, [addState, card]);
+  }, [addState, card, onCollectionAdd]);
 
   const dataRarity   = resolveRarity(card.rarity ?? '');
   const subtypesStr  = (card.subtypes  ?? []).join(' ').toLowerCase();

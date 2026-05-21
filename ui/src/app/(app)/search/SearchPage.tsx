@@ -168,7 +168,14 @@ export function SearchPage({ series, initialChaseIds }: SearchPageProps) {
         <CardModal
           card={expandedCard}
           chaseIds={chaseIds}
+          collectionIds={collectionIds}
           onClose={() => setExpandedCard(null)}
+          onChaseChange={(cardId, added) => setChaseIds(prev => {
+            const next = new Set(prev);
+            if (added) next.add(cardId); else next.delete(cardId);
+            return next;
+          })}
+          onCollectionAdd={(cardId) => setCollectionIds(prev => new Set(prev).add(cardId))}
         />
       )}
     </div>

@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import type { SeriesItem, SeriesDetail, SetCardItem, TcgCard } from '$shared/tcg';
 import { Card } from './Card';
-import { CardModal } from './CardModal';
 import styles from './SeriesBrowser.module.css';
 
 export interface SeriesBrowserProps {
@@ -39,7 +38,6 @@ export function SeriesBrowser({ series = [], onSelect, chaseIds, collectionIds }
   const [loadingCol3, setLoadingCol3]         = useState(false);
   const [errorCol2, setErrorCol2]             = useState<string | null>(null);
   const [errorCol3, setErrorCol3]             = useState<string | null>(null);
-  const [expandedCard, setExpandedCard]       = useState<TcgCard | null>(null);
   const [visibleCount, setVisibleCount]       = useState(PAGE_SIZE);
   const [failedSeriesLogos, setFailedSeriesLogos] = useState<Set<string>>(new Set());
   const [failedSetLogos, setFailedSetLogos]       = useState<Set<string>>(new Set());
@@ -175,7 +173,7 @@ export function SeriesBrowser({ series = [], onSelect, chaseIds, collectionIds }
                   <Card
                     key={item.id}
                     card={tcgCard}
-                    onExpand={(c) => { setExpandedCard(c); onSelect?.(c); }}
+                    onExpand={(c) => onSelect?.(c)}
                     isChased={chaseIds?.has(item.id) ?? false}
                     isCollected={collectionIds?.has(item.id) ?? false}
                   />
@@ -194,9 +192,6 @@ export function SeriesBrowser({ series = [], onSelect, chaseIds, collectionIds }
         </div>
       </div>
 
-      {expandedCard && (
-        <CardModal card={expandedCard} onClose={() => setExpandedCard(null)} />
-      )}
     </>
   );
 }
