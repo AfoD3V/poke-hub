@@ -40,12 +40,10 @@ services:
       dockerfile: ui/Dockerfile
     image: pokehub-ui
     ports:
-      - "4000:3000"
+      - "4000:4000"
     env_file: .env
     environment:
-      BACKEND_URL: http://api:3000
       API_BASE_URL: http://api:3000
-      ORIGIN: http://localhost:4000
     depends_on:
       - api
 

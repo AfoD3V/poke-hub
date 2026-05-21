@@ -36,11 +36,15 @@ All sidebar nav links SHALL be reachable and activatable via keyboard (Tab + Ent
 - **AND** pressing Enter on a focused link SHALL navigate to that route
 
 ### Requirement: Authenticated layout uses route group isolation
-The sidebar layout SHALL only wrap routes inside the `(app)` route group; auth routes MUST remain outside this group and render without the sidebar.
+The Sidebar layout SHALL only wrap routes inside the `(app)` Next.js route group (`app/(app)/layout.tsx`); auth routes (`app/auth/`) MUST remain outside this group and render without the Sidebar.
 
 #### Scenario: Route group separation
-- **WHEN** SvelteKit resolves the layout hierarchy for `/auth/login`
-- **THEN** the `(app)/+layout.svelte` SHALL NOT be in the ancestor chain
+- **WHEN** Next.js resolves the layout hierarchy for `/auth/login`
+- **THEN** `app/(app)/layout.tsx` SHALL NOT be in the ancestor chain
+
+#### Scenario: Route group separation for app routes
+- **WHEN** Next.js resolves the layout hierarchy for `/home`
+- **THEN** `app/(app)/layout.tsx` SHALL be in the ancestor chain and the Sidebar SHALL be rendered
 
 ### Requirement: Root redirects to home for authenticated users
 The root route (`/`) SHALL redirect authenticated users to `/home` and unauthenticated users to `/auth/login`.

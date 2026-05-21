@@ -1,0 +1,25 @@
+.page   { padding: 2rem; max-width: 800px; }
+.title  { font-size: 1.875rem; font-weight: 900; color: #fff; margin-bottom: 1.5rem; }
+.error  { color: #f87171; font-size: 0.875rem; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+  max-width: 480px;
+}
+
+.stat-card {
+  border-radius: 0.75rem;
+  background: var(--ph-surface);
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 1rem 1.25rem;
+}
+
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ph-muted); margin-bottom: 0.25rem; }
+.stat-value { font-size: 1.875rem; font-weight: 700; color: var(--ph-text); }
+
+.nav { display: flex; flex-direction: column; gap: 0.75rem; }
+.nav-link { color: var(--ph-accent); text-decoration: none; font-size: 0.9375rem; font-weight: 500; }
+.nav-link:hover { text-decoration: underline; }

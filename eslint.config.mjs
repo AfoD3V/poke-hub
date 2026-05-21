@@ -1,8 +1,7 @@
 import js from '@eslint/js'
 import tsPlugin from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
-import sveltePlugin from 'eslint-plugin-svelte'
-import svelteParser from 'svelte-eslint-parser'
+import reactHooksPlugin from 'eslint-plugin-react-hooks'
 import globals from 'globals'
 
 export default [
@@ -10,20 +9,21 @@ export default [
   {
     ignores: [
       '**/node_modules/**',
-      '**/.svelte-kit/**',
+      '**/.next/**',
       '**/dist/**',
       '**/build/**',
       'server/drizzle/**',
       'resources/**',
+      'ui-svelte/**',
     ],
   },
 
   // JS baseline
   js.configs.recommended,
 
-  // TypeScript — server, shared, and ui (non-Svelte)
+  // TypeScript — server, shared
   {
-    files: ['server/src/**/*.ts', 'shared/**/*.ts', 'ui/src/**/*.ts'],
+    files: ['server/src/**/*.ts', 'shared/**/*.ts'],
     plugins: { '@typescript-eslint': tsPlugin },
     languageOptions: {
       parser: tsParser,
@@ -37,22 +37,22 @@ export default [
     },
   },
 
-  // Svelte components (ui/src/**/*.svelte)
+  // React / Next.js (ui/src/**/*.{ts,tsx})
   {
-    files: ['ui/src/**/*.svelte'],
+    files: ['ui/src/**/*.{ts,tsx}'],
     plugins: {
-      svelte: sveltePlugin,
       '@typescript-eslint': tsPlugin,
+      'react-hooks': reactHooksPlugin,
     },
     languageOptions: {
-      parser: svelteParser,
-      parserOptions: { parser: tsParser },
+      parser: tsParser,
       globals: { ...globals.browser },
     },
     rules: {
-      ...sveltePlugin.configs.recommended.rules,
+      ...tsPlugin.configs.recommended.rules,
+      ...reactHooksPlugin.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'error',
-      'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
       'no-undef': 'off',
     },
   },

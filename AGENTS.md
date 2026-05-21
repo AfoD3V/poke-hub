@@ -31,8 +31,8 @@ replacement effect that uses radial gradients and SVG noise overlays).
 
 | Layer      | Technology                          |
 | ---        | ---                                 |
-| Frontend   | SvelteKit + Tailwind CSS            |
-| Card UI    | Custom holographic CSS (inspired by pokemon-cards-css) |
+| Frontend   | Next.js 14 App Router (React 18)    |
+| Card UI    | Custom holographic CSS + `useSpring` hook (inspired by pokemon-cards-css) |
 | Backend    | Bun + Hono (TypeScript)             |
 | Database   | PostgreSQL                          |
 | ORM        | Drizzle ORM                         |
@@ -53,7 +53,9 @@ poke-hub/
 |-- docs/
 |-- openspec/
 |-- shared/
-|-- ui/
+|-- ui/           ← Next.js 14 App Router (primary frontend)
+|-- ui-svelte/    ← Legacy SvelteKit (backup reference, not deployed)
+|-- server/
 `-- resources/
 ```
 
@@ -76,7 +78,7 @@ Invoke these skills automatically — do not wait to be asked.
 
 | Trigger | Skills to invoke |
 | --- | --- |
-| Any frontend file (`.svelte`, `.svelte.ts`, `.svelte.js`, or anything under `ui/`) | `svelte-code-writer`, `svelte-core-bestpractices`, `ui-ux-pro-max` |
+| Any frontend file (`.tsx`, `.ts`, or anything under `ui/`) | `ui-ux-pro-max` |
 | Any backend file (anything under `server/`, Hono routes, middleware, services) | `hono` |
 | Browser debugging, visual verification, or end-to-end testing of any UI change | `playwright-cli` |
 | Final step of any OpenSpec task implementation (before opening a PR) | `security-secure-coding` |
@@ -201,8 +203,7 @@ ESLint 9 (flat config) is configured at the repo root via `eslint.config.mjs` an
 | --- | --- | --- |
 | Backend | `server/src/**/*.ts` | `@typescript-eslint/recommended`, `no-explicit-any: error` |
 | Shared | `shared/**/*.ts` | same as backend |
-| Frontend TS | `ui/src/**/*.ts` | same as backend |
-| Frontend Svelte | `ui/src/**/*.svelte` | `eslint-plugin-svelte/recommended` + TypeScript rules |
+| Frontend React | `ui/src/**/*.{ts,tsx}` | `@typescript-eslint/recommended` + `react-hooks/recommended` |
 
 - Run **`bun run lint`** from the repo root to lint everything.
 - Run **`bun run lint:fix`** to auto-fix safe issues.
@@ -265,7 +266,7 @@ Use `playwright-cli` for all browser interactions and visual verification. It is
 A task is complete **only** when all of the following are true:
 
 1. ESLint passes — run `bun run lint` from the repo root; zero errors allowed.
-2. Type checks pass (`bun run check` in `ui/`, TypeScript compiler clean in `server/`).
+2. Type checks pass (`npm run check` in `ui/`, TypeScript compiler clean in `server/`).
 3. All tests pass (`bun run test` in both `server/` and `ui/`).
 4. Frontend changes verified via `playwright-cli snapshot`/`screenshot` (no visual regressions).
 5. New API endpoints have positive and negative Vitest test scenarios and the Postman collection is updated.
@@ -443,3 +444,24 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
 - **`$state.raw` and `SvelteMap` are Svelte 5 features — ignore autofixer suggestions in Svelte 4 projects:**
   The `@sveltejs/mcp` autofixer may suggest replacing `Map` with `SvelteMap`. This only applies to Svelte 5.
   In a Svelte 4 project, `Map` is correct; `SvelteMap` does not exist in Svelte 4.
+- **Next.js CSS Modules do NOT hash `data-*` attribute selectors:** CSS Modules hash class names but leave
+  `data-*` attribute selectors untouched. Selectors like `[data-rarity="rare holo"] .card__shine` work verbatim
+  in CSS Modules files — do not wrap them in `:local()`.
+- **`useSpring` TDZ self-reference — use `frameRef` pattern:** A RAF callback that references itself for the
+  next frame tick cannot call itself by name (temporal dead zone at declaration time). Fix: declare
+  `const frameRef = useRef<FrameRequestCallback>(() => {})` and assign the real function to `frameRef.current`
+  inside a `useEffect`. Start the loop with `requestAnimationFrame(frameRef.current)`. This satisfies
+  `react-hooks/exhaustive-deps` and avoids the TDZ error.
+- **`useState` not `useRef` for spring displayed value:** `useRef` mutations do not trigger React re-renders.
+  The value displayed to the DOM must live in `useState` so each spring tick causes a re-render.
+- **`useState(() => Math.random())` for seed values — avoids `react-hooks/purity`:** Calling `Math.random()`
+  directly in the render body triggers the `react-hooks/purity` lint rule. Use the lazy initializer form
+  `const [seed] = useState(() => Math.random())` to call it exactly once during mount.
+- **`Array.from(new Set(...))` instead of `[...new Set(...)]`:** The Docker build TS target does not support
+  iterating a `Set` with spread syntax. Always use `Array.from(new Set(...))` to convert to an array.
+- **Next.js API Route Handlers needed for all client-side API calls:** Neither `next dev` nor adapter-node
+  provide a transparent proxy. Every `/api/*` path fetched from the browser needs a `route.ts` handler
+  in `ui/src/app/api/`. Use the shared `proxyGet/proxyPost/proxyDelete` helpers in `ui/src/lib/apiProxy.ts`.
+- **`cancelAnimationFrame` must be stubbed via `Object.defineProperty` in tests:** `vi.stubGlobal` stubs are
+  reset by `vi.restoreAllMocks()`. Use `Object.defineProperty(window, 'cancelAnimationFrame', { value: ... })`
+  in `setup.ts` so the stub persists through all test files.
