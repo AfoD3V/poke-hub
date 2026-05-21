@@ -5,7 +5,7 @@ import type { ChaseEntry } from '$shared/tcg';
 import { HomeDashboard } from './HomeDashboard';
 import type { HomeDashboardProps } from './HomeDashboard';
 
-const API_BASE = process.env.BACKEND_URL ?? 'http://localhost:3000';
+const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
 function bucketRarity(raw: string | undefined): string {
   const r = (raw ?? '').toLowerCase().trim();

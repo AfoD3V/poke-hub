@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-const API_BASE = process.env.BACKEND_URL ?? 'http://localhost:3000';
+const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
 function getCookie(): string {
   try {

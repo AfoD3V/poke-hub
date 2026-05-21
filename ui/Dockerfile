@@ -29,8 +29,8 @@ COPY --from=builder /app/ui/public ./public
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-ENV BACKEND_URL=http://pokehub-api:3000
-EXPOSE 3000
+ENV PORT=4000
+ENV API_BASE_URL=http://api-svc:3000
+EXPOSE 4000
 
 CMD ["node", "server.js"]

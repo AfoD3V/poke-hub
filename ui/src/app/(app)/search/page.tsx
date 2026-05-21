@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import type { SeriesItem } from '$shared/tcg';
 import { SearchPage } from './SearchPage';
 
-const API_BASE = process.env.BACKEND_URL ?? 'http://localhost:3000';
+const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
 export const metadata = { title: 'Search · PokeHub' };
 

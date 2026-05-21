@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-const API_BASE = process.env.BACKEND_URL ?? 'http://localhost:3000';
+const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
 function redirectTo(path: string, req: NextRequest): NextResponse {
   const host  = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? 'localhost:4000';

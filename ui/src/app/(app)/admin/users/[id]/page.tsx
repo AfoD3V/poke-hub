@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import type { AdminUserDetail } from '$shared/admin';
 import styles from '../../admin.module.css';
 
-const API_BASE = process.env.BACKEND_URL ?? 'http://localhost:3000';
+const API_BASE = process.env.API_BASE_URL ?? 'http://localhost:3000';
 
 export const metadata = { title: 'User Detail · Admin · PokeHub' };
 
