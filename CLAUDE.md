@@ -86,6 +86,8 @@ Three-layer system in `ui/src/lib/components/Card.tsx`:
 - **Next.js Route Groups `(name)` for layout isolation:** Use `(app)/` route group to share a sidebar shell layout across authenticated pages without affecting the URL. Auth routes stay outside the group and render without the sidebar.
 - **CSS Module media query order matters — base rules before overrides:** If a base rule (e.g. `.bottom-nav { display: none }`) appears AFTER a media query override (e.g. `@media (max-width: 767px) { .bottom-nav { display: flex } }`), the base rule wins at all viewports due to cascade order. Always declare base/default styles first, then responsive overrides last.
 - **Docker rebuilds required for CSS changes:** The Docker UI container uses a production Next.js build. CSS Module changes are not hot-reloaded. Run `docker compose up -d --build` after any CSS change and verify with `playwright-cli` before marking done.
+- **`/api/sets/:id/cards` returns a raw array, not `{ cards: [...] }`:** Parse with `const cards = await res.json() as SetCardItem[]` after `res.ok` check. Never use `body.cards ?? []` — `.cards` is always `undefined` on an array and silently empties the grid.
+- **SeriesBrowser flex height chain:** `.series-browser` needs `flex: 1; min-height: 0`, `.app-main` and `.page` need `display: flex; flex-direction: column; min-height: 0`. Without this chain, `overflow-y: auto` on each column has no anchored height and expands unbounded instead of scrolling.
 
 ## Required Skills
 

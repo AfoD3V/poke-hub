@@ -123,7 +123,7 @@ export function SearchPage({ series, initialChaseIds }: SearchPageProps) {
               </p>
               <ul className={styles['card-grid']} role="list">
                 {cards.map((card) => (
-                  <Card key={card.id} card={card} onExpand={setExpandedCard} />
+                  <Card key={card.id} card={card} onExpand={setExpandedCard} isChased={chaseIds.has(card.id)} />
                 ))}
               </ul>
               {hasMore && (
@@ -145,7 +145,7 @@ export function SearchPage({ series, initialChaseIds }: SearchPageProps) {
       )}
 
       {mode === 'series' && (
-        <SeriesBrowser series={series} onSelect={setExpandedCard} />
+        <SeriesBrowser series={series} onSelect={setExpandedCard} chaseIds={chaseIds} />
       )}
 
       {expandedCard && (

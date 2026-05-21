@@ -9,6 +9,7 @@ import styles from './SeriesBrowser.module.css';
 export interface SeriesBrowserProps {
   series?: SeriesItem[];
   onSelect?: (card: TcgCard) => void;
+  chaseIds?: Set<string>;
 }
 
 const PAGE_SIZE = 40;
@@ -27,7 +28,7 @@ function toTcgCard(item: SetCardItem, setName: string): TcgCard {
   };
 }
 
-export function SeriesBrowser({ series = [], onSelect }: SeriesBrowserProps) {
+export function SeriesBrowser({ series = [], onSelect, chaseIds }: SeriesBrowserProps) {
   const [activeColumn, setActiveColumn]       = useState(0);
   const [selectedSeries, setSelectedSeries]   = useState<SeriesItem | null>(null);
   const [selectedSet, setSelectedSet]         = useState<{ id: string; name: string } | null>(null);
@@ -90,10 +91,13 @@ export function SeriesBrowser({ series = [], onSelect }: SeriesBrowserProps) {
     setLoadingCol3(true);
     setErrorCol3(null);
     try {
-      const res  = await fetch(`/api/sets/${encodeURIComponent(set.id)}/cards`);
-      const body = await res.json() as { cards?: SetCardItem[]; error?: string };
-      if (!res.ok) throw new Error(body.error ?? `Failed to load set (${res.status})`);
-      setSetCards(body.cards ?? []);
+      const res = await fetch(`/api/sets/${encodeURIComponent(set.id)}/cards`);
+      if (!res.ok) {
+        const err = await res.json() as { error?: string };
+        throw new Error(err.error ?? `Failed to load set (${res.status})`);
+      }
+      const cards = await res.json() as SetCardItem[];
+      setSetCards(cards);
     } catch (e) {
       setErrorCol3(e instanceof Error ? e.message : 'Failed to load set');
     } finally {
@@ -174,6 +178,7 @@ export function SeriesBrowser({ series = [], onSelect }: SeriesBrowserProps) {
                     key={item.id}
                     card={tcgCard}
                     onExpand={(c) => { setExpandedCard(c); onSelect?.(c); }}
+                    isChased={chaseIds?.has(item.id) ?? false}
                   />
                 );
               })}
