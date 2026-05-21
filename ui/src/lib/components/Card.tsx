@@ -10,6 +10,7 @@ export interface CardProps {
   card: TcgCard;
   onExpand: (card: TcgCard) => void;
   isChased?: boolean;
+  isCollected?: boolean;
 }
 
 // ── Math helpers ─────────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ function resolveRarity(raw: string): string {
 
 const SI = { stiffness: 0.066, damping: 0.25 };
 
-export function Card({ card, onExpand, isChased = false }: CardProps) {
+export function Card({ card, onExpand, isChased = false, isCollected = false }: CardProps) {
   const [seed] = useState(() => ({ x: Math.random(), y: Math.random() }));
 
   const [springGlare, setSpringGlare] = useSpring({ x: 50, y: 50, o: 0 }, SI);
@@ -120,6 +121,9 @@ export function Card({ card, onExpand, isChased = false }: CardProps) {
       style={dynStyle}
       role="listitem"
     >
+      {isCollected && (
+        <span className={styles['card__collected-badge']} aria-label="In your collection">✓</span>
+      )}
       {isChased && (
         <span className={styles['card__chase-badge']} aria-label="On your chase list">★</span>
       )}

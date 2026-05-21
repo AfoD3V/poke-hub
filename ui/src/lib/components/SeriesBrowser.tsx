@@ -10,6 +10,7 @@ export interface SeriesBrowserProps {
   series?: SeriesItem[];
   onSelect?: (card: TcgCard) => void;
   chaseIds?: Set<string>;
+  collectionIds?: Set<string>;
 }
 
 const PAGE_SIZE = 40;
@@ -28,7 +29,7 @@ function toTcgCard(item: SetCardItem, setName: string): TcgCard {
   };
 }
 
-export function SeriesBrowser({ series = [], onSelect, chaseIds }: SeriesBrowserProps) {
+export function SeriesBrowser({ series = [], onSelect, chaseIds, collectionIds }: SeriesBrowserProps) {
   const [activeColumn, setActiveColumn]       = useState(0);
   const [selectedSeries, setSelectedSeries]   = useState<SeriesItem | null>(null);
   const [selectedSet, setSelectedSet]         = useState<{ id: string; name: string } | null>(null);
@@ -46,21 +47,18 @@ export function SeriesBrowser({ series = [], onSelect, chaseIds }: SeriesBrowser
   const visibleCards = setCards.slice(0, visibleCount);
   const hasMore = visibleCount < setCards.length;
 
-  const col1Style: React.CSSProperties = activeColumn === 0
-    ? { width: '100%', minWidth: '100%' }
-    : activeColumn === 1
-    ? { width: '30%', minWidth: '30%' }
+  // Col 1 (series): always compact sidebar
+  const col1Style: React.CSSProperties = { width: '220px', flexShrink: 0 };
+
+  // Col 2 (sets): appears when a series is selected
+  const col2Style: React.CSSProperties = activeColumn >= 1
+    ? { width: '220px', flexShrink: 0 }
     : { width: 0, minWidth: 0, overflow: 'hidden' };
 
-  const col2Style: React.CSSProperties = activeColumn === 0
-    ? { width: 0, minWidth: 0, overflow: 'hidden' }
-    : activeColumn === 1
-    ? { width: '70%', minWidth: '70%' }
-    : { width: '30%', minWidth: '30%' };
-
-  const col3Style: React.CSSProperties = activeColumn < 2
-    ? { flex: 'none', width: 0, minWidth: 0, overflow: 'hidden' }
-    : { flex: 1, minWidth: 0 };
+  // Col 3 (cards): fills all remaining space when a set is selected
+  const col3Style: React.CSSProperties = activeColumn >= 2
+    ? { flex: 1, minWidth: 0 }
+    : { flex: 'none', width: 0, minWidth: 0, overflow: 'hidden' };
 
   const selectSeries = useCallback(async (s: SeriesItem) => {
     setSelectedSeries(s);
@@ -179,6 +177,7 @@ export function SeriesBrowser({ series = [], onSelect, chaseIds }: SeriesBrowser
                     card={tcgCard}
                     onExpand={(c) => { setExpandedCard(c); onSelect?.(c); }}
                     isChased={chaseIds?.has(item.id) ?? false}
+                    isCollected={collectionIds?.has(item.id) ?? false}
                   />
                 );
               })}

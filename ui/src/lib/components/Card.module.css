@@ -553,23 +553,35 @@
 	opacity: calc(var(--card-opacity) * 0.7);
 }
 
-/* ── Chase badge ─────────────────────────────────────────────────────────*/
-.card__chase-badge {
+/* ── Status badges (chase / collection) ──────────────────────────────────*/
+.card__chase-badge,
+.card__collected-badge {
 	position: absolute;
-	top: 0.35rem;
-	right: 0.35rem;
 	z-index: 10;
-	font-size: 0.9rem;
+	font-size: 0.85rem;
 	line-height: 1;
-	color: hsl(45, 100%, 60%);
-	background: rgba(0, 0, 0, 0.55);
+	background: rgba(0, 0, 0, 0.62);
 	border-radius: 50%;
-	width: 1.5rem;
-	height: 1.5rem;
+	width: 1.4rem;
+	height: 1.4rem;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	pointer-events: none;
+}
+
+.card__chase-badge {
+	top: 0.35rem;
+	right: 0.35rem;
+	color: hsl(45, 100%, 60%);
+}
+
+.card__collected-badge {
+	top: 0.35rem;
+	right: 2.1rem;
+	color: hsl(142, 70%, 55%);
+	font-size: 0.75rem;
+	font-weight: 700;
 }
 
 /* ── Card info ───────────────────────────────────────────────────────────*/
