@@ -1,5 +1,9 @@
 .page {
   padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .page-title {

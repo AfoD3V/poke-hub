@@ -62,4 +62,20 @@ describe('Card', () => {
     const { queryByRole } = render(<Card card={noImageCard as TcgCard} onExpand={() => {}} />);
     expect(queryByRole('img')).not.toBeInTheDocument();
   });
+
+  it('renders chase star badge when isChased is true', () => {
+    const { getByLabelText } = render(<Card card={mockCard} onExpand={() => {}} isChased={true} />);
+    expect(getByLabelText('On your chase list')).toBeInTheDocument();
+    expect(getByLabelText('On your chase list').textContent).toBe('★');
+  });
+
+  it('does not render chase star badge when isChased is false', () => {
+    const { queryByLabelText } = render(<Card card={mockCard} onExpand={() => {}} isChased={false} />);
+    expect(queryByLabelText('On your chase list')).not.toBeInTheDocument();
+  });
+
+  it('does not render chase star badge when isChased is omitted', () => {
+    const { queryByLabelText } = render(<Card card={mockCard} onExpand={() => {}} />);
+    expect(queryByLabelText('On your chase list')).not.toBeInTheDocument();
+  });
 });

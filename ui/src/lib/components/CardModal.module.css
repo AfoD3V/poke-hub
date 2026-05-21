@@ -7,23 +7,41 @@
 	backdrop-filter: blur(12px);
 }
 
-/* ── Flip shadow wrapper — floating card, slightly left of centre ────────*/
+/* ── Modal content — centered flex row holding card + panel ──────────────*/
+.modal-content {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 3rem;
+	padding: 1.5rem;
+}
+@media (max-width: 700px) {
+	.modal-content {
+		flex-direction: column;
+		overflow-y: auto;
+		justify-content: flex-start;
+		padding-top: 3.5rem;
+		gap: 1.5rem;
+	}
+}
+
+/* ── Flip shadow wrapper — participates in flex, not absolutely placed ───*/
 /* filter lives here, NOT on flip-wrap: filter on a preserve-3d element
    flattens 3D space and breaks backface-visibility on child faces */
 .flip-shadow-wrap {
-	position: absolute;
-	top: 50%;
-	left: 32%;
-	transform: translate(-50%, -50%);
-	width: min(320px, 40vw);
-	aspect-ratio: 0.718;
+	position: relative;
+	height: 75vh;
+	width: calc(75vh * 0.718);
+	flex-shrink: 0;
 	filter: drop-shadow(0 30px 60px rgba(0,0,0,0.85));
 }
-@media (max-width: 680px) {
+@media (max-width: 700px) {
 	.flip-shadow-wrap {
-		left: 50%;
-		top: 35%;
-		width: min(260px, 72vw);
+		height: 50vh;
+		width: calc(50vh * 0.718);
+		flex-shrink: 0;
 	}
 }
 
@@ -667,14 +685,11 @@
 	border-color: rgba(255,255,255,0.15);
 }
 
-/* ── Info panel — floating aside ─────────────────────────────────────────*/
+/* ── Info panel — flex sibling of card ───────────────────────────────────*/
 .info-panel {
-	position: absolute;
-	left: 56%;
-	top: 50%;
-	transform: translateY(-50%);
 	width: 280px;
-	max-height: 90vh;
+	max-height: 80vh;
+	flex-shrink: 0;
 	background: rgba(17, 17, 17, 0.92);
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
@@ -685,13 +700,11 @@
 	gap: 0;
 	overflow-y: auto;
 }
-@media (max-width: 680px) {
+@media (max-width: 700px) {
 	.info-panel {
-		position: static;
-		transform: none;
 		width: 100%;
-		max-width: 320px;
-		margin: 68vh auto 2rem;
+		max-width: calc(50vh * 0.718);
+		max-height: none;
 		border-radius: 0.75rem;
 	}
 }
@@ -771,70 +784,68 @@
 	gap: 0.5rem;
 }
 
-/* Chase button */
-.chase-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.4rem;
-	font-family: 'Geist', sans-serif;
-	font-size: 0.8rem;
-	font-weight: 600;
-	color: #a78bfa;
-	background: rgba(167, 139, 250, 0.10);
-	border: 1px solid rgba(167, 139, 250, 0.30);
-	border-radius: 0.5rem;
-	padding: 0.5rem 1rem;
-	cursor: pointer;
-	transition: background 0.2s, border-color 0.2s, color 0.2s;
-	align-self: flex-start;
-	width: 100%;
-	justify-content: center;
-	min-height: 44px;
-}
-.chase-btn:hover:not(:disabled) {
-	background: rgba(167, 139, 250, 0.20);
-	border-color: rgba(167, 139, 250, 0.55);
-	color: #c4b5fd;
-}
-.chase-btn--active {
-	color: #fbbf24;
-	background: rgba(251, 191, 36, 0.12);
-	border-color: rgba(251, 191, 36, 0.40);
-}
-.chase-btn--active:hover:not(:disabled) {
-	background: rgba(251, 191, 36, 0.22);
-	border-color: rgba(251, 191, 36, 0.65);
-	color: #fcd34d;
-}
-.chase-btn:disabled { cursor: default; opacity: 0.7; }
+/* Shared button base */
+.chase-btn,
 .add-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.4rem;
+	justify-content: center;
+	gap: 0.45rem;
 	font-family: 'Geist', sans-serif;
-	font-size: 0.8rem;
+	font-size: 0.875rem;
 	font-weight: 600;
-	color: #E3000B;
-	background: rgba(227, 0, 11, 0.12);
-	border: 1px solid rgba(227, 0, 11, 0.35);
 	border-radius: 0.5rem;
-	padding: 0.5rem 1rem;
+	padding: 0.6rem 1rem;
 	cursor: pointer;
 	transition: background 0.2s, border-color 0.2s, color 0.2s;
-	align-self: flex-start;
 	width: 100%;
-	justify-content: center;
+	min-height: 44px;
+	border: 1px solid transparent;
+}
+.chase-btn:disabled,
+.add-btn:disabled { cursor: default; opacity: 0.65; }
+
+.btn-icon {
+	font-size: 1rem;
+	line-height: 1;
+}
+
+/* Chase button — gold (★) */
+.chase-btn {
+	color: hsl(45, 100%, 60%);
+	background: rgba(251, 191, 36, 0.10);
+	border-color: rgba(251, 191, 36, 0.30);
+}
+.chase-btn:hover:not(:disabled) {
+	background: rgba(251, 191, 36, 0.20);
+	border-color: rgba(251, 191, 36, 0.55);
+	color: hsl(45, 100%, 72%);
+}
+.chase-btn--active {
+	color: hsl(45, 100%, 65%);
+	background: rgba(251, 191, 36, 0.18);
+	border-color: rgba(251, 191, 36, 0.50);
+}
+.chase-btn--active:hover:not(:disabled) {
+	background: rgba(251, 191, 36, 0.28);
+	border-color: rgba(251, 191, 36, 0.70);
+}
+
+/* Collection button — green (✓) */
+.add-btn {
+	color: hsl(142, 70%, 55%);
+	background: rgba(34, 197, 94, 0.10);
+	border-color: rgba(34, 197, 94, 0.30);
 }
 .add-btn:hover:not(:disabled) {
-	background: rgba(227, 0, 11, 0.22);
-	border-color: rgba(227, 0, 11, 0.6);
-	color: #ff2233;
+	background: rgba(34, 197, 94, 0.20);
+	border-color: rgba(34, 197, 94, 0.55);
+	color: hsl(142, 70%, 68%);
 }
-.add-btn:disabled { cursor: default; opacity: 0.7; }
 .add-btn--success {
-	color: #6ee7b7;
-	background: rgba(16, 185, 129, 0.12);
-	border-color: rgba(16, 185, 129, 0.35);
+	color: hsl(142, 70%, 55%);
+	background: rgba(34, 197, 94, 0.16);
+	border-color: rgba(34, 197, 94, 0.42);
 }
 .add-btn--error {
 	color: #fca5a5;
@@ -850,9 +861,9 @@
 .collection-link {
 	font-family: 'Geist', sans-serif;
 	font-size: 0.75rem;
-	color: #E3000B;
+	color: hsl(142, 70%, 55%);
 	text-decoration: none;
 }
-.collection-link:hover { color: #ff2233; }
+.collection-link:hover { color: hsl(142, 70%, 68%); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.75s linear infinite; }

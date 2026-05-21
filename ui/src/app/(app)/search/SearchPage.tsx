@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { TcgCard, SeriesItem } from '$shared/tcg';
 import { Card } from '@/lib/components/Card';
 import { CardModal } from '@/lib/components/CardModal';
@@ -38,8 +38,24 @@ export function SearchPage({ series, initialChaseIds }: SearchPageProps) {
   const [loading, setLoading]         = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError]             = useState<string | null>(null);
-  const [expandedCard, setExpandedCard] = useState<TcgCard | null>(null);
-  const [chaseIds]                    = useState(new Set(initialChaseIds));
+  const [expandedCard, setExpandedCard]   = useState<TcgCard | null>(null);
+  const [chaseIds, setChaseIds]           = useState(new Set(initialChaseIds));
+  const [collectionIds, setCollectionIds] = useState(new Set<string>());
+
+  useEffect(() => {
+    fetch('/api/chase')
+      .then(r => r.json())
+      .then((data: { entries?: Array<{ cardId: string }> }) => {
+        if (data.entries) setChaseIds(new Set(data.entries.map(e => e.cardId)));
+      })
+      .catch(() => {});
+    fetch('/api/collection')
+      .then(r => r.json())
+      .then((data: { entries?: Array<{ cardId: string }> }) => {
+        if (data.entries) setCollectionIds(new Set(data.entries.map(e => e.cardId)));
+      })
+      .catch(() => {});
+  }, []);
 
   const hasMore = mode === 'name' && cards.length < totalCount && !error;
 
@@ -123,7 +139,7 @@ export function SearchPage({ series, initialChaseIds }: SearchPageProps) {
               </p>
               <ul className={styles['card-grid']} role="list">
                 {cards.map((card) => (
-                  <Card key={card.id} card={card} onExpand={setExpandedCard} />
+                  <Card key={card.id} card={card} onExpand={setExpandedCard} isChased={chaseIds.has(card.id)} isCollected={collectionIds.has(card.id)} />
                 ))}
               </ul>
               {hasMore && (
@@ -145,14 +161,21 @@ export function SearchPage({ series, initialChaseIds }: SearchPageProps) {
       )}
 
       {mode === 'series' && (
-        <SeriesBrowser series={series} onSelect={setExpandedCard} />
+        <SeriesBrowser series={series} onSelect={setExpandedCard} chaseIds={chaseIds} collectionIds={collectionIds} />
       )}
 
       {expandedCard && (
         <CardModal
           card={expandedCard}
           chaseIds={chaseIds}
+          collectionIds={collectionIds}
           onClose={() => setExpandedCard(null)}
+          onChaseChange={(cardId, added) => setChaseIds(prev => {
+            const next = new Set(prev);
+            if (added) next.add(cardId); else next.delete(cardId);
+            return next;
+          })}
+          onCollectionAdd={(cardId) => setCollectionIds(prev => new Set(prev).add(cardId))}
         />
       )}
     </div>

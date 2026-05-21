@@ -423,3 +423,15 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   Next.js production export. Unlike `next dev`, CSS Module changes are NOT hot-reloaded. Always run
   `docker compose up -d --build` after any CSS change and verify visually with `playwright-cli` before
   marking tasks done.
+
+- **`/api/sets/:id/cards` returns a raw array, not `{ cards: [...] }`:** The Hono backend returns
+  `SetCardItem[]` directly (not wrapped in an object). Parse with `const cards = await res.json() as SetCardItem[]`
+  after checking `res.ok`. Do not use `body.cards ?? []` — it will always be `undefined` and silently
+  return an empty grid.
+- **SeriesBrowser column layout requires a flex height chain from root to `.series-browser`:** The
+  3-column sliding panel uses `overflow: hidden` to clip hidden columns and `overflow-y: auto` on each
+  column for per-panel scrolling. After the responsive layout change that made `.app-main` a `flex`
+  column container, `.series-browser` must declare `flex: 1; min-height: 0` to fill remaining height,
+  and `.app-main` + `.page` must participate in the flex chain (`display: flex; flex-direction: column;
+  min-height: 0`). Without this, the columns have no anchored height and `overflow-y: auto` expands
+  infinitely rather than scrolling.
