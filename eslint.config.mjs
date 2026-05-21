@@ -14,7 +14,6 @@ export default [
       '**/build/**',
       'server/drizzle/**',
       'resources/**',
-      'ui-svelte/**',
     ],
   },
 

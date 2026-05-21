@@ -8,7 +8,6 @@ bun.lockb
 
 dist/
 build/
-.svelte-kit/
 
 .turbo/
 .cache/
