@@ -176,6 +176,7 @@ export function SearchPage({ series, initialChaseIds }: SearchPageProps) {
             return next;
           })}
           onCollectionAdd={(cardId) => setCollectionIds(prev => new Set(prev).add(cardId))}
+          onCollectionRemove={(cardId) => setCollectionIds(prev => { const next = new Set(prev); next.delete(cardId); return next; })}
         />
       )}
     </div>

@@ -12,6 +12,7 @@ export interface CardModalProps {
   onClose: () => void;
   onChaseChange?: (cardId: string, added: boolean) => void;
   onCollectionAdd?: (cardId: string) => void;
+  onCollectionRemove?: (cardId: string) => void;
 }
 
 const round  = (v: number, p = 3) => parseFloat(v.toFixed(p));
@@ -38,7 +39,7 @@ function resolveRarity(raw: string): string {
 
 const SI = { stiffness: 0.066, damping: 0.25 };
 
-export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(), onClose, onChaseChange, onCollectionAdd }: CardModalProps) {
+export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(), onClose, onChaseChange, onCollectionAdd, onCollectionRemove }: CardModalProps) {
   const [seed] = useState(() => ({ x: Math.random(), y: Math.random() }));
 
   const [springRotate, setSpringRotate] = useSpring({ x: 0,  y: 0  }, SI);
@@ -49,10 +50,10 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
   const [flipped,     setFlipped    ] = useState(false);
   const [imgSrcIdx,   setImgSrcIdx  ] = useState(0);
 
-  // Chase / add-to-collection state
-  type AddState = 'idle' | 'loading' | 'success' | 'error';
-  const [addState,    setAddState   ] = useState<AddState>(() => collectionIds.has(card.id) ? 'success' : 'idle');
-  const [addError,    setAddError   ] = useState('');
+  // Collection state
+  type CollectionState = 'idle' | 'adding' | 'collected' | 'removing' | 'error';
+  const [collectionState, setCollectionState] = useState<CollectionState>(() => collectionIds.has(card.id) ? 'collected' : 'idle');
+  const [collectionError, setCollectionError] = useState('');
   const [localChasing, setLocalChasing] = useState<boolean | null>(null);
   const [chaseLoading, setChaseLoading] = useState(false);
 
@@ -137,9 +138,9 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
   }, [chaseLoading, isChasing, card, onChaseChange]);
 
   const addToCollection = useCallback(async () => {
-    if (addState === 'loading' || addState === 'success') return;
-    setAddState('loading');
-    setAddError('');
+    if (collectionState === 'adding' || collectionState === 'collected') return;
+    setCollectionState('adding');
+    setCollectionError('');
     try {
       const res = await fetch('/api/collection/add', {
         method: 'POST',
@@ -150,13 +151,35 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
         const body = await res.json() as { error?: string };
         throw new Error(body.error ?? `Request failed (${res.status})`);
       }
-      setAddState('success');
+      setCollectionState('collected');
       onCollectionAdd?.(card.id);
     } catch (e) {
-      setAddError(e instanceof Error ? e.message : 'Failed to add card');
-      setAddState('error');
+      setCollectionError(e instanceof Error ? e.message : 'Failed to add card');
+      setCollectionState('error');
     }
-  }, [addState, card, onCollectionAdd]);
+  }, [collectionState, card, onCollectionAdd]);
+
+  const removeFromCollection = useCallback(async () => {
+    if (collectionState === 'removing') return;
+    setCollectionState('removing');
+    setCollectionError('');
+    try {
+      const res = await fetch('/api/collection/remove', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardId: card.id }),
+      });
+      if (!res.ok) {
+        const body = await res.json() as { error?: string };
+        throw new Error(body.error ?? `Request failed (${res.status})`);
+      }
+      setCollectionState('idle');
+      onCollectionRemove?.(card.id);
+    } catch (e) {
+      setCollectionError(e instanceof Error ? e.message : 'Failed to remove card');
+      setCollectionState('collected');
+    }
+  }, [collectionState, card, onCollectionRemove]);
 
   const dataRarity   = resolveRarity(card.rarity ?? '');
   const subtypesStr  = (card.subtypes  ?? []).join(' ').toLowerCase();
@@ -283,23 +306,31 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
             {isChasing ? 'Chasing' : 'Chase'}
           </button>
 
-          <button
-            className={`${styles['add-btn']} ${addState === 'success' ? styles['add-btn--success'] : ''} ${addState === 'error' ? styles['add-btn--error'] : ''}`}
-            disabled={addState === 'loading' || addState === 'success'}
-            onClick={addToCollection}
-            aria-label={`Add ${card.name} to collection`}
-          >
-            <span className={styles['btn-icon']}>✓</span>
-            {addState === 'idle' && 'Collection'}
-            {addState === 'loading' && 'Adding…'}
-            {addState === 'success' && 'In Collection'}
-            {addState === 'error' && 'Retry'}
-          </button>
-
-          {addState === 'error' && <p className={styles['add-error']}>{addError}</p>}
-          {addState === 'success' && (
-            <a href="/collection" className={styles['collection-link']}>View Collection →</a>
+          {collectionState !== 'collected' && collectionState !== 'removing' ? (
+            <button
+              className={`${styles['add-btn']} ${collectionState === 'error' ? styles['add-btn--error'] : ''}`}
+              disabled={collectionState === 'adding'}
+              onClick={addToCollection}
+              aria-label={`Add ${card.name} to collection`}
+            >
+              <span className={styles['btn-icon']}>✓</span>
+              {collectionState === 'idle' && 'Collection'}
+              {collectionState === 'adding' && 'Adding…'}
+              {collectionState === 'error' && 'Retry'}
+            </button>
+          ) : (
+            <button
+              className={`${styles['add-btn']} ${styles['add-btn--remove']}`}
+              disabled={collectionState === 'removing'}
+              onClick={removeFromCollection}
+              aria-label={`Remove ${card.name} from collection`}
+            >
+              <span className={styles['btn-icon']}>✕</span>
+              {collectionState === 'removing' ? 'Removing…' : 'Remove'}
+            </button>
           )}
+
+          {collectionState === 'error' && <p className={styles['add-error']}>{collectionError}</p>}
         </div>
       </aside>
       </div>{/* end modal-content */}
