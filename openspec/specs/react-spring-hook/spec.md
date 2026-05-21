@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
-### Requirement: useSpring hook implements the Svelte spring ODE
-A `useSpring<T>(initialValue: T, config?: SpringConfig)` hook SHALL exist at `ui/src/lib/hooks/useSpring.ts`. It SHALL implement the same damped-spring update loop as Svelte's `spring()`:
+### Requirement: useSpring hook implements the damped-spring ODE
+A `useSpring<T>(initialValue: T, config?: SpringConfig)` hook SHALL exist at `ui/src/lib/hooks/useSpring.ts`. It SHALL implement the following damped-spring update loop (originally from Svelte's `spring()` store, ported to React):
 
 ```
 velocity += (target - value) * stiffness
@@ -27,15 +27,15 @@ This loop SHALL run each `requestAnimationFrame` until the spring settles (veloc
 - **WHEN** `set(target, { soft: 1 })` is called while the spring is in motion
 - **THEN** the spring does not abruptly change direction but smoothly transitions toward the new target
 
-### Requirement: useSpring matches the exact config pairs used in Card.svelte
-The hook SHALL produce visually equivalent motion to the Svelte spring when initialised with:
+### Requirement: useSpring uses the config pairs from Card.tsx
+The hook SHALL produce visually equivalent motion when initialised with:
 - Interact (fast): `{ stiffness: 0.066, damping: 0.25 }`
 - Relax (slow): `{ stiffness: 0.01, damping: 0.06 }`
 
-These are the pairs used in `Card.svelte`'s `springGlare` and `springBg` stores.
+These are the pairs used in `Card.tsx`'s spring instances for glare and background animation.
 
 #### Scenario: Visual regression baseline passes
-- **WHEN** a Playwright screenshot is taken of the React Card component hovered at the same cursor position as the Svelte Card reference screenshot
+- **WHEN** a Playwright screenshot is taken of the Card component hovered at the same cursor position across two renders
 - **THEN** the pixel difference between the two screenshots is less than 2%
 
 ### Requirement: useSpring supports object values with numeric leaf nodes

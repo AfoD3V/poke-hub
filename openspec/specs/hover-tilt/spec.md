@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: HoverTilt component available as shared UI primitive
-A `HoverTilt.tsx` component SHALL exist at `ui/src/lib/components/HoverTilt.tsx`. It SHALL expose the same props as the original Svelte component: `tiltFactor`, `scaleFactor`, `springOptions`, `enterDelay`, `exitDelay`, `glareIntensity`, `glareHue`, `shadow`, `shadowBlur`. It SHALL accept `children: React.ReactNode` (replacing Svelte's slot). It SHALL use the `useSpring` hook internally for physics.
+A `HoverTilt.tsx` component SHALL exist at `ui/src/lib/components/HoverTilt.tsx`. It SHALL expose props: `tiltFactor`, `scaleFactor`, `springOptions`, `enterDelay`, `exitDelay`, `glareIntensity`, `glareHue`, `shadow`, `shadowBlur`. It SHALL accept `children: React.ReactNode`. It SHALL use the `useSpring` hook internally for physics.
 
 #### Scenario: Component wraps children with tilt
 - **WHEN** a card image is wrapped in `<HoverTilt>`

@@ -1,9 +1,9 @@
 ## ADDED Requirements
 
-### Requirement: App Router directory structure mirrors every SvelteKit route
-`ui/src/app/` SHALL contain the following routes, matching the SvelteKit structure 1:1:
+### Requirement: App Router directory structure
+`ui/src/app/` SHALL contain the following routes (migrated from the original SvelteKit structure):
 
-| SvelteKit route | Next.js App Router route |
+| Original SvelteKit route | Next.js App Router route |
 |---|---|
 | `routes/+page.server.ts` (redirect) | `app/page.tsx` (Server Component redirect) |
 | `routes/auth/login/+page.svelte` | `app/auth/login/page.tsx` |
@@ -46,8 +46,8 @@
 - **WHEN** a user without a JWT cookie visits `/`
 - **THEN** they receive a server redirect to `/auth/login`
 
-### Requirement: API proxy route handlers mirror all +server.ts files
-`ui/src/app/api/` SHALL contain Next.js Route Handlers (`.../route.ts`) for every `+server.ts` API proxy:
+### Requirement: API proxy route handlers
+`ui/src/app/api/` SHALL contain Next.js Route Handlers (`.../route.ts`) for all API proxies:
 
 - `app/api/cards/[id]/route.ts`
 - `app/api/cards/search/route.ts`
@@ -85,7 +85,7 @@ Each route handler SHALL forward the incoming request (including the `cookie` he
 - **THEN** the middleware allows the request to proceed
 
 ### Requirement: Data loading uses Server Components (not getServerSideProps)
-`(app)/home/page.tsx`, `(app)/search/page.tsx`, and `(app)/collection/page.tsx` SHALL be async Server Components that fetch data directly from `API_BASE_URL` (forwarding the `Cookie` header from Next.js `headers()`) — replacing SvelteKit's `+page.server.ts` load functions.
+`(app)/home/page.tsx`, `(app)/search/page.tsx`, and `(app)/collection/page.tsx` SHALL be async Server Components that fetch data directly from `API_BASE_URL` (forwarding the `Cookie` header from Next.js `headers()`).
 
 #### Scenario: Home page renders collection stats server-side
 - **WHEN** an authenticated user visits `/home`

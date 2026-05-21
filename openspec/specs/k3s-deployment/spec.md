@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Service Dockerfiles
-The project SHALL include Dockerfiles for the SvelteKit UI and Hono API services suitable for k3s deployment.
+The project SHALL include Dockerfiles for the Next.js UI and Hono API services suitable for k3s deployment.
 
 #### Scenario: Building service images
 - **WHEN** the Docker build commands are executed

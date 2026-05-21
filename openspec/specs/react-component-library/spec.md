@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
-### Requirement: All 7 Svelte components ported to React with CSS Modules
-The following components SHALL exist as React functional components in `ui/src/lib/components/`, each with a co-located `ComponentName.module.css` file containing the verbatim CSS from the corresponding Svelte `<style>` block:
+### Requirement: All 7 components implemented as React components with CSS Modules
+The following components SHALL exist as React functional components in `ui/src/lib/components/`, each with a co-located `ComponentName.module.css` file:
 
 - `Card.tsx` / `Card.module.css`
 - `HoverTilt.tsx` / `HoverTilt.module.css`
@@ -20,9 +20,9 @@ The following components SHALL exist as React functional components in `ui/src/l
 - **THEN** zero `@typescript-eslint/no-explicit-any` violations in component files
 
 ### Requirement: Card component preserves the full holographic effect
-`Card.tsx` SHALL compute CSS custom properties (`--pointer-x`, `--pointer-y`, `--pointer-from-center`, `--pointer-from-top`, `--pointer-from-left`, `--card-opacity`, `--background-x`, `--background-y`, `--seedx`, `--seedy`) using the `useSpring` hook with the same stiffness/damping pairs as `Card.svelte`. These CSS variables SHALL be written to the card's root `style` attribute on each RAF frame.
+`Card.tsx` SHALL compute CSS custom properties (`--pointer-x`, `--pointer-y`, `--pointer-from-center`, `--pointer-from-top`, `--pointer-from-left`, `--card-opacity`, `--background-x`, `--background-y`, `--seedx`, `--seedy`) using the `useSpring` hook. These CSS variables SHALL be written to the card's root `style` attribute on each RAF frame.
 
-`Card.tsx` SHALL use `data-rarity`, `data-subtypes`, `data-supertype`, and `className` (from type) to drive CSS Module selectors identically to the Svelte `data-*` attribute system.
+`Card.tsx` SHALL use `data-rarity`, `data-subtypes`, `data-supertype`, and `className` (from type) to drive CSS Module selectors via `data-*` attribute selectors.
 
 #### Scenario: Holo effect activates on pointer enter
 - **WHEN** the pointer moves over a rare-holo Card component
@@ -41,7 +41,7 @@ The following components SHALL exist as React functional components in `ui/src/l
 - **THEN** the fallback div with the card name is displayed instead of a broken image
 
 ### Requirement: HoverTilt component is a React wrapper accepting children
-`HoverTilt.tsx` SHALL accept `children: React.ReactNode` and props `tiltFactor`, `scaleFactor`, `shadow` (matching the Svelte slot/prop API). It SHALL use `useSpring` internally and apply a 3D CSS transform to a wrapper `<div>`.
+`HoverTilt.tsx` SHALL accept `children: React.ReactNode` and props `tiltFactor`, `scaleFactor`, `shadow`. It SHALL use `useSpring` internally and apply a 3D CSS transform to a wrapper `<div>`.
 
 #### Scenario: Tilt applies to children
 - **WHEN** pointer moves over a HoverTilt-wrapped element
@@ -67,7 +67,7 @@ The following components SHALL exist as React functional components in `ui/src/l
 - **THEN** `onClose` callback is invoked
 
 ### Requirement: CSS Module selectors preserve all data-rarity and pseudo-element rules
-Every `data-*` attribute selector and pseudo-element (`::before`, `::after`) in the original Svelte `<style>` blocks SHALL appear verbatim in the corresponding `.module.css` files. CSS Modules SHALL NOT hash `data-*` attribute names or pseudo-selectors — only local class names are hashed.
+Every `data-*` attribute selector and pseudo-element (`::before`, `::after`) SHALL appear verbatim in the corresponding `.module.css` files. CSS Modules SHALL NOT hash `data-*` attribute names or pseudo-selectors — only local class names are hashed.
 
 #### Scenario: Rare holo selector applies in module
 - **WHEN** a Card with `data-rarity="rare holo"` is rendered
