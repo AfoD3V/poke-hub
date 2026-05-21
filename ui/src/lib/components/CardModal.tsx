@@ -203,6 +203,7 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
     >
       <button className={styles['close-btn']} onClick={onClose} aria-label="Close">×</button>
 
+      <div className={styles['modal-content']}>
       <div className={styles['flip-shadow-wrap']}>
         <div className={`${styles['flip-wrap']} ${flipped ? styles.flipped : ''}`}>
           {/* Back face */}
@@ -246,7 +247,7 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
             </div>
           </div>
         </div>
-      </div>
+      </div>{/* end flip-shadow-wrap */}
 
       {/* Info panel */}
       <aside className={styles['info-panel']}>
@@ -278,6 +279,7 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
             onClick={toggleChase}
             aria-label={`${isChasing ? 'Remove' : 'Add'} ${card.name} ${isChasing ? 'from' : 'to'} chase list`}
           >
+            <span className={styles['btn-icon']}>★</span>
             {isChasing ? 'Chasing' : 'Chase'}
           </button>
 
@@ -287,9 +289,10 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
             onClick={addToCollection}
             aria-label={`Add ${card.name} to collection`}
           >
-            {addState === 'idle' && 'Add to Collection'}
+            <span className={styles['btn-icon']}>✓</span>
+            {addState === 'idle' && 'Collection'}
             {addState === 'loading' && 'Adding…'}
-            {addState === 'success' && 'Added!'}
+            {addState === 'success' && 'In Collection'}
             {addState === 'error' && 'Retry'}
           </button>
 
@@ -299,6 +302,7 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
           )}
         </div>
       </aside>
+      </div>{/* end modal-content */}
     </div>
   );
 }
