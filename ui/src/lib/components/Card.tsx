@@ -48,9 +48,16 @@ export function Card({ card, onExpand, isChased = false, isCollected = false }: 
   const [interacting, setInteracting] = useState(false);
   const [imgSrcIdx,   setImgSrcIdx  ] = useState(0);
 
-  const imgSrcs = card.images?.small
-    ? [card.images.small, card.images.small.replace('.webp', '.png')]
-    : [];
+  const imgSrcs = (() => {
+    const large = card.images?.large ?? '';
+    const small = card.images?.small ?? '';
+    const srcs: string[] = [];
+    if (large) srcs.push(large);
+    if (small && small !== large) srcs.push(small);
+    if (large) srcs.push(large.replace('.webp', '.png'));
+    if (small && small !== large) srcs.push(small.replace('.webp', '.png'));
+    return srcs;
+  })();
   const currentCardSrc = imgSrcs[imgSrcIdx] ?? '';
 
   const handleImgError = useCallback(() => {

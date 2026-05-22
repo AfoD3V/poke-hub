@@ -67,13 +67,15 @@ export function HomeDashboard({
   })();
 
   function openChaseCard(entry: ChaseEntry) {
+    const small = entry.cardSnapshot.imageSmall;
+    const large = small ? small.replace('/low.webp', '/high.webp') : '';
     setExpandedCard({
       id: entry.cardId,
       name: entry.cardSnapshot.name,
       supertype: 'Pokémon',
       set: entry.cardSnapshot.setName,
       number: '',
-      images: { small: entry.cardSnapshot.imageSmall, large: entry.cardSnapshot.imageSmall },
+      images: { small, large },
     });
   }
 
@@ -230,7 +232,7 @@ export function HomeDashboard({
                       >
                         {entry.cardSnapshot.imageSmall ? (
                           <img
-                            src={entry.cardSnapshot.imageSmall}
+                            src={entry.cardSnapshot.imageSmall.replace('/low.webp', '/high.webp')}
                             alt={entry.cardSnapshot.name}
                             loading="lazy"
                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
