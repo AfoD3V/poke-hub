@@ -8,6 +8,16 @@ PokeHub is a premium personal Pokémon TCG collection manager. Dark mode is the 
 
 **Current phase:** Phase 1, Task 5 (Real-Time Event Architecture) is next.
 
+## Architecture Reference
+
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the single authoritative reference on structural, naming, and organisational decisions across this monorepo.
+
+> **Prime Directive:** Does this structure serve the code, or does the code serve the structure?
+
+Before adding any new file, consult the **Decision Checklist** in `ARCHITECTURE.md`. It answers: which layer does this belong to, does a file already exist to extend, and does the name follow conventions?
+
+`ARCHITECTURE.md` covers: repo layout, frontend layer rules (`lib/components/`, `lib/hooks/`, `app/api/`), backend layering (routes → services → Drizzle), shared package rules, naming conventions, anti-patterns, documented exceptions, and the 5-question decision checklist.
+
 ## Commands
 
 ### Local Development (Docker Compose — primary)
@@ -88,6 +98,7 @@ Three-layer system in `ui/src/lib/components/Card.tsx`:
 - **Docker rebuilds required for CSS changes:** The Docker UI container uses a production Next.js build. CSS Module changes are not hot-reloaded. Run `docker compose up -d --build` after any CSS change and verify with `playwright-cli` before marking done.
 - **`/api/sets/:id/cards` returns a raw array, not `{ cards: [...] }`:** Parse with `const cards = await res.json() as SetCardItem[]` after `res.ok` check. Never use `body.cards ?? []` — `.cards` is always `undefined` on an array and silently empties the grid.
 - **SeriesBrowser flex height chain:** `.series-browser` needs `flex: 1; min-height: 0`, `.app-main` and `.page` need `display: flex; flex-direction: column; min-height: 0`. Without this chain, `overflow-y: auto` on each column has no anchored height and expands unbounded instead of scrolling.
+- **Playwright Screenshots — always write to `screenshots/`:** All `playwright-cli screenshot` and `playwright-cli snapshot` calls MUST write output to `screenshots/<descriptive-name>.png`. Never write screenshot files to the repo root, `ui/`, `server/`, or any other location. If `screenshots/` does not exist, create it first. The directory is tracked in git; image files within it are gitignored.
 
 ## Required Skills
 
@@ -137,11 +148,12 @@ A task is complete only when:
 7. Security check via `security-secure-coding` skill — all findings resolved.
 8. Changes pushed to a feature branch; PR created via `gh pr create`.
 
-## Keeping CLAUDE.md and AGENTS.md in Sync
+## Keeping CLAUDE.md, AGENTS.md, and ARCHITECTURE.md in Sync
 
-These two files are the primary sources of truth for AI agents working in this repo and **must always be consistent with each other**.
+These three files are the primary sources of truth for AI agents working in this repo and **must always be consistent with each other**.
 
 - **When updating `AGENTS.md`** (e.g. adding a Project Learning, changing a directive, updating current status): reflect the relevant change in `CLAUDE.md` as well — update the corresponding section or add a new entry.
 - **When updating `CLAUDE.md`** (e.g. adding a gotcha, changing a command, updating the current phase): ensure `AGENTS.md` reflects the same information in the appropriate section.
-- Both files must be updated in the **same commit**. A change to one file without the corresponding update to the other is incomplete.
-- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, tooling config). `CLAUDE.md` contains the distilled, actionable version. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`.
+- **When introducing a new structural pattern** (a new layer, a new convention, a new directory): update `ARCHITECTURE.md` in the **same commit** as the code change.
+- All three files must be updated in the **same commit** when a structural change is involved. A change to one file without the corresponding update to the others is incomplete.
+- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, tooling config). `CLAUDE.md` contains the distilled, actionable version. `ARCHITECTURE.md` is the authoritative structural reference. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`; structural conventions go in `ARCHITECTURE.md`.

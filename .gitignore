@@ -24,3 +24,6 @@ opencode.jsonc
 .playwright-cli/
 .postman/
 postman/
+
+screenshots/*.png
+screenshots/*.jpg

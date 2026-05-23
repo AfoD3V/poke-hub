@@ -27,6 +27,33 @@ replacement effect that uses radial gradients and SVG noise overlays).
 
 ---
 
+## Architecture Reference
+
+See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the single authoritative reference on structural, naming, and organisational decisions across this monorepo.
+
+> **Prime Directive:** Does this structure serve the code, or does the code serve the structure?
+
+### When to consult `ARCHITECTURE.md`
+
+- **Before adding any new file**: run through the Decision Checklist (5 questions) to confirm the correct layer, naming, and responsibility.
+- **When asked "where does this go?"**: `ARCHITECTURE.md` is the authoritative answer — not memory, not convention, not precedent.
+- **When introducing a new structural pattern**: update `ARCHITECTURE.md` in the same commit.
+
+### What `ARCHITECTURE.md` covers
+
+| Section | Purpose |
+|---------|---------|
+| Repo Layout | Top-level directories and their roles; mapping from reference arch to real paths |
+| Frontend Structure | Layer rules for `ui/src/` — `app/`, `lib/components/`, `lib/hooks/`, `app/api/` |
+| Backend Structure | Hono layering: routes → services → Drizzle |
+| Shared Package | Cross-boundary types; no `any`, no logic |
+| Naming Conventions | File/folder naming table; semantic naming rules |
+| Anti-Patterns | 8 explicitly forbidden patterns with correct alternatives |
+| When to Break the Rules | 5 documented exceptions with rationale and resolution |
+| Decision Checklist | 5 questions to answer before creating any new file |
+
+---
+
 ## Tech Stack
 
 | Layer      | Technology                          |
@@ -160,14 +187,15 @@ Neither replaces the other. Both are required, every time, for every endpoint.
   design guidelines.
 - Use `playwright-cli` for browser-based debugging, developing, and testing when needed.
 
-### Keeping AGENTS.md and CLAUDE.md in Sync
+### Keeping AGENTS.md, CLAUDE.md, and ARCHITECTURE.md in Sync
 
-`AGENTS.md` and `CLAUDE.md` are the two primary sources of truth for AI agents in this repo and **must always be consistent with each other**.
+`AGENTS.md`, `CLAUDE.md`, and `ARCHITECTURE.md` are the three primary sources of truth for AI agents in this repo and **must always be consistent with each other**.
 
 - **When updating `AGENTS.md`** (e.g. adding a Project Learning, changing a directive, updating current status): reflect the relevant change in `CLAUDE.md` as well — update the corresponding section or add a new entry.
 - **When updating `CLAUDE.md`** (e.g. adding a gotcha, changing a command, updating the current phase): ensure `AGENTS.md` reflects the same information in the appropriate section.
-- Both files must be updated in the **same commit**. A change to one file without the corresponding update to the other is incomplete.
-- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, tooling config). `CLAUDE.md` contains the distilled, actionable version. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`.
+- **When introducing a new structural pattern** (a new layer, convention, or directory): update `ARCHITECTURE.md` in the **same commit** as the code change.
+- All three files must be updated in the **same commit** when a structural change is involved. A change to one file without the corresponding update to the others is incomplete.
+- `AGENTS.md` is the canonical home for full detail (rationale, workflow steps, tooling config). `CLAUDE.md` contains the distilled, actionable version. `ARCHITECTURE.md` is the authoritative structural reference. When in doubt: full context goes in `AGENTS.md`; the practical summary goes in `CLAUDE.md`; structural conventions go in `ARCHITECTURE.md`.
 
 ---
 
@@ -435,3 +463,8 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   and `.app-main` + `.page` must participate in the flex chain (`display: flex; flex-direction: column;
   min-height: 0`). Without this, the columns have no anchored height and `overflow-y: auto` expands
   infinitely rather than scrolling.
+- **Playwright Screenshots — always write to `screenshots/`:** All `playwright-cli screenshot` and
+  `playwright-cli snapshot` calls MUST write output to `screenshots/<descriptive-name>.png` at the repo
+  root. Never write screenshot files to the repo root directly, `ui/`, `server/`, or any other location.
+  If the `screenshots/` directory does not yet exist, create it before writing the first screenshot.
+  The directory is tracked in git (via `.gitkeep`); image files within it are gitignored via `.gitignore`.
