@@ -5,6 +5,7 @@ import { registerTcgProxyRoutes } from "./routes/tcg-proxy";
 import { registerCollectionRoutes } from "./routes/collection";
 import { chaseRoutes } from "./routes/chase";
 import { adminRoutes } from "./routes/admin";
+import { bindersRouter } from "./routes/binders";
 import { requireAuth } from "./middleware/auth";
 import { requireAdmin } from "./middleware/admin";
 
@@ -16,6 +17,7 @@ export function createApp(): Hono {
 
   app.use("/api/collection/*", requireAuth);
   app.use("/api/chase/*", requireAuth);
+  app.use("/api/binders/*", requireAuth);
   app.use("/api/admin/*", requireAdmin);
 
   registerHealthRoutes(app);
@@ -24,6 +26,7 @@ export function createApp(): Hono {
   registerCollectionRoutes(app);
   app.route("/api/chase", chaseRoutes);
   app.route("/api/admin", adminRoutes);
+  app.route("/api/binders", bindersRouter);
 
   return app;
 }

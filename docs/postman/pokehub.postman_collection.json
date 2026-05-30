@@ -382,8 +382,13 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/series",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "series"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "series"
+          ]
         }
       }
     },
@@ -412,8 +417,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/series/sv",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "series", "sv"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "series",
+            "sv"
+          ]
         }
       }
     },
@@ -440,8 +451,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/series/nonexistent-series-xyz",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "series", "nonexistent-series-xyz"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "series",
+            "nonexistent-series-xyz"
+          ]
         }
       }
     },
@@ -472,8 +489,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/sets/sv03.5/cards",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "sets", "sv03.5", "cards"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "sets",
+            "sv03.5",
+            "cards"
+          ]
         }
       }
     },
@@ -500,12 +524,24 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/cards/search?q=ピカチュウ&lang=ja",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "cards", "search"],
+          "raw": "{{baseUrl}}/api/cards/search?q=\u30d4\u30ab\u30c1\u30e5\u30a6&lang=ja",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "cards",
+            "search"
+          ],
           "query": [
-            { "key": "q", "value": "ピカチュウ" },
-            { "key": "lang", "value": "ja" }
+            {
+              "key": "q",
+              "value": "\u30d4\u30ab\u30c1\u30e5\u30a6"
+            },
+            {
+              "key": "lang",
+              "value": "ja"
+            }
           ]
         }
       }
@@ -533,11 +569,23 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/cards/search?q=Pikachu&lang=zz",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "cards", "search"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "cards",
+            "search"
+          ],
           "query": [
-            { "key": "q", "value": "Pikachu" },
-            { "key": "lang", "value": "zz" }
+            {
+              "key": "q",
+              "value": "Pikachu"
+            },
+            {
+              "key": "lang",
+              "value": "zz"
+            }
           ]
         }
       }
@@ -1129,12 +1177,20 @@
       "request": {
         "method": "GET",
         "header": [
-          { "key": "Cookie", "value": "{{sessionCookie}}" }
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/chase",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "chase"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "chase"
+          ]
         }
       }
     },
@@ -1161,8 +1217,13 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/chase",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "chase"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "chase"
+          ]
         }
       }
     },
@@ -1190,8 +1251,14 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Cookie", "value": "{{sessionCookie}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -1199,8 +1266,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/chase/add",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "chase", "add"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "chase",
+            "add"
+          ]
         }
       }
     },
@@ -1225,8 +1298,14 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Cookie", "value": "{{sessionCookie}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -1234,8 +1313,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/chase/add",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "chase", "add"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "chase",
+            "add"
+          ]
         }
       }
     },
@@ -1260,8 +1345,14 @@
       "request": {
         "method": "DELETE",
         "header": [
-          { "key": "Cookie", "value": "{{sessionCookie}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -1269,8 +1360,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/chase/remove",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "chase", "remove"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "chase",
+            "remove"
+          ]
         }
       }
     },
@@ -1295,8 +1392,14 @@
       "request": {
         "method": "DELETE",
         "header": [
-          { "key": "Cookie", "value": "{{sessionCookie}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -1304,8 +1407,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/chase/remove",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "chase", "remove"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "chase",
+            "remove"
+          ]
         }
       }
     },
@@ -1344,6 +1453,561 @@
           "path": [
             "auth",
             "logout"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - List (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => { pm.expect(pm.response.code).to.equal(200); });",
+              "pm.test('response has binders array', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('binders');",
+              "  pm.expect(body.binders).to.be.an('array');",
+              "});",
+              "if (pm.response.json().binders.length > 0) {",
+              "  const item = pm.response.json().binders[0];",
+              "  pm.test('binder list item has stats fields', () => {",
+              "    pm.expect(item).to.have.property('pageCount');",
+              "    pm.expect(item).to.have.property('filledSlots');",
+              "    pm.expect(item).to.have.property('totalSlots');",
+              "    pm.expect(item).to.have.property('estimatedValue');",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/binders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - List (Negative - unauthenticated)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 401', () => { pm.expect(pm.response.code).to.equal(401); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/binders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Create (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 201', () => { pm.expect(pm.response.code).to.equal(201); });",
+              "pm.test('response has binder with id', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.binder).to.have.property('id');",
+              "  pm.expect(body.binder).to.have.property('pages');",
+              "  pm.expect(body.binder.pages).to.be.an('array').with.length(1);",
+              "});",
+              "pm.collectionVariables.set('binderId', pm.response.json().binder.id);",
+              "pm.collectionVariables.set('pageId', pm.response.json().binder.pages[0].id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Test Binder\", \"icon\": \"book-open\", \"gridCols\": 4, \"gridRows\": 4}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/binders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Create (Negative - missing name)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 400', () => { pm.expect(pm.response.code).to.equal(400); });",
+              "pm.test('response has error', () => { pm.expect(pm.response.json()).to.have.property('error'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/binders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Create (Negative - invalid grid size)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 400', () => { pm.expect(pm.response.code).to.equal(400); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Bad Grid\", \"gridCols\": 5, \"gridRows\": 5}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/binders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Get by ID (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => { pm.expect(pm.response.code).to.equal(200); });",
+              "pm.test('binder has pages', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.binder).to.have.property('pages');",
+              "  pm.expect(body.binder.pages).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/{{binderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "{{binderId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Get by ID (Negative - not found)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 404', () => { pm.expect(pm.response.code).to.equal(404); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/00000000-0000-0000-0000-000000000000",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "00000000-0000-0000-0000-000000000000"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Update (Positive - rename)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => { pm.expect(pm.response.code).to.equal(200); });",
+              "pm.test('name updated', () => { pm.expect(pm.response.json().binder.name).to.equal('Renamed Binder'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Renamed Binder\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/{{binderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "{{binderId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Add Page (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 201', () => { pm.expect(pm.response.code).to.equal(201); });",
+              "pm.test('page has id and pageNumber', () => {",
+              "  const page = pm.response.json().page;",
+              "  pm.expect(page).to.have.property('id');",
+              "  pm.expect(page).to.have.property('pageNumber');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/{{binderId}}/pages",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "{{binderId}}",
+            "pages"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Place Card (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => { pm.expect(pm.response.code).to.equal(200); });",
+              "pm.test('slot has cardId', () => {",
+              "  const slot = pm.response.json().slot;",
+              "  pm.expect(slot.cardId).to.equal('sv3pt5-001');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardId\": \"sv3pt5-001\", \"cardSnapshot\": {\"name\": \"Bulbasaur\", \"imageSmall\": \"https://assets.tcgdex.net/en/mew/mew-001/low.webp\", \"setName\": \"Mew\", \"setId\": \"sv3pt5\", \"setCode\": \"MEW\", \"rarity\": \"Common\"}}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/{{binderId}}/pages/{{pageId}}/slots/0",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "{{binderId}}",
+            "pages",
+            "{{pageId}}",
+            "slots",
+            "0"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Place Card (Negative - missing cardId)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 400', () => { pm.expect(pm.response.code).to.equal(400); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"cardSnapshot\": {\"name\": \"Bulbasaur\", \"imageSmall\": \"https://example.com/img.jpg\", \"setName\": \"Mew\", \"setId\": \"sv3pt5\", \"setCode\": \"MEW\", \"rarity\": null}}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/{{binderId}}/pages/{{pageId}}/slots/0",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "{{binderId}}",
+            "pages",
+            "{{pageId}}",
+            "slots",
+            "0"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Clear Slot (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => { pm.expect(pm.response.code).to.equal(200); });",
+              "pm.test('success is true', () => { pm.expect(pm.response.json().success).to.be.true; });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/{{binderId}}/pages/{{pageId}}/slots/0",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "{{binderId}}",
+            "pages",
+            "{{pageId}}",
+            "slots",
+            "0"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Remove Page (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200 or 409', () => { pm.expect([200, 409]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/{{binderId}}/pages/{{pageId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "{{binderId}}",
+            "pages",
+            "{{pageId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Binders - Delete (Positive)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', () => { pm.expect(pm.response.code).to.equal(200); });",
+              "pm.test('success is true', () => { pm.expect(pm.response.json().success).to.be.true; });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "{{sessionCookie}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/binders/{{binderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "binders",
+            "{{binderId}}"
           ]
         }
       }

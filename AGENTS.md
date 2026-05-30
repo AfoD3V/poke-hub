@@ -468,3 +468,24 @@ bug fix, or project-specific quirk. See "Learning & Knowledge Capture" above.**
   root. Never write screenshot files to the repo root directly, `ui/`, `server/`, or any other location.
   If the `screenshots/` directory does not yet exist, create it before writing the first screenshot.
   The directory is tracked in git (via `.gitkeep`); image files within it are gitignored via `.gitignore`.
+- **Drizzle camelCase column references — snake_case doesn't exist on the JS object:** When using Drizzle
+  column references inside `drizzleSql` template literals (e.g. `drizzleSql\`${table.column} > 0\``),
+  always use the camelCase JS property name defined in the schema (e.g. `binderSlots.cardId`, not
+  `binderSlots.card_id`). The snake_case property doesn't exist on the Drizzle table object; using it
+  inserts `undefined` into the SQL template and causes a runtime query error.
+- **`react-hooks/set-state-in-effect` (v5 canary) — avoid direct setState in useEffect body:** The
+  `eslint-plugin-react-hooks` v5.0.0-canary shipped two new rules: `react-hooks/set-state-in-effect`
+  and `react-hooks/error-boundaries`. The first flags synchronous `setState` calls and calls to
+  callbacks-that-call-setState directly inside an `useEffect` body. Fix: move synchronous state resets
+  to event handlers (e.g. onChange), and inline async data-fetching into a local `async function` with a
+  `cancelled` flag inside the effect rather than calling a `useCallback` that sets state.
+- **`react-hooks/error-boundaries` — JSX inside try/catch is flagged:** The same v5 canary rule flags
+  returning JSX from inside a `try` block. Fix: collect data inside the try (using variables), then
+  render JSX after the try/catch block. The error fallback JSX in the `catch` block is fine.
+- **`playwright-cli open` resets browser session:** Each `playwright-cli open <url>` creates a fresh
+  browser context, discarding all cookies (including auth). After login, navigate within the same
+  session using `playwright-cli goto <url>` to preserve the session. Only use `open` once per session.
+- **`playwright-cli fill` with `!` — use `printf` to avoid shell history expansion:** Bash/zsh
+  history-expands `!` in double-quoted strings, causing playwright-cli to fill `\!` literally instead
+  of `!`. Always pass passwords containing `!` via `"$(printf '%s' 'Claude123!')"` to produce a clean
+  string without shell interpolation.

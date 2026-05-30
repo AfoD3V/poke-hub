@@ -62,3 +62,37 @@ export async function proxyDelete(path: string, bodyText: string): Promise<NextR
     return NextResponse.json({ error: 'Backend unavailable' }, { status: 502 });
   }
 }
+
+export async function proxyPatch(path: string, bodyText: string): Promise<NextResponse> {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', cookie: getCookie() },
+      body: bodyText,
+    });
+    const body = await res.text();
+    return new NextResponse(body, {
+      status: res.status,
+      headers: { 'content-type': 'application/json' },
+    });
+  } catch {
+    return NextResponse.json({ error: 'Backend unavailable' }, { status: 502 });
+  }
+}
+
+export async function proxyPut(path: string, bodyText: string): Promise<NextResponse> {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', cookie: getCookie() },
+      body: bodyText,
+    });
+    const body = await res.text();
+    return new NextResponse(body, {
+      status: res.status,
+      headers: { 'content-type': 'application/json' },
+    });
+  } catch {
+    return NextResponse.json({ error: 'Backend unavailable' }, { status: 502 });
+  }
+}
