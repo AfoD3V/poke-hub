@@ -175,6 +175,7 @@ export function CardModal({ card, chaseIds = new Set(), collectionIds = new Set(
       }
       setCollectionState('idle');
       onCollectionRemove?.(card.id);
+      onClose();
     } catch (e) {
       setCollectionError(e instanceof Error ? e.message : 'Failed to remove card');
       setCollectionState('collected');
