@@ -11,7 +11,7 @@ interface Props {
   onClose: () => void;
 }
 
-interface JpSet { id: string; name: string; cardCount: number; }
+interface JpSet { id: string; name: string; cardCount: number; logo: string; }
 interface JpSeries { id: string; name: string; sets: JpSet[]; }
 interface JpCard { id: string; name: string; localId: string; image: string; }
 
@@ -102,8 +102,6 @@ export function AddCardModal({ onSelect, onClose }: Props) {
   // Debounced EN card search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    setSuggestions([]);
-    setCardResults([]);
     if (query.length < 2) return;
     debounceRef.current = setTimeout(async () => {
       setLoadingCards(true);
@@ -259,8 +257,9 @@ export function AddCardModal({ onSelect, onClose }: Props) {
                 value={query}
                 onChange={(e) => {
                   const val = e.target.value;
+                  setSuggestions([]);
+                  setCardResults([]);
                   setQuery(val);
-                  if (val.length < 2) { setSuggestions([]); setCardResults([]); }
                 }}
                 aria-label="Search for a card"
                 autoComplete="off"
@@ -327,6 +326,9 @@ export function AddCardModal({ onSelect, onClose }: Props) {
                         <li key={set.id}>
                           <button type="button" className={styles.setItem}
                             onClick={() => handleJpSetSelect(selectedJpSeries, set)}>
+                            {set.logo && (
+                              <img src={set.logo} alt="" className={styles.setLogo} aria-hidden="true" />
+                            )}
                             <span className={styles.setName}>{set.name}</span>
                             <span className={styles.setCode}>{set.cardCount} cards</span>
                           </button>

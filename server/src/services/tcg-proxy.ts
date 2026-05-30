@@ -919,7 +919,6 @@ const jpSeriesCache: { data: SeriesItem[] | null; expiresAt: number } = {
   data: null,
   expiresAt: 0,
 };
-const jpSeriesDetailCache: Map<string, { data: SeriesDetail; expiresAt: number }> = new Map();
 const jpSetCardsCache: Map<string, { data: SetCardItem[]; expiresAt: number }> = new Map();
 
 /**
@@ -966,21 +965,23 @@ export async function getJpSeries(): Promise<SeriesItem[]> {
 
     const rawSets = Array.isArray(detail?.sets) ? detail!.sets as Array<Record<string, unknown>> : [];
 
+    const seriesId = String(item.id ?? "");
     return {
-      id: String(item.id ?? ""),
-      name: String(item.name ?? ""),
-      logo: "",
-      releaseDate: typeof detail?.releaseDate === "string" ? detail.releaseDate : "",
-      sets: rawSets.map((s) => {
-        const cardCount = s.cardCount as Record<string, unknown> | null;
-        return {
-          id: String(s.id ?? ""),
-          name: String(s.name ?? ""),
-          logo: "",
-          cardCount: Number(cardCount?.official ?? cardCount?.total ?? 0),
-        };
-      }),
-    };
+        id: seriesId,
+        name: String(item.name ?? ""),
+        logo: "",
+        releaseDate: typeof detail?.releaseDate === "string" ? detail.releaseDate : "",
+        sets: rawSets.map((s) => {
+          const setId = String(s.id ?? "");
+          const cardCount = s.cardCount as Record<string, unknown> | null;
+          return {
+            id: setId,
+            name: String(s.name ?? ""),
+            logo: "",
+            cardCount: Number(cardCount?.official ?? cardCount?.total ?? 0),
+          };
+        }),
+      };
   });
 
   // Newest first
