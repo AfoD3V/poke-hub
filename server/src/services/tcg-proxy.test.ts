@@ -140,7 +140,7 @@ describe("tcg-proxy service", () => {
       await searchCards("Charizard", 1, 20);
 
       expect(capturedRequest).toBeDefined();
-      expect(capturedRequest?.url).toBe("https://api.tcgdex.net/v2/en/graphql");
+      expect(capturedRequest?.url).toBe("https://api.tcgdex.net/v2/graphql");
       expect(capturedRequest?.init.method).toBe("POST");
     });
 
@@ -849,33 +849,59 @@ describe("getSetCards service", () => {
 // ---------------------------------------------------------------------------
 describe("searchCards with lang param", () => {
   const originalFetch = globalThis.fetch;
-  let capturedUrl = "";
+  let capturedUrls: string[] = [];
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
-    capturedUrl = "";
+    capturedUrls = [];
   });
 
-  const stubGraphQLOkLang = (cards: unknown[] = []): void => {
+  it("uses root /v2/graphql endpoint for EN (default)", async () => {
     globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
-      capturedUrl = typeof url === "string" ? url : url.toString();
-      return new Response(JSON.stringify({ data: { cards } }), {
+      capturedUrls.push(typeof url === "string" ? url : url.toString());
+      return new Response(JSON.stringify({ data: { cards: [] } }), {
         status: 200,
         headers: { "Content-Type": "application/json" }
       });
     };
-  };
-
-  it("defaults to English endpoint when lang is not provided", async () => {
-    stubGraphQLOkLang([]);
     await searchCards("Pikachu");
-    expect(capturedUrl).toContain("/v2/en/graphql");
+    expect(capturedUrls[0]).toBe("https://api.tcgdex.net/v2/graphql");
   });
 
-  it("uses language-specific graphql endpoint for ja", async () => {
-    stubGraphQLOkLang([]);
-    await searchCards("ピカチュウ", 1, 20, "ja");
-    expect(capturedUrl).toContain("/v2/ja/graphql");
+  it("for ja: queries PokéAPI then TCGdex JP REST with translated name", async () => {
+    globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+      const u = typeof url === "string" ? url : url.toString();
+      capturedUrls.push(u);
+      if (u.includes("pokeapi.co")) {
+        return new Response(
+          JSON.stringify({ names: [{ name: "ピカチュウ", language: { name: "ja" } }] }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      // TCGdex JP REST
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    };
+    const result = await searchCards("Pikachu", 1, 20, "ja");
+    expect(capturedUrls[0]).toContain("pokeapi.co");
+    expect(capturedUrls[1]).toContain("api.tcgdex.net/v2/ja/cards");
+    expect(capturedUrls[1]).toContain(encodeURIComponent("ピカチュウ"));
+    expect(result.cards).toEqual([]);
+  });
+
+  it("for ja: returns empty array when PokéAPI does not recognise the name", async () => {
+    globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
+      capturedUrls.push(typeof url === "string" ? url : url.toString());
+      // PokéAPI 404 (trainer card name etc.)
+      return new Response("Not Found", { status: 404 });
+    };
+    const result = await searchCards("Professor Oak", 1, 20, "ja");
+    expect(capturedUrls.length).toBe(1);
+    expect(capturedUrls[0]).toContain("pokeapi.co");
+    expect(result.cards).toEqual([]);
+    expect(result.totalCount).toBe(0);
   });
 
   it("throws TcgProxyServiceError(400) for unsupported language code", async () => {

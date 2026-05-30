@@ -461,6 +461,51 @@ export async function getSets(): Promise<SetItem[]> {
  * @returns Mapped search result
  * @throws TcgProxyServiceError on upstream failure, timeout, or invalid lang
  */
+/**
+ * Translates an English Pokémon name to its Japanese name using PokéAPI.
+ * Returns null when the name is not found (e.g. trainer cards, items).
+ */
+async function getJapanesePokemonName(enName: string): Promise<string | null> {
+  const slug = enName.toLowerCase().trim().replace(/\s+/g, "-");
+  try {
+    const res = await fetchWithTimeout(
+      `https://pokeapi.co/api/v2/pokemon-species/${encodeURIComponent(slug)}`,
+      { method: "GET" },
+      5000
+    );
+    if (!res.ok) return null;
+    const body = await res.json() as { names?: Array<{ name: string; language: { name: string } }> };
+    const jaEntry = body.names?.find((n) => n.language.name === "ja");
+    return jaEntry?.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Searches the TCGdex JP REST endpoint by Japanese Pokémon name.
+ * Maps the simplified list response to our TcgCard shape.
+ */
+async function searchJapaneseCards(jaName: string): Promise<TcgCard[]> {
+  const url = `https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(jaName)}`;
+  const res = await fetchWithTimeout(url, { method: "GET" });
+  if (!res.ok) return [];
+
+  const raw = await res.json() as unknown;
+  if (!Array.isArray(raw)) return [];
+
+  return (raw as Record<string, unknown>[]).map((c) => ({
+    id: String(c.id ?? ""),
+    name: String(c.name ?? ""),
+    supertype: "Pokemon",
+    set: "",
+    images: {
+      small: c.image ? `${c.image}/low.webp` : "",
+      large: c.image ? `${c.image}/high.webp` : ""
+    }
+  }));
+}
+
 export async function searchCards(
   query: string,
   _page = 1,
@@ -471,7 +516,18 @@ export async function searchCards(
     throw new TcgProxyServiceError(`Unsupported language: ${lang}`, 400);
   }
 
-  const graphqlEndpoint = `https://api.tcgdex.net/v2/${lang}/graphql`;
+  // For Japanese: translate EN name → JP name via PokéAPI, then search TCGdex JP REST
+  if (lang === "ja") {
+    const jaName = await getJapanesePokemonName(query);
+    if (!jaName) {
+      return { cards: [], totalCount: 0 };
+    }
+    const cards = await searchJapaneseCards(jaName);
+    return { cards, totalCount: cards.length };
+  }
+
+  // English: search via TCGdex GraphQL (language-agnostic endpoint returns EN data)
+  const graphqlEndpoint = "https://api.tcgdex.net/v2/graphql";
   const response = await fetchWithTimeout(graphqlEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

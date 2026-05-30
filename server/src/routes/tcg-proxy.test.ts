@@ -450,19 +450,27 @@ describe("tcg-proxy routes", () => {
       await expect(res.json()).resolves.toHaveProperty("error");
     });
 
-    it("uses the language-specific graphql endpoint for ja", async () => {
-      let capturedUrl = "";
+    it("for ja: queries PokéAPI then TCGdex JP REST", async () => {
+      const capturedUrls: string[] = [];
       globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
-        capturedUrl = typeof url === "string" ? url : url.toString();
-        return new Response(JSON.stringify({ data: { cards: [] } }), { status: 200, headers: { "Content-Type": "application/json" } });
+        const u = typeof url === "string" ? url : url.toString();
+        capturedUrls.push(u);
+        if (u.includes("pokeapi.co")) {
+          return new Response(
+            JSON.stringify({ names: [{ name: "ピカチュウ", language: { name: "ja" } }] }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+        return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
       };
 
       const app = await buildApp();
-      await app.request("/api/cards/search?q=ピカチュウ&lang=ja");
-      expect(capturedUrl).toContain("/v2/ja/graphql");
+      await app.request("/api/cards/search?q=Pikachu&lang=ja");
+      expect(capturedUrls[0]).toContain("pokeapi.co");
+      expect(capturedUrls[1]).toContain("api.tcgdex.net/v2/ja/cards");
     });
 
-    it("defaults to the en graphql endpoint when lang param is absent", async () => {
+    it("defaults to the root graphql endpoint when lang param is absent", async () => {
       let capturedUrl = "";
       globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
         capturedUrl = typeof url === "string" ? url : url.toString();
@@ -471,7 +479,7 @@ describe("tcg-proxy routes", () => {
 
       const app = await buildApp();
       await app.request("/api/cards/search?q=Pikachu");
-      expect(capturedUrl).toContain("/v2/en/graphql");
+      expect(capturedUrl).toBe("https://api.tcgdex.net/v2/graphql");
     });
   });
 });
