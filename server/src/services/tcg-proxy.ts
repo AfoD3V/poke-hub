@@ -471,9 +471,7 @@ export async function searchCards(
     throw new TcgProxyServiceError(`Unsupported language: ${lang}`, 400);
   }
 
-  // TCGdex GraphQL is language-agnostic — only the REST API uses lang prefixes.
-  // The lang param is validated above but does not change the endpoint.
-  const graphqlEndpoint = "https://api.tcgdex.net/v2/graphql";
+  const graphqlEndpoint = `https://api.tcgdex.net/v2/${lang}/graphql`;
   const response = await fetchWithTimeout(graphqlEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

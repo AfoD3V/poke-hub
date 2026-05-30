@@ -450,7 +450,7 @@ describe("tcg-proxy routes", () => {
       await expect(res.json()).resolves.toHaveProperty("error");
     });
 
-    it("uses the base graphql endpoint for any valid lang", async () => {
+    it("uses the language-specific graphql endpoint for ja", async () => {
       let capturedUrl = "";
       globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
         capturedUrl = typeof url === "string" ? url : url.toString();
@@ -459,11 +459,10 @@ describe("tcg-proxy routes", () => {
 
       const app = await buildApp();
       await app.request("/api/cards/search?q=ピカチュウ&lang=ja");
-      // TCGdex GraphQL is language-agnostic; lang param is validated but doesn't change the URL
-      expect(capturedUrl).toContain("/v2/graphql");
+      expect(capturedUrl).toContain("/v2/ja/graphql");
     });
 
-    it("defaults to the base graphql endpoint when lang param is absent", async () => {
+    it("defaults to the en graphql endpoint when lang param is absent", async () => {
       let capturedUrl = "";
       globalThis.fetch = async (url: RequestInfo | URL): Promise<Response> => {
         capturedUrl = typeof url === "string" ? url : url.toString();
@@ -472,7 +471,7 @@ describe("tcg-proxy routes", () => {
 
       const app = await buildApp();
       await app.request("/api/cards/search?q=Pikachu");
-      expect(capturedUrl).toContain("/v2/graphql");
+      expect(capturedUrl).toContain("/v2/en/graphql");
     });
   });
 });

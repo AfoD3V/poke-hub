@@ -140,7 +140,7 @@ describe("tcg-proxy service", () => {
       await searchCards("Charizard", 1, 20);
 
       expect(capturedRequest).toBeDefined();
-      expect(capturedRequest?.url).toBe("https://api.tcgdex.net/v2/graphql");
+      expect(capturedRequest?.url).toBe("https://api.tcgdex.net/v2/en/graphql");
       expect(capturedRequest?.init.method).toBe("POST");
     });
 
@@ -869,14 +869,13 @@ describe("searchCards with lang param", () => {
   it("defaults to English endpoint when lang is not provided", async () => {
     stubGraphQLOkLang([]);
     await searchCards("Pikachu");
-    // TCGdex GraphQL is language-agnostic; lang param is validated but doesn't change the URL
-    expect(capturedUrl).toContain("/v2/graphql");
+    expect(capturedUrl).toContain("/v2/en/graphql");
   });
 
-  it("uses the base graphql endpoint regardless of lang", async () => {
+  it("uses language-specific graphql endpoint for ja", async () => {
     stubGraphQLOkLang([]);
     await searchCards("ピカチュウ", 1, 20, "ja");
-    expect(capturedUrl).toContain("/v2/graphql");
+    expect(capturedUrl).toContain("/v2/ja/graphql");
   });
 
   it("throws TcgProxyServiceError(400) for unsupported language code", async () => {
