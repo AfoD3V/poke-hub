@@ -6,7 +6,7 @@ import type { Binder, BinderPage, CardSnapshot } from '$shared/binders';
 import { BinderGrid } from '@/lib/components/BinderGrid';
 import { AddCardModal } from '@/lib/components/AddCardModal';
 import { CreateEditBinderModal } from '@/lib/components/CreateEditBinderModal';
-import { placeCard, clearSlot, moveCard, copyCard, addPage, updateBinder, deleteBinder } from '@/lib/api/binders';
+import { placeCard, clearSlot, moveCard, copyCard, addPage, updateBinder, deleteBinder, setSlotCustomImage, clearSlotCustomImage } from '@/lib/api/binders';
 import styles from './BinderPageView.module.css';
 
 interface Props {
@@ -106,6 +106,30 @@ export function BinderPageView({ binder: initialBinder }: Props) {
       });
       await refreshBinder();
     } finally { setSaving(false); setPendingSlot(null); }
+  }
+
+  async function handleUploadCustomImage(slotIndex: number, file: File) {
+    if (!currentPage) return;
+    setSaving(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      await setSlotCustomImage(binder.id, currentPage.id, slotIndex, { dataUrl });
+      await refreshBinder();
+    } finally { setSaving(false); }
+  }
+
+  async function handleClearCustomImage(slotIndex: number) {
+    if (!currentPage) return;
+    setSaving(true);
+    try {
+      await clearSlotCustomImage(binder.id, currentPage.id, slotIndex);
+      await refreshBinder();
+    } finally { setSaving(false); }
   }
 
   async function handleAddPage() {
@@ -210,6 +234,8 @@ export function BinderPageView({ binder: initialBinder }: Props) {
           onSlotClick={handleSlotClick}
           onClearSlot={handleClearSlot}
           onDragDrop={handleDragDrop}
+          onUploadCustomImage={handleUploadCustomImage}
+          onClearCustomImage={handleClearCustomImage}
           selectedSlot={moveSourceSlot}
         />
       ) : (

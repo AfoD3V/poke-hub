@@ -135,3 +135,60 @@
 .removeBtn:hover {
   background: #ef4444;
 }
+
+/* Custom image — amber/gold highlight outline */
+.customImage {
+  box-shadow: 0 0 0 2px #f59e0b, 0 0 6px rgba(245, 158, 11, 0.4);
+  border-color: #f59e0b !important;
+}
+
+.customImage:hover {
+  box-shadow: 0 0 0 2px #fbbf24, 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+/* Upload button — blue/indigo */
+.uploadBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: rgba(99, 102, 241, 0.88);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 120ms;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.uploadBtn:hover {
+  background: #6366f1;
+}
+
+/* Clear custom image button — amber */
+.clearCustomBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: rgba(245, 158, 11, 0.88);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 120ms;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.clearCustomBtn:hover {
+  background: #f59e0b;
+}
+
+/* Hidden file input */
+.hiddenFileInput {
+  display: none;
+}

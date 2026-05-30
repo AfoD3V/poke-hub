@@ -67,6 +67,8 @@ const mockPlaceCard = mock(() => Promise.resolve(mockSlot));
 const mockClearSlot = mock(() => Promise.resolve(true));
 const mockMoveCard = mock(() => Promise.resolve(true));
 const mockCopyCard = mock(() => Promise.resolve(mockSlot));
+const mockSetSlotCustomImage = mock(() => Promise.resolve({ ...mockSlot, customImageUrl: null }));
+const mockClearSlotCustomImage = mock(() => Promise.resolve(true));
 
 mock.module("../services/binderService", () => ({
   createBinder: mockCreateBinder,
@@ -79,7 +81,9 @@ mock.module("../services/binderService", () => ({
   placeCard: mockPlaceCard,
   clearSlot: mockClearSlot,
   moveCard: mockMoveCard,
-  copyCard: mockCopyCard
+  copyCard: mockCopyCard,
+  setSlotCustomImage: mockSetSlotCustomImage,
+  clearSlotCustomImage: mockClearSlotCustomImage
 }));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -617,6 +621,130 @@ describe("POST /api/binders/:id/pages/:pageId/slots/:slotIndex/copy", () => {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders("user-2") },
       body: JSON.stringify(validBody)
+    });
+    expect(res.status).toBe(404);
+  });
+});
+
+// ── PUT /api/binders/:id/pages/:pageId/slots/:slotIndex/custom-image ──────────
+
+describe("PUT /api/binders/:id/pages/:pageId/slots/:slotIndex/custom-image", () => {
+  const originalSecret = process.env.JWT_SECRET;
+  beforeAll(() => { process.env.JWT_SECRET = "test-secret"; });
+  afterAll(() => {
+    if (originalSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = originalSecret;
+  });
+
+  const customImageUrl = "/api/binders/binder-uuid-1/pages/page-uuid-1/slots/0/custom-image";
+  const validDataUrl = "data:image/jpeg;base64,/9j/4AAQSkZJRgAB";
+
+  it("returns 401 without auth", async () => {
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataUrl: validDataUrl })
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 400 when dataUrl is missing", async () => {
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({})
+    });
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({ error: expect.any(String) });
+  });
+
+  it("returns 400 when dataUrl is not a valid data URL", async () => {
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ dataUrl: "https://example.com/image.jpg" })
+    });
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({ error: expect.any(String) });
+  });
+
+  it("returns 400 when dataUrl exceeds 2 MB", async () => {
+    const bigPayload = "data:image/jpeg;base64," + "A".repeat(2 * 1024 * 1024 + 1);
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ dataUrl: bigPayload })
+    });
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({ error: expect.any(String) });
+  });
+
+  it("returns 200 and slot with customImageUrl on success", async () => {
+    mockSetSlotCustomImage.mockImplementationOnce(() => Promise.resolve({
+      ...mockSlot,
+      customImageUrl: validDataUrl
+    }));
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ dataUrl: validDataUrl })
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as { slot: typeof mockSlot & { customImageUrl: string } };
+    expect(body.slot.customImageUrl).toBe(validDataUrl);
+  });
+
+  it("returns 404 when slot not found", async () => {
+    mockSetSlotCustomImage.mockImplementationOnce(() => Promise.resolve(null));
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ dataUrl: validDataUrl })
+    });
+    expect(res.status).toBe(404);
+  });
+});
+
+// ── DELETE /api/binders/:id/pages/:pageId/slots/:slotIndex/custom-image ───────
+
+describe("DELETE /api/binders/:id/pages/:pageId/slots/:slotIndex/custom-image", () => {
+  const originalSecret = process.env.JWT_SECRET;
+  beforeAll(() => { process.env.JWT_SECRET = "test-secret"; });
+  afterAll(() => {
+    if (originalSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = originalSecret;
+  });
+
+  const customImageUrl = "/api/binders/binder-uuid-1/pages/page-uuid-1/slots/0/custom-image";
+
+  it("returns 401 without auth", async () => {
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, { method: "DELETE" });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 200 on successful clear", async () => {
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({ success: true });
+  });
+
+  it("returns 404 when not owned", async () => {
+    mockClearSlotCustomImage.mockImplementationOnce(() => Promise.resolve(false));
+    const app = await buildApp();
+    const res = await app.request(customImageUrl, {
+      method: "DELETE",
+      headers: authHeaders("user-2")
     });
     expect(res.status).toBe(404);
   });
