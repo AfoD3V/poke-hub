@@ -1,6 +1,6 @@
 .grid {
   display: grid;
-  gap: 0.5rem;
+  /* gap is set inline per grid size */
   padding: 0.75rem;
 }
 

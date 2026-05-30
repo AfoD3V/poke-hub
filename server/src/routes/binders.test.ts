@@ -191,7 +191,7 @@ describe("POST /api/binders", () => {
     const res = await app.request("/api/binders", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ name: "My Binder", gridCols: 5, gridRows: 5 })
+      body: JSON.stringify({ name: "My Binder", gridCols: 11, gridRows: 5 })
     });
     expect(res.status).toBe(400);
   });

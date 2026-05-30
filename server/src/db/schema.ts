@@ -1,5 +1,4 @@
-import { boolean, check, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { boolean, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -70,9 +69,7 @@ export const binders = pgTable(
       .notNull()
       .$onUpdate(() => new Date())
   },
-  (t) => [
-    check("binders_grid_size_check", sql`(${t.gridCols} = 3 AND ${t.gridRows} = 3) OR (${t.gridCols} = 4 AND ${t.gridRows} = 4)`)
-  ]
+  () => []
 );
 
 export const binderPages = pgTable("binder_pages", {
