@@ -32,6 +32,7 @@ export function AddCardModal({ onSelect, onClose }: Props) {
   const [loadingCollection, setLoadingCollection] = useState(false);
   // Cards tab state
   const [query, setQuery] = useState('');
+  const [lang, setLang] = useState<'en' | 'ja'>('en');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [cardResults, setCardResults] = useState<TcgCard[]>([]);
   const [loadingCards, setLoadingCards] = useState(false);
@@ -74,11 +75,13 @@ export function AddCardModal({ onSelect, onClose }: Props) {
   // Debounced card search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSuggestions([]);
+    setCardResults([]);
     if (query.length < 2) return;
     debounceRef.current = setTimeout(async () => {
       setLoadingCards(true);
       try {
-        const res = await fetch(`/api/cards/search?q=${encodeURIComponent(query)}&lang=en`);
+        const res = await fetch(`/api/cards/search?q=${encodeURIComponent(query)}&lang=${lang}`);
         if (!res.ok) return;
         const body = await res.json() as { cards: TcgCard[] };
         const cards = Array.isArray(body.cards) ? body.cards : [];
@@ -90,7 +93,7 @@ export function AddCardModal({ onSelect, onClose }: Props) {
         setLoadingCards(false);
       }
     }, 300);
-  }, [query]);
+  }, [query, lang]);
 
   function handleCardSelect(card: TcgCard) {
     const snap = cardToSnapshot(card);
@@ -192,11 +195,27 @@ export function AddCardModal({ onSelect, onClose }: Props) {
 
         {tab === 'cards' && (
           <div className={styles.tabPanel}>
+            <div className={styles.langToggle}>
+              <button
+                type="button"
+                className={`${styles.langBtn} ${lang === 'en' ? styles.langBtnActive : ''}`}
+                onClick={() => setLang('en')}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                className={`${styles.langBtn} ${lang === 'ja' ? styles.langBtnActive : ''}`}
+                onClick={() => setLang('ja')}
+              >
+                JP
+              </button>
+            </div>
             <div className={styles.searchWrap}>
               <input
                 ref={tab === 'cards' ? inputRef : undefined}
                 className={styles.searchInput}
-                placeholder="Search for a card…"
+                placeholder={lang === 'ja' ? 'カード名で検索…' : 'Search for a card…'}
                 value={query}
                 onChange={(e) => {
                   const val = e.target.value;
