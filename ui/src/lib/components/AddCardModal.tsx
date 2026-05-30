@@ -6,49 +6,21 @@ import type { TcgCard } from '$shared/tcg';
 import type { CollectionEntry } from '$shared/collection';
 import styles from './AddCardModal.module.css';
 
-interface TcgSet {
-  id: string;
-  name: string;
-  code?: string;
-  logo?: string;
-  symbol?: string;
-}
-
-interface SetCardItem {
-  id: string;
-  name: string;
-  image?: string;
-  rarity?: string;
-  localId?: string;
-}
-
 interface Props {
   onSelect: (snapshot: CardSnapshot) => void;
   onClose: () => void;
 }
 
-type Tab = 'collection' | 'cards' | 'sets';
+type Tab = 'collection' | 'cards';
 
-function cardToSnapshot(card: TcgCard | SetCardItem, setInfo?: { name: string; id: string; code: string }): CardSnapshot {
-  if ('images' in card) {
-    const c = card as TcgCard;
-    return {
-      name: c.name,
-      imageSmall: c.images?.small ?? '',
-      setName: typeof c.set === 'string' ? c.set : (c.set as unknown as { name: string })?.name ?? '',
-      setId: typeof c.set === 'string' ? c.set.toLowerCase().replace(/\s+/g, '-') : (c.set as unknown as { id: string })?.id ?? '',
-      setCode: (c as unknown as { setCode?: string }).setCode ?? '',
-      rarity: c.rarity ?? null,
-    };
-  }
-  const c = card as SetCardItem;
+function cardToSnapshot(card: TcgCard): CardSnapshot {
   return {
-    name: c.name,
-    imageSmall: c.image ? `${c.image}/low.webp` : '',
-    setName: setInfo?.name ?? '',
-    setId: setInfo?.id ?? '',
-    setCode: setInfo?.code ?? '',
-    rarity: c.rarity ?? null,
+    name: card.name,
+    imageSmall: card.images?.small ?? '',
+    setName: typeof card.set === 'string' ? card.set : (card.set as unknown as { name: string })?.name ?? '',
+    setId: typeof card.set === 'string' ? card.set.toLowerCase().replace(/\s+/g, '-') : (card.set as unknown as { id: string })?.id ?? '',
+    setCode: (card as unknown as { setCode?: string }).setCode ?? '',
+    rarity: card.rarity ?? null,
   };
 }
 
@@ -63,19 +35,10 @@ export function AddCardModal({ onSelect, onClose }: Props) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [cardResults, setCardResults] = useState<TcgCard[]>([]);
   const [loadingCards, setLoadingCards] = useState(false);
-  // Sets tab state
-  const [sets, setSets] = useState<TcgSet[]>([]);
-  const [setsFilter, setSetsFilter] = useState('');
-  const [selectedSet, setSelectedSet] = useState<TcgSet | null>(null);
-  const [setCards, setSetCards] = useState<SetCardItem[]>([]);
-  const [loadingSets, setLoadingSets] = useState(false);
-  const [loadingSetCards, setLoadingSetCards] = useState(false);
-
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const collectionLoadedRef = useRef(false);
-  const setsLoadedRef = useRef(false);
 
   useEffect(() => {
     triggerRef.current = document.activeElement as HTMLElement;
@@ -129,45 +92,8 @@ export function AddCardModal({ onSelect, onClose }: Props) {
     }, 300);
   }, [query]);
 
-  // Load sets when sets tab is first opened
-  useEffect(() => {
-    if (tab !== 'sets' || setsLoadedRef.current) return;
-    setsLoadedRef.current = true;
-    let cancelled = false;
-    async function fetchSets() {
-      setLoadingSets(true);
-      try {
-        const res = await fetch('/api/series');
-        if (!res.ok || cancelled) return;
-        const body = await res.json() as { series: Array<{ sets: TcgSet[] }> };
-        const allSets: TcgSet[] = [];
-        if (Array.isArray(body.series)) {
-          body.series.forEach((s) => { if (Array.isArray(s.sets)) allSets.push(...s.sets); });
-        }
-        if (!cancelled) setSets(allSets);
-      } finally {
-        if (!cancelled) setLoadingSets(false);
-      }
-    }
-    void fetchSets();
-    return () => { cancelled = true; };
-  }, [tab]);
-
-  async function handleSetSelect(set: TcgSet) {
-    setSelectedSet(set);
-    setLoadingSetCards(true);
-    try {
-      const res = await fetch(`/api/sets/${set.id}/cards`);
-      if (!res.ok) return;
-      const cards = await res.json() as SetCardItem[];
-      setSetCards(Array.isArray(cards) ? cards : []);
-    } finally {
-      setLoadingSetCards(false);
-    }
-  }
-
-  function handleCardSelect(card: TcgCard | SetCardItem) {
-    const snap = cardToSnapshot(card, selectedSet ? { name: selectedSet.name, id: selectedSet.id, code: selectedSet.code ?? '' } : undefined);
+  function handleCardSelect(card: TcgCard) {
+    const snap = cardToSnapshot(card);
     onSelect(snap);
     onClose();
   }
@@ -177,10 +103,6 @@ export function AddCardModal({ onSelect, onClose }: Props) {
     onSelect(snap);
     onClose();
   }
-
-  const filteredSets = sets.filter((s) =>
-    setsFilter.trim() === '' || s.name.toLowerCase().includes(setsFilter.toLowerCase())
-  );
 
   const filteredCollection = collection.filter((e) =>
     collectionFilter.trim() === '' || e.card.name.toLowerCase().includes(collectionFilter.toLowerCase())
@@ -226,14 +148,6 @@ export function AddCardModal({ onSelect, onClose }: Props) {
           >
             Cards
           </button>
-          <button
-            role="tab"
-            aria-selected={tab === 'sets'}
-            className={`${styles.tab} ${tab === 'sets' ? styles.tabActive : ''}`}
-            onClick={() => setTab('sets')}
-          >
-            Sets
-          </button>
         </div>
 
         {tab === 'collection' && (
@@ -249,7 +163,7 @@ export function AddCardModal({ onSelect, onClose }: Props) {
             />
             {loadingCollection && <p className={styles.loading}>Loading collection…</p>}
             {!loadingCollection && collection.length === 0 && (
-              <p className={styles.empty}>Your collection is empty. Add cards from the Cards or Sets tabs.</p>
+              <p className={styles.empty}>Your collection is empty. Search for cards in the Cards tab.</p>
             )}
             {!loadingCollection && collection.length > 0 && filteredCollection.length === 0 && (
               <p className={styles.empty}>No cards match your filter.</p>
@@ -332,66 +246,6 @@ export function AddCardModal({ onSelect, onClose }: Props) {
           </div>
         )}
 
-        {tab === 'sets' && (
-          <div className={styles.tabPanel}>
-            {!selectedSet ? (
-              <>
-                <input
-                  className={styles.searchInput}
-                  placeholder="Search for a series…"
-                  value={setsFilter}
-                  onChange={(e) => setSetsFilter(e.target.value)}
-                  aria-label="Search for a set"
-                />
-                {loadingSets && <p className={styles.loading}>Loading sets…</p>}
-                <ul className={styles.setList}>
-                  {filteredSets.map((s) => (
-                    <li key={s.id}>
-                      <button
-                        type="button"
-                        className={styles.setItem}
-                        onClick={() => handleSetSelect(s)}
-                      >
-                        {s.logo && <img src={s.logo} alt="" className={styles.setLogo} aria-hidden="true" />}
-                        {s.code && <span className={styles.setCode}>{s.code}</span>}
-                        <span className={styles.setName}>{s.name}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className={styles.backBtn}
-                  onClick={() => { setSelectedSet(null); setSetCards([]); }}
-                >
-                  ← Back to sets
-                </button>
-                <p className={styles.setHeading}>{selectedSet.name}</p>
-                {loadingSetCards && <p className={styles.loading}>Loading cards…</p>}
-                <div className={styles.grid3}>
-                  {setCards.map((card) => (
-                    <button
-                      key={card.id}
-                      type="button"
-                      className={styles.cardTile}
-                      onClick={() => handleCardSelect(card)}
-                      title={`Add ${card.name}`}
-                    >
-                      {card.image && (
-                        <img src={`${card.image}/low.webp`} alt={card.name} className={styles.cardImg} />
-                      )}
-                      <span className={styles.setCode}>{selectedSet.code ?? ''}</span>
-                      <span className={styles.tileAddIcon} aria-hidden="true">+</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
