@@ -908,3 +908,136 @@ export async function getSetInfo(setId: string): Promise<{ name: string; logo: s
   setLogoCache.set(setId, { data: info, expiresAt: now + CACHE_TTL_MS });
   return info;
 }
+
+// ---------------------------------------------------------------------------
+// Japanese series / set browsing (TCGdex JP REST)
+// ---------------------------------------------------------------------------
+
+const JP_BASE = "https://api.tcgdex.net/v2/ja";
+
+const jpSeriesCache: { data: SeriesItem[] | null; expiresAt: number } = {
+  data: null,
+  expiresAt: 0,
+};
+const jpSeriesDetailCache: Map<string, { data: SeriesDetail; expiresAt: number }> = new Map();
+const jpSetCardsCache: Map<string, { data: SetCardItem[]; expiresAt: number }> = new Map();
+
+/**
+ * Returns all JP series, each with their embedded sets.
+ * Results are cached for 24 hours.
+ */
+export async function getJpSeries(): Promise<SeriesItem[]> {
+  const now = Date.now();
+  if (jpSeriesCache.data !== null && now < jpSeriesCache.expiresAt) {
+    return jpSeriesCache.data;
+  }
+
+  const listRes = await fetchWithTimeout(`${JP_BASE}/series`, { method: "GET" });
+  if (!listRes.ok) {
+    throw new TcgProxyServiceError(`Upstream returned ${listRes.status}`, 502);
+  }
+
+  let listBody: unknown;
+  try {
+    listBody = await listRes.json();
+  } catch {
+    throw new TcgProxyServiceError("Invalid upstream response body", 502);
+  }
+
+  if (!Array.isArray(listBody)) {
+    throw new TcgProxyServiceError("Unexpected upstream response shape", 502);
+  }
+
+  const listItems = listBody as Array<Record<string, unknown>>;
+
+  // Fan-out to series detail endpoints to get embedded sets
+  const detailResults = await Promise.allSettled(
+    listItems.map((item) =>
+      fetchWithTimeout(`${JP_BASE}/series/${encodeURIComponent(String(item.id ?? ""))}`, {
+        method: "GET",
+      }).then((r) => (r.ok ? r.json() : Promise.resolve(null)))
+    )
+  );
+
+  const series: SeriesItem[] = listItems.map((item, i) => {
+    const detail = detailResults[i].status === "fulfilled"
+      ? (detailResults[i] as PromiseFulfilledResult<unknown>).value as Record<string, unknown> | null
+      : null;
+
+    const rawSets = Array.isArray(detail?.sets) ? detail!.sets as Array<Record<string, unknown>> : [];
+
+    return {
+      id: String(item.id ?? ""),
+      name: String(item.name ?? ""),
+      logo: "",
+      releaseDate: typeof detail?.releaseDate === "string" ? detail.releaseDate : "",
+      sets: rawSets.map((s) => {
+        const cardCount = s.cardCount as Record<string, unknown> | null;
+        return {
+          id: String(s.id ?? ""),
+          name: String(s.name ?? ""),
+          logo: "",
+          cardCount: Number(cardCount?.official ?? cardCount?.total ?? 0),
+        };
+      }),
+    };
+  });
+
+  // Newest first
+  series.sort((a, b) => {
+    if (a.releaseDate && b.releaseDate) return a.releaseDate < b.releaseDate ? 1 : -1;
+    if (a.releaseDate) return -1;
+    if (b.releaseDate) return 1;
+    return 0;
+  });
+
+  jpSeriesCache.data = series;
+  jpSeriesCache.expiresAt = now + CACHE_TTL_MS;
+  return series;
+}
+
+/**
+ * Returns cards for a JP set, sorted by localId.
+ * Results are cached for 24 hours.
+ */
+export async function getJpSetCards(setId: string): Promise<SetCardItem[]> {
+  const now = Date.now();
+  const cached = jpSetCardsCache.get(setId);
+  if (cached && now < cached.expiresAt) {
+    return cached.data;
+  }
+
+  const res = await fetchWithTimeout(`${JP_BASE}/sets/${encodeURIComponent(setId)}`, {
+    method: "GET",
+  });
+
+  if (res.status === 404) throw new TcgProxyServiceError("Set not found", 404);
+  if (!res.ok) throw new TcgProxyServiceError(`Upstream returned ${res.status}`, 502);
+
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    throw new TcgProxyServiceError("Invalid upstream response body", 502);
+  }
+
+  const raw = body as Record<string, unknown>;
+  const rawCards = Array.isArray(raw.cards) ? raw.cards as Array<Record<string, unknown>> : [];
+
+  const cards: SetCardItem[] = rawCards
+    .map((c) => ({
+      id: String(c.id ?? ""),
+      name: String(c.name ?? ""),
+      localId: String(c.localId ?? ""),
+      image: typeof c.image === "string" ? c.image : "",
+    }))
+    .sort((a, b) => {
+      const na = Number(a.localId);
+      const nb = Number(b.localId);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localId < b.localId ? -1 : a.localId > b.localId ? 1 : 0;
+    });
+
+  jpSetCardsCache.set(setId, { data: cards, expiresAt: now + CACHE_TTL_MS });
+  return cards;
+}

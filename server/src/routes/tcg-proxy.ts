@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { searchCards, getCardById, getCardBySetAndNumber, getSets, getSeries, getSeriesById, getSetCards, getSetInfo, TcgProxyServiceError } from "../services/tcg-proxy";
+import { searchCards, getCardById, getCardBySetAndNumber, getSets, getSeries, getSeriesById, getSetCards, getSetInfo, getJpSeries, getJpSetCards, TcgProxyServiceError } from "../services/tcg-proxy";
 import type { TcgProxyError, TcgSearchResponse } from "../../../shared/tcg";
 
 /**
@@ -31,8 +31,9 @@ export function registerTcgProxyRoutes(app: Hono): void {
   });
 
   app.get("/api/series", async (context) => {
+    const lang = context.req.query("lang") ?? "en";
     try {
-      const series = await getSeries();
+      const series = lang === "ja" ? await getJpSeries() : await getSeries();
       return context.json(series, 200);
     } catch (err) {
       if (err instanceof TcgProxyServiceError) {
@@ -76,8 +77,9 @@ export function registerTcgProxyRoutes(app: Hono): void {
 
   app.get("/api/sets/:id/cards", async (context) => {
     const id = context.req.param("id");
+    const lang = context.req.query("lang") ?? "en";
     try {
-      const cards = await getSetCards(id);
+      const cards = lang === "ja" ? await getJpSetCards(id) : await getSetCards(id);
       return context.json(cards, 200);
     } catch (err) {
       if (err instanceof TcgProxyServiceError) {

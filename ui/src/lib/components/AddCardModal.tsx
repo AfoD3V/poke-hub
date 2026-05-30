@@ -11,7 +11,11 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'collection' | 'cards';
+interface JpSet { id: string; name: string; cardCount: number; }
+interface JpSeries { id: string; name: string; sets: JpSet[]; }
+interface JpCard { id: string; name: string; localId: string; image: string; }
+
+type Tab = 'collection' | 'cards' | 'jp';
 
 function cardToSnapshot(card: TcgCard): CardSnapshot {
   return {
@@ -24,22 +28,45 @@ function cardToSnapshot(card: TcgCard): CardSnapshot {
   };
 }
 
+function jpCardToSnapshot(card: JpCard, setName: string, setId: string): CardSnapshot {
+  return {
+    name: card.name,
+    imageSmall: card.image ? `${card.image}/low.webp` : '',
+    setName,
+    setId,
+    setCode: '',
+    rarity: null,
+  };
+}
+
 export function AddCardModal({ onSelect, onClose }: Props) {
   const [tab, setTab] = useState<Tab>('collection');
+
   // Collection tab state
   const [collection, setCollection] = useState<CollectionEntry[]>([]);
   const [collectionFilter, setCollectionFilter] = useState('');
   const [loadingCollection, setLoadingCollection] = useState(false);
-  // Cards tab state
+
+  // EN Cards tab state
   const [query, setQuery] = useState('');
-  const [lang, setLang] = useState<'en' | 'ja'>('en');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [cardResults, setCardResults] = useState<TcgCard[]>([]);
   const [loadingCards, setLoadingCards] = useState(false);
+
+  // JP tab state
+  const [jpSeries, setJpSeries] = useState<JpSeries[]>([]);
+  const [loadingJpSeries, setLoadingJpSeries] = useState(false);
+  const [selectedJpSeries, setSelectedJpSeries] = useState<JpSeries | null>(null);
+  const [selectedJpSet, setSelectedJpSet] = useState<JpSet | null>(null);
+  const [jpCards, setJpCards] = useState<JpCard[]>([]);
+  const [loadingJpCards, setLoadingJpCards] = useState(false);
+  const [jpFilter, setJpFilter] = useState('');
+
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const collectionLoadedRef = useRef(false);
+  const jpSeriesLoadedRef = useRef(false);
 
   useEffect(() => {
     triggerRef.current = document.activeElement as HTMLElement;
@@ -72,7 +99,7 @@ export function AddCardModal({ onSelect, onClose }: Props) {
     return () => { cancelled = true; };
   }, [tab]);
 
-  // Debounced card search
+  // Debounced EN card search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setSuggestions([]);
@@ -81,7 +108,7 @@ export function AddCardModal({ onSelect, onClose }: Props) {
     debounceRef.current = setTimeout(async () => {
       setLoadingCards(true);
       try {
-        const res = await fetch(`/api/cards/search?q=${encodeURIComponent(query)}&lang=${lang}`);
+        const res = await fetch(`/api/cards/search?q=${encodeURIComponent(query)}&lang=en`);
         if (!res.ok) return;
         const body = await res.json() as { cards: TcgCard[] };
         const cards = Array.isArray(body.cards) ? body.cards : [];
@@ -93,22 +120,65 @@ export function AddCardModal({ onSelect, onClose }: Props) {
         setLoadingCards(false);
       }
     }, 300);
-  }, [query, lang]);
+  }, [query]);
+
+  // Load JP series list on first JP tab open
+  useEffect(() => {
+    if (tab !== 'jp' || jpSeriesLoadedRef.current) return;
+    jpSeriesLoadedRef.current = true;
+    let cancelled = false;
+    async function fetchJpSeries() {
+      setLoadingJpSeries(true);
+      try {
+        const res = await fetch('/api/series?lang=ja');
+        if (!res.ok || cancelled) return;
+        const body = await res.json() as JpSeries[];
+        if (!cancelled) setJpSeries(Array.isArray(body) ? body : []);
+      } finally {
+        if (!cancelled) setLoadingJpSeries(false);
+      }
+    }
+    void fetchJpSeries();
+    return () => { cancelled = true; };
+  }, [tab]);
+
+  async function handleJpSetSelect(series: JpSeries, set: JpSet) {
+    setSelectedJpSeries(series);
+    setSelectedJpSet(set);
+    setJpCards([]);
+    setJpFilter('');
+    setLoadingJpCards(true);
+    try {
+      const res = await fetch(`/api/sets/${set.id}/cards?lang=ja`);
+      if (!res.ok) return;
+      const cards = await res.json() as JpCard[];
+      setJpCards(Array.isArray(cards) ? cards : []);
+    } finally {
+      setLoadingJpCards(false);
+    }
+  }
 
   function handleCardSelect(card: TcgCard) {
-    const snap = cardToSnapshot(card);
-    onSelect(snap);
+    onSelect(cardToSnapshot(card));
     onClose();
   }
 
   function handleCollectionSelect(entry: CollectionEntry) {
-    const snap = cardToSnapshot(entry.card);
-    onSelect(snap);
+    onSelect(cardToSnapshot(entry.card));
+    onClose();
+  }
+
+  function handleJpCardSelect(card: JpCard) {
+    onSelect(jpCardToSnapshot(card, selectedJpSet?.name ?? '', selectedJpSet?.id ?? ''));
     onClose();
   }
 
   const filteredCollection = collection.filter((e) =>
     collectionFilter.trim() === '' || e.card.name.toLowerCase().includes(collectionFilter.toLowerCase())
+  );
+
+  const filteredJpCards = jpCards.filter((c) =>
+    jpFilter.trim() === '' || c.name.toLowerCase().includes(jpFilter.toLowerCase()) || c.localId.includes(jpFilter)
   );
 
   return (
@@ -135,22 +205,15 @@ export function AddCardModal({ onSelect, onClose }: Props) {
         </div>
 
         <div className={styles.tabs} role="tablist">
-          <button
-            role="tab"
-            aria-selected={tab === 'collection'}
+          <button role="tab" aria-selected={tab === 'collection'}
             className={`${styles.tab} ${tab === 'collection' ? styles.tabActive : ''}`}
-            onClick={() => setTab('collection')}
-          >
-            Collection
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === 'cards'}
+            onClick={() => setTab('collection')}>Collection</button>
+          <button role="tab" aria-selected={tab === 'cards'}
             className={`${styles.tab} ${tab === 'cards' ? styles.tabActive : ''}`}
-            onClick={() => setTab('cards')}
-          >
-            Cards
-          </button>
+            onClick={() => setTab('cards')}>Cards</button>
+          <button role="tab" aria-selected={tab === 'jp'}
+            className={`${styles.tab} ${tab === 'jp' ? styles.tabActive : ''}`}
+            onClick={() => setTab('jp')}>JP</button>
         </div>
 
         {tab === 'collection' && (
@@ -173,19 +236,12 @@ export function AddCardModal({ onSelect, onClose }: Props) {
             )}
             <div className={styles.grid3}>
               {filteredCollection.map((entry) => (
-                <button
-                  key={entry.id}
-                  type="button"
-                  className={styles.cardTile}
-                  onClick={() => handleCollectionSelect(entry)}
-                  title={`Add ${entry.card.name}`}
-                >
+                <button key={entry.id} type="button" className={styles.cardTile}
+                  onClick={() => handleCollectionSelect(entry)} title={`Add ${entry.card.name}`}>
                   {entry.card.images?.small && (
                     <img src={entry.card.images.small} alt={entry.card.name} className={styles.cardImg} />
                   )}
-                  {entry.quantity > 1 && (
-                    <span className={styles.quantityBadge}>×{entry.quantity}</span>
-                  )}
+                  {entry.quantity > 1 && <span className={styles.quantityBadge}>×{entry.quantity}</span>}
                   <span className={styles.tileAddIcon} aria-hidden="true">+</span>
                 </button>
               ))}
@@ -195,27 +251,11 @@ export function AddCardModal({ onSelect, onClose }: Props) {
 
         {tab === 'cards' && (
           <div className={styles.tabPanel}>
-            <div className={styles.langToggle}>
-              <button
-                type="button"
-                className={`${styles.langBtn} ${lang === 'en' ? styles.langBtnActive : ''}`}
-                onClick={() => setLang('en')}
-              >
-                EN
-              </button>
-              <button
-                type="button"
-                className={`${styles.langBtn} ${lang === 'ja' ? styles.langBtnActive : ''}`}
-                onClick={() => setLang('ja')}
-              >
-                JP
-              </button>
-            </div>
             <div className={styles.searchWrap}>
               <input
-                ref={tab === 'cards' ? inputRef : undefined}
+                ref={inputRef}
                 className={styles.searchInput}
-                placeholder={lang === 'ja' ? 'カード名で検索…' : 'Search for a card…'}
+                placeholder="Search for a card…"
                 value={query}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -228,15 +268,8 @@ export function AddCardModal({ onSelect, onClose }: Props) {
               {suggestions.length > 0 && (
                 <ul className={styles.suggestions} role="listbox">
                   {suggestions.map((s) => (
-                    <li
-                      key={s}
-                      role="option"
-                      aria-selected={false}
-                      className={styles.suggestion}
-                      onClick={() => { setQuery(s); setSuggestions([]); }}
-                    >
-                      {s}
-                    </li>
+                    <li key={s} role="option" aria-selected={false} className={styles.suggestion}
+                      onClick={() => { setQuery(s); setSuggestions([]); }}>{s}</li>
                   ))}
                 </ul>
               )}
@@ -247,21 +280,91 @@ export function AddCardModal({ onSelect, onClose }: Props) {
             )}
             <div className={styles.grid3}>
               {cardResults.map((card) => (
-                <button
-                  key={card.id}
-                  type="button"
-                  className={styles.cardTile}
-                  onClick={() => handleCardSelect(card)}
-                  title={`Add ${card.name}`}
-                >
-                  {card.images?.small && (
-                    <img src={card.images.small} alt={card.name} className={styles.cardImg} />
-                  )}
-                  <span className={styles.setCode}>{(card as unknown as { setCode?: string }).setCode ?? ''}</span>
+                <button key={card.id} type="button" className={styles.cardTile}
+                  onClick={() => handleCardSelect(card)} title={`Add ${card.name}`}>
+                  {card.images?.small && <img src={card.images.small} alt={card.name} className={styles.cardImg} />}
                   <span className={styles.tileAddIcon} aria-hidden="true">+</span>
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {tab === 'jp' && (
+          <div className={styles.tabPanel}>
+            {!selectedJpSet ? (
+              <>
+                {/* Breadcrumb back to series list */}
+                {selectedJpSeries && (
+                  <button type="button" className={styles.backBtn}
+                    onClick={() => setSelectedJpSeries(null)}>
+                    ← All series
+                  </button>
+                )}
+                {loadingJpSeries && <p className={styles.loading}>Loading series…</p>}
+
+                {/* Series list */}
+                {!selectedJpSeries && !loadingJpSeries && (
+                  <ul className={styles.setList}>
+                    {jpSeries.map((s) => (
+                      <li key={s.id}>
+                        <button type="button" className={styles.setItem}
+                          onClick={() => setSelectedJpSeries(s)}>
+                          <span className={styles.setName}>{s.name}</span>
+                          <span className={styles.setCode}>{s.sets.length} sets</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Sets within a series */}
+                {selectedJpSeries && (
+                  <>
+                    <p className={styles.setHeading}>{selectedJpSeries.name}</p>
+                    <ul className={styles.setList}>
+                      {selectedJpSeries.sets.map((set) => (
+                        <li key={set.id}>
+                          <button type="button" className={styles.setItem}
+                            onClick={() => handleJpSetSelect(selectedJpSeries, set)}>
+                            <span className={styles.setName}>{set.name}</span>
+                            <span className={styles.setCode}>{set.cardCount} cards</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <button type="button" className={styles.backBtn}
+                  onClick={() => { setSelectedJpSet(null); setJpCards([]); setJpFilter(''); }}>
+                  ← {selectedJpSeries?.name}
+                </button>
+                <p className={styles.setHeading}>{selectedJpSet.name}</p>
+                <input
+                  className={styles.searchInput}
+                  placeholder="Filter cards…"
+                  value={jpFilter}
+                  onChange={(e) => setJpFilter(e.target.value)}
+                  aria-label="Filter JP cards"
+                  autoComplete="off"
+                />
+                {loadingJpCards && <p className={styles.loading}>Loading cards…</p>}
+                <div className={styles.grid3}>
+                  {filteredJpCards.map((card) => (
+                    <button key={card.id} type="button" className={styles.cardTile}
+                      onClick={() => handleJpCardSelect(card)} title={`Add ${card.name}`}>
+                      {card.image && (
+                        <img src={`${card.image}/low.webp`} alt={card.name} className={styles.cardImg} />
+                      )}
+                      <span className={styles.tileAddIcon} aria-hidden="true">+</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 

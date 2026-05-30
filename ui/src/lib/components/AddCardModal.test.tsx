@@ -41,13 +41,13 @@ describe('AddCardModal', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('shows Collection and Cards tabs only', () => {
-    const { getByRole, queryByRole } = render(
+  it('shows Collection, Cards and JP tabs', () => {
+    const { getByRole } = render(
       <AddCardModal onSelect={() => {}} onClose={() => {}} />
     );
     expect(getByRole('tab', { name: /collection/i })).toBeInTheDocument();
     expect(getByRole('tab', { name: /cards/i })).toBeInTheDocument();
-    expect(queryByRole('tab', { name: /sets/i })).not.toBeInTheDocument();
+    expect(getByRole('tab', { name: /jp/i })).toBeInTheDocument();
   });
 
   it('Collection tab is active by default', () => {
