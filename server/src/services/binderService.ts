@@ -60,6 +60,7 @@ function toBinder(
     icon: r.icon,
     gridCols: r.gridCols,
     gridRows: r.gridRows,
+    color: r.color,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
     pages
@@ -73,11 +74,12 @@ export async function createBinder(
   name: string,
   icon = "book-open",
   gridCols = 4,
-  gridRows = 4
+  gridRows = 4,
+  color = "purple"
 ): Promise<Binder> {
   const [binderRow] = await db
     .insert(binders)
-    .values({ userId, name: name.trim(), icon, gridCols, gridRows })
+    .values({ userId, name: name.trim(), icon, gridCols, gridRows, color })
     .returning();
 
   // Create the first page automatically
@@ -141,6 +143,7 @@ export async function listBinders(userId: string): Promise<BinderListItem[]> {
         icon: b.icon,
         gridCols: b.gridCols,
         gridRows: b.gridRows,
+        color: b.color,
         pageCount,
         filledSlots,
         totalSlots,
@@ -188,7 +191,7 @@ export async function getBinderById(
 export async function updateBinder(
   userId: string,
   binderId: string,
-  updates: { name?: string; icon?: string; gridCols?: number; gridRows?: number }
+  updates: { name?: string; icon?: string; gridCols?: number; gridRows?: number; color?: string }
 ): Promise<Binder | null> {
   const [binderRow] = await db
     .select()
@@ -233,6 +236,7 @@ export async function updateBinder(
   if (updates.icon !== undefined) updateValues.icon = updates.icon;
   if (updates.gridCols !== undefined) updateValues.gridCols = updates.gridCols;
   if (updates.gridRows !== undefined) updateValues.gridRows = updates.gridRows;
+  if (updates.color !== undefined) updateValues.color = updates.color;
 
   const [updated] = await db
     .update(binders)

@@ -1,21 +1,18 @@
 .card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
   background: #1a1a2e;
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 14px;
+  overflow: hidden;
   cursor: pointer;
-  text-align: left;
-  width: 100%;
-  transition: border-color 150ms, background 150ms;
-  color: inherit;
+  transition: transform 150ms, box-shadow 150ms, border-color 150ms;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
-  border-color: rgba(139, 92, 246, 0.5);
-  background: #1e1e35;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-color: rgba(139, 92, 246, 0.35);
 }
 
 .card:focus-visible {
@@ -23,20 +20,47 @@
   outline-offset: 2px;
 }
 
-.iconWrap {
+.cardTop {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  color: #7c3aed;
+  position: relative;
 }
 
-.info {
+/* Subtle inner shine overlay */
+.cardTop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.icon {
+  color: rgba(255, 255, 255, 0.9);
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.cardBottom {
+  padding: 0.875rem 0.875rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   flex: 1;
-  min-width: 0;
+}
+
+.cardInfo {
+  flex: 1;
 }
 
 .name {
   margin: 0 0 0.25rem;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 700;
   color: #e2e8f0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -45,7 +69,44 @@
 
 .stat {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: #94a3b8;
-  line-height: 1.4;
+  line-height: 1.5;
+}
+
+.cardActions {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: flex-end;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 6px;
+  color: #a78bfa;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  padding: 0;
+}
+
+.actionBtn:hover {
+  background: rgba(139, 92, 246, 0.22);
+  color: #c4b5fd;
+}
+
+.deleteBtn {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.2);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.deleteBtn:hover {
+  background: rgba(248, 113, 113, 0.2);
+  color: #fca5a5;
 }

@@ -63,6 +63,7 @@ export const binders = pgTable(
     icon: text("icon").notNull().default("book-open"),
     gridCols: integer("grid_cols").notNull().default(4),
     gridRows: integer("grid_rows").notNull().default(4),
+    color: text("color").notNull().default("purple"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()

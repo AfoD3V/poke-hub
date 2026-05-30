@@ -87,6 +87,17 @@
   border-color: #7c3aed;
 }
 
+.colorRow {
+  margin-bottom: 1rem;
+}
+
+.colorSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.375rem;
+}
+
 .error {
   color: #f87171;
   font-size: 0.875rem;

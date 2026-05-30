@@ -44,6 +44,7 @@ export interface Binder {
   icon: string;
   gridCols: number;
   gridRows: number;
+  color?: string;
   createdAt: string;
   updatedAt: string;
   pages: BinderPage[];
@@ -56,6 +57,7 @@ export interface BinderListItem {
   icon: string;
   gridCols: number;
   gridRows: number;
+  color?: string;
   pageCount: number;
   filledSlots: number;
   totalSlots: number;
@@ -70,6 +72,7 @@ export interface CreateBinderBody {
   icon?: string;
   gridCols?: number;
   gridRows?: number;
+  color?: string;
 }
 
 /** Request body for updating a binder. */
@@ -78,6 +81,7 @@ export interface UpdateBinderBody {
   icon?: string;
   gridCols?: number;
   gridRows?: number;
+  color?: string;
 }
 
 /** Request body for placing a card in a slot. */

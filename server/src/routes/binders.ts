@@ -24,7 +24,7 @@ bindersRouter.get("/", async (c) => {
 bindersRouter.post("/", async (c) => {
   const { userId } = c.get("auth") as AuthContext;
 
-  let body: { name?: unknown; icon?: unknown; gridCols?: unknown; gridRows?: unknown };
+  let body: { name?: unknown; icon?: unknown; gridCols?: unknown; gridRows?: unknown; color?: unknown };
   try {
     body = await c.req.json();
   } catch {
@@ -46,10 +46,11 @@ bindersRouter.post("/", async (c) => {
   }
 
   const icon = typeof body.icon === "string" ? body.icon : "book-open";
+  const color = typeof body.color === "string" ? body.color : "purple";
   const { createBinder } = await import("../services/binderService");
 
   try {
-    const binder = await createBinder(userId, body.name, icon, gridCols, gridRows);
+    const binder = await createBinder(userId, body.name, icon, gridCols, gridRows, color);
     return c.json({ binder }, 201);
   } catch {
     return c.json({ error: "Failed to create binder" }, 500);
@@ -78,14 +79,14 @@ bindersRouter.patch("/:id", async (c) => {
   const { userId } = c.get("auth") as AuthContext;
   const binderId = c.req.param("id");
 
-  let body: { name?: unknown; icon?: unknown; gridCols?: unknown; gridRows?: unknown };
+  let body: { name?: unknown; icon?: unknown; gridCols?: unknown; gridRows?: unknown; color?: unknown };
   try {
     body = await c.req.json();
   } catch {
     return c.json({ error: "Invalid request body" }, 400);
   }
 
-  const updates: { name?: string; icon?: string; gridCols?: number; gridRows?: number } = {};
+  const updates: { name?: string; icon?: string; gridCols?: number; gridRows?: number; color?: string } = {};
   if (body.name !== undefined) {
     if (typeof body.name !== "string" || !body.name.trim()) {
       return c.json({ error: "name must be a non-empty string" }, 400);
@@ -98,6 +99,7 @@ bindersRouter.patch("/:id", async (c) => {
   if (body.icon !== undefined && typeof body.icon === "string") updates.icon = body.icon;
   if (body.gridCols !== undefined) updates.gridCols = Number(body.gridCols);
   if (body.gridRows !== undefined) updates.gridRows = Number(body.gridRows);
+  if (body.color !== undefined && typeof body.color === "string") updates.color = body.color;
 
   if ((updates.gridCols !== undefined || updates.gridRows !== undefined)) {
     const cols = updates.gridCols ?? 4;

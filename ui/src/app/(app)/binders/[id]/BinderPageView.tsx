@@ -117,7 +117,7 @@ export function BinderPageView({ binder: initialBinder }: Props) {
     } finally { setSaving(false); }
   }
 
-  async function handleSaveBinder(data: { name: string; icon: string; gridCols: number; gridRows: number }) {
+  async function handleSaveBinder(data: { name: string; icon: string; gridCols: number; gridRows: number; color: string }) {
     await updateBinder(binder.id, data);
     await refreshBinder();
   }
@@ -230,7 +230,7 @@ export function BinderPageView({ binder: initialBinder }: Props) {
 
       {showEditModal && (
         <CreateEditBinderModal
-          binder={{ id: binder.id, name: binder.name, icon: binder.icon, gridCols: binder.gridCols, gridRows: binder.gridRows, pageCount: binder.pages.length, filledSlots: 0, totalSlots: 0, estimatedValue: 0, createdAt: binder.createdAt, updatedAt: binder.updatedAt }}
+          binder={{ id: binder.id, name: binder.name, icon: binder.icon, gridCols: binder.gridCols, gridRows: binder.gridRows, color: binder.color, pageCount: binder.pages.length, filledSlots: 0, totalSlots: 0, estimatedValue: 0, createdAt: binder.createdAt, updatedAt: binder.updatedAt }}
           onSave={handleSaveBinder}
           onDelete={handleDeleteBinder}
           onClose={() => setShowEditModal(false)}
