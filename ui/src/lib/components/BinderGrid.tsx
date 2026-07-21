@@ -16,10 +16,15 @@ export function BinderGrid({ page, gridCols, gridRows, onSlotClick, selectedSlot
   const slotMap = new Map<number, BinderSlot>();
   page.slots.forEach((s) => slotMap.set(s.slotIndex, s));
 
+  // Scale gap and icon down proportionally for larger grids
+  const maxDim = Math.max(gridCols, gridRows);
+  const gap = maxDim <= 4 ? '0.5rem' : maxDim <= 6 ? '0.35rem' : maxDim <= 8 ? '0.25rem' : '0.15rem';
+  const iconSize = maxDim <= 4 ? 28 : maxDim <= 6 ? 22 : maxDim <= 8 ? 16 : 12;
+
   return (
     <div
       className={styles.grid}
-      style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}
+      style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap }}
     >
       {Array.from({ length: total }, (_, i) => {
         const slot = slotMap.get(i);
@@ -55,8 +60,8 @@ export function BinderGrid({ page, gridCols, gridRows, onSlotClick, selectedSlot
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
-                width="28"
-                height="28"
+                width={iconSize}
+                height={iconSize}
                 className={styles.addIcon}
                 aria-hidden="true"
               >

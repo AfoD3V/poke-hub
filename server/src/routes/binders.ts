@@ -42,7 +42,7 @@ bindersRouter.post("/", async (c) => {
   const gridRows = body.gridRows !== undefined ? Number(body.gridRows) : 4;
 
   if (!isValidGridSize(gridCols, gridRows)) {
-    return c.json({ error: "gridCols/gridRows must be 3x3 or 4x4" }, 400);
+    return c.json({ error: "gridCols and gridRows must each be between 1 and 10" }, 400);
   }
 
   const icon = typeof body.icon === "string" ? body.icon : "book-open";
@@ -103,7 +103,7 @@ bindersRouter.patch("/:id", async (c) => {
     const cols = updates.gridCols ?? 4;
     const rows = updates.gridRows ?? 4;
     if (!isValidGridSize(cols, rows)) {
-      return c.json({ error: "gridCols/gridRows must be 3x3 or 4x4" }, 400);
+      return c.json({ error: "gridCols and gridRows must each be between 1 and 10" }, 400);
     }
   }
 
@@ -119,7 +119,7 @@ bindersRouter.patch("/:id", async (c) => {
       return c.json({ error: "Cannot resize: slots exist outside new grid bounds" }, 409);
     }
     if (e?.code === "INVALID_GRID_SIZE") {
-      return c.json({ error: "gridCols/gridRows must be 3x3 or 4x4" }, 400);
+      return c.json({ error: "gridCols and gridRows must each be between 1 and 10" }, 400);
     }
     return c.json({ error: "Failed to update binder" }, 500);
   }

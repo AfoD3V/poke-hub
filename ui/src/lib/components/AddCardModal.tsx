@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { CardSnapshot } from '$shared/binders';
 import type { TcgCard } from '$shared/tcg';
+import type { CollectionEntry } from '$shared/collection';
 import styles from './AddCardModal.module.css';
 
 interface TcgSet {
@@ -26,7 +27,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Tab = 'cards' | 'sets';
+type Tab = 'collection' | 'cards' | 'sets';
 
 function cardToSnapshot(card: TcgCard | SetCardItem, setInfo?: { name: string; id: string; code: string }): CardSnapshot {
   if ('images' in card) {
@@ -52,26 +53,33 @@ function cardToSnapshot(card: TcgCard | SetCardItem, setInfo?: { name: string; i
 }
 
 export function AddCardModal({ onSelect, onClose }: Props) {
-  const [tab, setTab] = useState<Tab>('cards');
+  const [tab, setTab] = useState<Tab>('collection');
+  // Collection tab state
+  const [collection, setCollection] = useState<CollectionEntry[]>([]);
+  const [collectionFilter, setCollectionFilter] = useState('');
+  const [loadingCollection, setLoadingCollection] = useState(false);
+  // Cards tab state
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [cardResults, setCardResults] = useState<TcgCard[]>([]);
   const [loadingCards, setLoadingCards] = useState(false);
+  // Sets tab state
   const [sets, setSets] = useState<TcgSet[]>([]);
   const [setsFilter, setSetsFilter] = useState('');
   const [selectedSet, setSelectedSet] = useState<TcgSet | null>(null);
   const [setCards, setSetCards] = useState<SetCardItem[]>([]);
   const [loadingSets, setLoadingSets] = useState(false);
   const [loadingSetCards, setLoadingSetCards] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const collectionLoadedRef = useRef(false);
+  const setsLoadedRef = useRef(false);
 
   useEffect(() => {
-    // Capture the element that triggered this modal so we can restore focus
     triggerRef.current = document.activeElement as HTMLElement;
     inputRef.current?.focus();
-
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
     return () => {
@@ -79,6 +87,26 @@ export function AddCardModal({ onSelect, onClose }: Props) {
       triggerRef.current?.focus();
     };
   }, [onClose]);
+
+  // Load collection on first open
+  useEffect(() => {
+    if (tab !== 'collection' || collectionLoadedRef.current) return;
+    collectionLoadedRef.current = true;
+    let cancelled = false;
+    async function fetchCollection() {
+      setLoadingCollection(true);
+      try {
+        const res = await fetch('/api/collection', { cache: 'no-store' });
+        if (!res.ok || cancelled) return;
+        const body = await res.json() as { entries: CollectionEntry[] };
+        if (!cancelled) setCollection(Array.isArray(body.entries) ? body.entries : []);
+      } finally {
+        if (!cancelled) setLoadingCollection(false);
+      }
+    }
+    void fetchCollection();
+    return () => { cancelled = true; };
+  }, [tab]);
 
   // Debounced card search
   useEffect(() => {
@@ -91,7 +119,6 @@ export function AddCardModal({ onSelect, onClose }: Props) {
         if (!res.ok) return;
         const body = await res.json() as { cards: TcgCard[] };
         const cards = Array.isArray(body.cards) ? body.cards : [];
-        // Build unique name suggestions
         const nameSet = new Set<string>();
         cards.forEach((c) => { if (c.name) nameSet.add(c.name); });
         setSuggestions(Array.from(nameSet).slice(0, 8));
@@ -103,7 +130,6 @@ export function AddCardModal({ onSelect, onClose }: Props) {
   }, [query]);
 
   // Load sets when sets tab is first opened
-  const setsLoadedRef = useRef(false);
   useEffect(() => {
     if (tab !== 'sets' || setsLoadedRef.current) return;
     setsLoadedRef.current = true;
@@ -146,8 +172,18 @@ export function AddCardModal({ onSelect, onClose }: Props) {
     onClose();
   }
 
+  function handleCollectionSelect(entry: CollectionEntry) {
+    const snap = cardToSnapshot(entry.card);
+    onSelect(snap);
+    onClose();
+  }
+
   const filteredSets = sets.filter((s) =>
     setsFilter.trim() === '' || s.name.toLowerCase().includes(setsFilter.toLowerCase())
+  );
+
+  const filteredCollection = collection.filter((e) =>
+    collectionFilter.trim() === '' || e.card.name.toLowerCase().includes(collectionFilter.toLowerCase())
   );
 
   return (
@@ -176,6 +212,14 @@ export function AddCardModal({ onSelect, onClose }: Props) {
         <div className={styles.tabs} role="tablist">
           <button
             role="tab"
+            aria-selected={tab === 'collection'}
+            className={`${styles.tab} ${tab === 'collection' ? styles.tabActive : ''}`}
+            onClick={() => setTab('collection')}
+          >
+            Collection
+          </button>
+          <button
+            role="tab"
             aria-selected={tab === 'cards'}
             className={`${styles.tab} ${tab === 'cards' ? styles.tabActive : ''}`}
             onClick={() => setTab('cards')}
@@ -192,11 +236,51 @@ export function AddCardModal({ onSelect, onClose }: Props) {
           </button>
         </div>
 
+        {tab === 'collection' && (
+          <div className={styles.tabPanel}>
+            <input
+              ref={inputRef}
+              className={styles.searchInput}
+              placeholder="Filter your collection…"
+              value={collectionFilter}
+              onChange={(e) => setCollectionFilter(e.target.value)}
+              aria-label="Filter collection"
+              autoComplete="off"
+            />
+            {loadingCollection && <p className={styles.loading}>Loading collection…</p>}
+            {!loadingCollection && collection.length === 0 && (
+              <p className={styles.empty}>Your collection is empty. Add cards from the Cards or Sets tabs.</p>
+            )}
+            {!loadingCollection && collection.length > 0 && filteredCollection.length === 0 && (
+              <p className={styles.empty}>No cards match your filter.</p>
+            )}
+            <div className={styles.grid3}>
+              {filteredCollection.map((entry) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={styles.cardTile}
+                  onClick={() => handleCollectionSelect(entry)}
+                  title={`Add ${entry.card.name}`}
+                >
+                  {entry.card.images?.small && (
+                    <img src={entry.card.images.small} alt={entry.card.name} className={styles.cardImg} />
+                  )}
+                  {entry.quantity > 1 && (
+                    <span className={styles.quantityBadge}>×{entry.quantity}</span>
+                  )}
+                  <span className={styles.tileAddIcon} aria-hidden="true">+</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {tab === 'cards' && (
           <div className={styles.tabPanel}>
             <div className={styles.searchWrap}>
               <input
-                ref={inputRef}
+                ref={tab === 'cards' ? inputRef : undefined}
                 className={styles.searchInput}
                 placeholder="Search for a card…"
                 value={query}

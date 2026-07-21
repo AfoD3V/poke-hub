@@ -18,8 +18,17 @@ const ICONS = [
 ];
 
 const GRID_SIZES = [
+  { label: '2×2', cols: 2, rows: 2 },
+  { label: '2×4', cols: 2, rows: 4 },
   { label: '3×3', cols: 3, rows: 3 },
+  { label: '4×2', cols: 4, rows: 2 },
   { label: '4×4', cols: 4, rows: 4 },
+  { label: '4×6', cols: 4, rows: 6 },
+  { label: '5×5', cols: 5, rows: 5 },
+  { label: '6×4', cols: 6, rows: 4 },
+  { label: '6×6', cols: 6, rows: 6 },
+  { label: '8×8', cols: 8, rows: 8 },
+  { label: '10×10', cols: 10, rows: 10 },
 ];
 
 interface Props {
@@ -75,7 +84,7 @@ export function CreateEditBinderModal({ binder, onSave, onDelete, onClose }: Pro
     }
   }
 
-  const selectedSize = GRID_SIZES.find((s) => s.cols === gridCols && s.rows === gridRows) ?? GRID_SIZES[1];
+  const selectedSize = GRID_SIZES.find((s) => s.cols === gridCols && s.rows === gridRows) ?? GRID_SIZES[4];
 
   return (
     <div

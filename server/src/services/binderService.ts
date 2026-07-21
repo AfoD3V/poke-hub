@@ -11,13 +11,15 @@ import type {
 
 // ── Allowed grid sizes ────────────────────────────────────────────────────────
 
-const ALLOWED_GRID_SIZES = [
-  { cols: 3, rows: 3 },
-  { cols: 4, rows: 4 }
-];
+const MIN_GRID = 1;
+const MAX_GRID = 10;
 
 export function isValidGridSize(cols: number, rows: number): boolean {
-  return ALLOWED_GRID_SIZES.some((s) => s.cols === cols && s.rows === rows);
+  return (
+    Number.isInteger(cols) && Number.isInteger(rows) &&
+    cols >= MIN_GRID && cols <= MAX_GRID &&
+    rows >= MIN_GRID && rows <= MAX_GRID
+  );
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

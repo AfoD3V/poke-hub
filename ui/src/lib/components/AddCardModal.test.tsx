@@ -1,6 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { AddCardModal } from './AddCardModal';
+
+// Mock fetch so collection loading on mount doesn't fail in jsdom
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ entries: [] }),
+  }));
+});
 
 describe('AddCardModal', () => {
   it('renders modal with title "Add card"', () => {
@@ -33,25 +41,35 @@ describe('AddCardModal', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('shows Cards and Sets tabs', () => {
+  it('shows Collection, Cards and Sets tabs', () => {
     const { getByRole } = render(
       <AddCardModal onSelect={() => {}} onClose={() => {}} />
     );
+    expect(getByRole('tab', { name: /collection/i })).toBeInTheDocument();
     expect(getByRole('tab', { name: /cards/i })).toBeInTheDocument();
     expect(getByRole('tab', { name: /sets/i })).toBeInTheDocument();
   });
 
-  it('Cards tab is active by default', () => {
+  it('Collection tab is active by default', () => {
     const { getByRole } = render(
       <AddCardModal onSelect={() => {}} onClose={() => {}} />
     );
-    expect(getByRole('tab', { name: /cards/i })).toHaveAttribute('aria-selected', 'true');
+    expect(getByRole('tab', { name: /collection/i })).toHaveAttribute('aria-selected', 'true');
+    expect(getByRole('tab', { name: /cards/i })).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('has a search input on Cards tab', () => {
+  it('has a filter input on Collection tab', () => {
     const { getByPlaceholderText } = render(
       <AddCardModal onSelect={() => {}} onClose={() => {}} />
     );
-    expect(getByPlaceholderText(/search/i)).toBeInTheDocument();
+    expect(getByPlaceholderText(/filter/i)).toBeInTheDocument();
+  });
+
+  it('has a search input on Cards tab', () => {
+    const { getByRole, getByPlaceholderText } = render(
+      <AddCardModal onSelect={() => {}} onClose={() => {}} />
+    );
+    fireEvent.click(getByRole('tab', { name: /cards/i }));
+    expect(getByPlaceholderText(/search for a card/i)).toBeInTheDocument();
   });
 });
