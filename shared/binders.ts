@@ -20,6 +20,8 @@ export interface BinderSlot {
   slotIndex: number;
   cardId: string | null;
   cardSnapshot: CardSnapshot | null;
+  /** Base64 data URL of a user-uploaded custom image for this slot. */
+  customImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -102,4 +104,10 @@ export interface MoveCardBody {
 export interface CopyCardBody {
   toPageId: string;
   toSlotIndex: number;
+}
+
+/** Request body for setting a custom image on a slot. */
+export interface SetCustomImageBody {
+  /** Base64 data URL (e.g. "data:image/jpeg;base64,..."). Max 2 MB. */
+  dataUrl: string;
 }

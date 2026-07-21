@@ -31,6 +31,7 @@ function toBinderSlot(r: typeof binderSlots.$inferSelect): BinderSlot {
     slotIndex: r.slotIndex,
     cardId: r.cardId ?? null,
     cardSnapshot: r.cardSnapshot as CardSnapshot | null,
+    customImageUrl: r.customImageUrl ?? null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString()
   };
@@ -456,6 +457,50 @@ export async function moveCard(
       target: [binderSlots.pageId, binderSlots.slotIndex],
       set: { cardId: swapCardId, cardSnapshot: swapSnapshot, updatedAt: new Date() }
     });
+
+  return true;
+}
+
+export async function setSlotCustomImage(
+  userId: string,
+  binderId: string,
+  pageId: string,
+  slotIndex: number,
+  dataUrl: string
+): Promise<BinderSlot | null> {
+  const owned = await verifyPageOwnership(userId, binderId, pageId);
+  if (!owned) return null;
+
+  // Slot must exist and have a card
+  const [existing] = await db
+    .select()
+    .from(binderSlots)
+    .where(and(eq(binderSlots.pageId, pageId), eq(binderSlots.slotIndex, slotIndex)));
+
+  if (!existing || !existing.cardId) return null;
+
+  const [updated] = await db
+    .update(binderSlots)
+    .set({ customImageUrl: dataUrl, updatedAt: new Date() })
+    .where(and(eq(binderSlots.pageId, pageId), eq(binderSlots.slotIndex, slotIndex)))
+    .returning();
+
+  return updated ? toBinderSlot(updated) : null;
+}
+
+export async function clearSlotCustomImage(
+  userId: string,
+  binderId: string,
+  pageId: string,
+  slotIndex: number
+): Promise<boolean> {
+  const owned = await verifyPageOwnership(userId, binderId, pageId);
+  if (!owned) return false;
+
+  await db
+    .update(binderSlots)
+    .set({ customImageUrl: null, updatedAt: new Date() })
+    .where(and(eq(binderSlots.pageId, pageId), eq(binderSlots.slotIndex, slotIndex)));
 
   return true;
 }

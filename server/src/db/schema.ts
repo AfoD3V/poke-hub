@@ -100,6 +100,7 @@ export const binderSlots = pgTable(
         setCode: string;
         rarity: string | null;
       }>(),
+    customImageUrl: text("custom_image_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()

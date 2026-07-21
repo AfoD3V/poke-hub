@@ -6,6 +6,7 @@ import type {
   PlaceCardBody,
   MoveCardBody,
   CopyCardBody,
+  SetCustomImageBody,
 } from '$shared/binders';
 
 // ── Binders ───────────────────────────────────────────────────────────────────
@@ -123,4 +124,32 @@ export async function copyCard(
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to copy card');
+}
+
+export async function setSlotCustomImage(
+  binderId: string,
+  pageId: string,
+  slotIndex: number,
+  data: SetCustomImageBody
+): Promise<void> {
+  const res = await fetch(`/api/binders/${binderId}/pages/${pageId}/slots/${slotIndex}/custom-image`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json() as { error: string };
+    throw new Error(err.error ?? 'Failed to set custom image');
+  }
+}
+
+export async function clearSlotCustomImage(
+  binderId: string,
+  pageId: string,
+  slotIndex: number
+): Promise<void> {
+  const res = await fetch(`/api/binders/${binderId}/pages/${pageId}/slots/${slotIndex}/custom-image`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to clear custom image');
 }

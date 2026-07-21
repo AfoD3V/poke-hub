@@ -1,7 +1,10 @@
 import { Hono } from "hono";
 import type { AuthContext } from "../middleware/auth";
 import { isValidGridSize } from "../services/binderService";
-import type { PlaceCardBody, CardSnapshot } from "../../../shared/binders";
+import type { PlaceCardBody, CardSnapshot, SetCustomImageBody } from "../../../shared/binders";
+
+const MAX_CUSTOM_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
+const DATA_URL_PATTERN = /^data:image\/(jpeg|png|webp|gif);base64,/;
 
 const bindersRouter = new Hono();
 
@@ -316,6 +319,69 @@ bindersRouter.post("/:id/pages/:pageId/slots/:slotIndex/copy", async (c) => {
     return c.json({ slot }, 200);
   } catch {
     return c.json({ error: "Failed to copy card" }, 500);
+  }
+});
+
+// ── PUT /api/binders/:id/pages/:pageId/slots/:slotIndex/custom-image ──────────
+
+bindersRouter.put("/:id/pages/:pageId/slots/:slotIndex/custom-image", async (c) => {
+  const { userId } = c.get("auth") as AuthContext;
+  const binderId = c.req.param("id");
+  const pageId = c.req.param("pageId");
+  const slotIndex = Number(c.req.param("slotIndex"));
+
+  if (Number.isNaN(slotIndex) || slotIndex < 0) {
+    return c.json({ error: "slotIndex must be a non-negative integer" }, 400);
+  }
+
+  let body: SetCustomImageBody;
+  try {
+    body = await c.req.json<SetCustomImageBody>();
+  } catch {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+
+  if (!body.dataUrl || typeof body.dataUrl !== "string") {
+    return c.json({ error: "dataUrl is required" }, 400);
+  }
+  if (!DATA_URL_PATTERN.test(body.dataUrl)) {
+    return c.json({ error: "dataUrl must be a valid image data URL (jpeg, png, webp, or gif)" }, 400);
+  }
+  if (body.dataUrl.length > MAX_CUSTOM_IMAGE_BYTES) {
+    return c.json({ error: "Image exceeds 2 MB limit" }, 400);
+  }
+
+  const { setSlotCustomImage } = await import("../services/binderService");
+
+  try {
+    const slot = await setSlotCustomImage(userId, binderId, pageId, slotIndex, body.dataUrl);
+    if (!slot) return c.json({ error: "Not found" }, 404);
+    return c.json({ slot }, 200);
+  } catch {
+    return c.json({ error: "Failed to set custom image" }, 500);
+  }
+});
+
+// ── DELETE /api/binders/:id/pages/:pageId/slots/:slotIndex/custom-image ───────
+
+bindersRouter.delete("/:id/pages/:pageId/slots/:slotIndex/custom-image", async (c) => {
+  const { userId } = c.get("auth") as AuthContext;
+  const binderId = c.req.param("id");
+  const pageId = c.req.param("pageId");
+  const slotIndex = Number(c.req.param("slotIndex"));
+
+  if (Number.isNaN(slotIndex) || slotIndex < 0) {
+    return c.json({ error: "slotIndex must be a non-negative integer" }, 400);
+  }
+
+  const { clearSlotCustomImage } = await import("../services/binderService");
+
+  try {
+    const cleared = await clearSlotCustomImage(userId, binderId, pageId, slotIndex);
+    if (!cleared) return c.json({ error: "Not found" }, 404);
+    return c.json({ success: true }, 200);
+  } catch {
+    return c.json({ error: "Failed to clear custom image" }, 500);
   }
 });
 
